@@ -1,0 +1,621 @@
+source("R/00_libraries.R")
+source("R/01_utils.R")
+
+
+# Capacity data sources ---------------------------------------------------
+
+## Hospital beds
+# Overnight
+url <- "https://www.england.nhs.uk/statistics/statistical-work-areas/bed-availability-and-occupancy/bed-data-overnight/"
+
+excel_urls <- obtain_links(url)
+
+excel_urls <- excel_urls[grepl("xls$|xlsx$", excel_urls, ignore.case = TRUE)]
+
+# download files
+files <- purrr::map_chr(
+  excel_urls,
+  ~ download_url_to_directory(
+    url = .x,
+    new_directory = "Bed Availability and Occupancy Data – Overnight"
+  )
+)
+
+# clean filenames and remove unnecessary files
+purrr::walk(
+  files,
+  rename_hospital_beds_xls
+)
+
+# tidy xlsx spreadsheets
+# this function ignores the xls files
+quarterly_overnight_beds <- list.files(
+  "data-raw/Bed Availability and Occupancy Data – Overnight/",
+  full.names = TRUE
+) |> 
+  purrr::map_dfr(
+    ~ reformat_bed_availability_data(
+      filepath = .x,
+      bed_type = "overnight"
+    )
+  )
+
+annual_overnight_beds <- quarterly_to_annual_sum(
+  quarterly_overnight_beds
+)
+
+bind_rows(
+  quarterly_overnight_beds,
+  annual_overnight_beds
+) |> 
+  write.csv(
+  "data/overnight-beds.csv",
+  row.names = FALSE
+)
+
+# Day only
+url <- "https://www.england.nhs.uk/statistics/statistical-work-areas/bed-availability-and-occupancy/bed-data-day-only/"
+excel_urls <- obtain_links(url)
+excel_urls <- excel_urls[grepl("xls$|xlsx$", excel_urls, ignore.case = TRUE)]
+
+# download files
+files <- purrr::map_chr(
+  excel_urls,
+  ~ download_url_to_directory(
+    url = .x,
+    new_directory = "Bed Availability and Occupancy Data – Day"
+  )
+)
+
+
+# clean and move file names
+purrr::walk(
+  files,
+  rename_hospital_beds_xls
+)
+
+# tidy xlsx spreadsheets
+# this function ignores the xls files
+quarterly_day_beds <- list.files(
+  "data-raw/Bed Availability and Occupancy Data – Day/",
+  full.names = TRUE
+) |> 
+  purrr::map_dfr(
+    ~ reformat_bed_availability_data(
+      filepath = .x,
+      bed_type = "day"
+    )
+  )
+
+annual_day_beds <- quarterly_to_annual_sum(
+  quarterly_day_beds
+)
+
+bind_rows(
+  quarterly_day_beds,
+  annual_day_beds
+) |> 
+  write.csv(
+    "data/day-beds.csv",
+    row.names = FALSE
+  )
+
+
+
+# GPs per population
+quarterly_gps_per_population <- fingertipsR::fingertips_data(
+  IndicatorID = 93966,
+  AreaTypeID = 221
+) |>
+  filter(
+    AreaType == "ICBs"
+  ) |> 
+  mutate(
+    year = as.integer(
+      substr(
+        Timeperiod, 1, 4
+      )
+    ),
+    quarter = as.integer(
+      substr(
+        Timeperiod, 
+        nchar(Timeperiod),
+        nchar(Timeperiod)
+      )
+    ),
+    org = gsub("n", "", AreaCode),
+    frequency = "quarterly"
+  ) |> 
+  select(
+    "year",
+    "quarter",
+    "org",
+    org_name = "AreaName",
+    metric = "IndicatorName",
+    numerator = "Count",
+    denominator = "Denominator",
+    value = "Value",
+    "frequency"
+  )
+
+annual_gps_per_population <- quarterly_to_annual_mean(
+  quarterly_gps_per_population
+)
+
+bind_rows(
+  quarterly_gps_per_population,
+  annual_gps_per_population
+) |> 
+  write.csv(
+  "data/clinical-workforce-per-population.csv",
+  row.names = FALSE
+)
+
+# sickness absence
+url <- "https://files.digital.nhs.uk/A6/67E0C1/ESR_ABSENCE_CSV_NHSE.csv"
+
+monthly_sickness_absence <- read.csv(url) |> 
+  mutate(
+    year = as.integer(
+      substr(
+        Date, 1, 4
+        )
+      ),
+    month = match(
+      tolower(
+        gsub(".*-", "", Date)
+      ),
+      tolower(month.abb)
+    ),
+    metric = "ESR absence",
+    frequency = "monthly"
+  ) |> 
+  select(
+    "year",
+    "month",
+    "metric",
+    org = "Org.Code",
+    org_name = "Org.Name",
+    numerator = "FTE.Days.Sick",
+    denominator = "FTE.Days.Available",
+    value = "SA.Rate....",
+    "frequency"
+  )
+
+quarterly_sickness_absence <- monthly_to_quarterly_mean(
+  monthly_sickness_absence
+)
+
+annual_sickness_absence <- monthly_to_annual(
+  monthly_sickness_absence
+)
+
+bind_rows(
+  monthly_sickness_absence,
+  quarterly_sickness_absence,
+  annual_sickness_absence
+) |> 
+  write.csv(
+    "data/sickness-absence.csv",
+    row.names = FALSE
+    )
+
+
+# Demand ------------------------------------------------------------------
+
+# population
+
+
+older_population <- fingertipsR::fingertips_data(
+  IndicatorID = c(336, 641, 642),
+  AreaTypeID = 167
+  ) |> 
+  filter(
+    AreaType == "CCGs (from Apr 2021)"
+  ) |> 
+  select(
+    year = "Timeperiod",
+    org = "AreaCode",
+    org_name = "AreaName",
+    metric = "IndicatorName",
+    numerator = "Count",
+    denominator = "Denominator",
+    value = "Value",
+  ) |> 
+  mutate(
+    frequency = "annual calendar"
+  )
+
+write.csv(
+  older_population,
+  "data/older-population.csv",
+  row.names = FALSE
+)  
+
+# risk factors
+
+risk_factors <- fingertipsR::indicators() |> 
+  filter(
+    grepl("[Rr]isk", DomainName),
+    grepl("[Ff]actor", DomainName)
+) |> 
+  pull(
+    IndicatorID
+  ) |> 
+  unique() |> 
+  fingertipsR::fingertips_data(
+    AreaTypeID = 221
+  ) |> 
+  filter(
+    AreaType == "ICBs"
+  ) |> 
+  mutate(
+    AreaCode = gsub("n", "", AreaCode)
+  ) |> 
+  select(
+    year = "Timeperiod",
+    org = "AreaCode",
+    org_name = "AreaName",
+    metric = "IndicatorName",
+    numerator = "Count",
+    denominator = "Denominator",
+    value = "Value",
+  ) |> 
+  mutate(
+    frequency = case_when(
+      grepl("/", year) ~ "annual financial",
+      .default = "annual calendar"
+    )
+  )
+
+write.csv(
+  risk_factors,
+  "data/risk-factors-fingertips.csv",
+  row.names = FALSE
+)
+
+
+# Performance -------------------------------------------------------------
+
+
+# GP wait times these are help in zip files containing monthly of data (each zip
+# file contains multiple csvs, one for each month). The zip files are produced
+# monthly, so there is overlap between the csv files in multiple zip files, but
+# the data changes slightly (as information updates?). This function will always
+# use the most recent file for each month for its information
+url <- "https://digital.nhs.uk/data-and-information/publications/statistical/appointments-in-general-practice/"
+
+url_links <- obtain_links(url) |> 
+  (function(url) url[grepl("[a-z].*-[0-9]{4}$", url)])() |> 
+  (function(url) paste0("https://digital.nhs.uk", url))() |> 
+  purrr::map(
+    obtain_links
+  ) |> 
+  lapply(
+    function(x) x[grepl("zip$", x)]
+  ) |> 
+  lapply(
+    function(x) if (length(x) > 1) {
+      x[grepl("Daily", x)]
+    } else {
+      x
+    }
+    
+  ) |> 
+  unlist()
+
+files <- purrr::walk(
+  url_links,
+  download_unzip_gp_wait_times
+)
+
+monthly_gp_wait_times <- setNames(
+  list.files(
+    "data-raw/GP wait times/"
+    ),
+  nm = gsub(".csv", "", list.files(
+    "data-raw/GP wait times/"
+  ))) |> 
+  purrr::map_dfr(
+    ~ read.csv(
+      paste0(
+        "data-raw/GP wait times/",
+        .x
+      ),
+      colClasses = c(
+        "character",
+        "character",
+        "integer"
+      )
+    ),
+    .id = "date"
+  ) |> 
+  mutate(
+    year = as.integer(
+      paste0(
+        "20",
+        substr(
+          date, 5, 6
+          )
+      )
+    ),
+    month = match(
+      substr(
+        date, 1, 3
+      ),
+      month.abb
+    ),
+    TIME_BETWEEN_BOOK_AND_APPT = case_when(
+      TIME_BETWEEN_BOOK_AND_APPT %in% c("Same Day", "1 Day", "2 to 7 Days") ~ "0 to 1 weeks",
+      TIME_BETWEEN_BOOK_AND_APPT %in% c("8  to 14 Days") ~ "1 to 2 weeks",
+      TIME_BETWEEN_BOOK_AND_APPT %in% c("15  to 21 Days") ~ "2 to 3 weeks",
+      TIME_BETWEEN_BOOK_AND_APPT %in% c("22  to 28 Days") ~ "3 to 4 weeks",
+      TIME_BETWEEN_BOOK_AND_APPT %in% c("More than 28 Days") ~ "Over 4 weeks",
+      .default = "Unknown/Data Issue"
+    ),
+    metric = paste0(
+      "Proportion of attended appointments",
+      " (",
+      TIME_BETWEEN_BOOK_AND_APPT,
+      " wait time)"
+    )
+  ) |> 
+  filter(
+    TIME_BETWEEN_BOOK_AND_APPT != "Unknown/Data Issue"
+  ) |>
+  summarise(
+    numerator = sum(COUNT_OF_APPOINTMENTS),
+    .by = c(
+      date,
+      year,
+      month,
+      ICB_STP_ONS_CODE,
+      metric,
+      TIME_BETWEEN_BOOK_AND_APPT
+    )
+  ) |> 
+  mutate(
+    denominator = sum(numerator),
+    .by = c(
+      date,
+      year, 
+      month,
+      ICB_STP_ONS_CODE
+    )
+  ) |> 
+  mutate(
+    value = numerator / denominator,
+    frequency = "monthly"
+  ) |> 
+  select(
+    "year",
+    "month",
+    org = "ICB_STP_ONS_CODE",
+    "metric",
+    "numerator",
+    "denominator",
+    "value",
+    "frequency"
+  )
+
+quarterly_gp_wait_times <- monthly_to_quarterly_sum(
+  monthly_gp_wait_times
+)
+
+annual_gp_wait_times <- monthly_to_annual_sum(
+  monthly_gp_wait_times
+)
+
+
+bind_rows(
+  monthly_gp_wait_times,
+  quarterly_gp_wait_times,
+  annual_gp_wait_times
+) |> 
+  write.csv(
+    "data/gp-wait-times.csv",
+    row.names = FALSE
+    )  
+
+# ambulance response times
+url <- "https://www.england.nhs.uk/statistics/wp-content/uploads/sites/2/2023/09/20230825-AmbSYS-AmbCO-indicator-list.xlsx"
+
+file <- download_url_to_directory(
+  url,
+  "Ambulance response times"
+)
+
+keep_indicators <- paste0("A", c(8:12, 24, 27, 30, 33, 36))
+
+ambsys_lookup <- read_excel(
+  file,
+  sheet = "AmbSYS",
+  range = "R5C1:R136C3",
+  col_names = c(
+    "id",
+    "description",
+    "metric"
+  )
+) |> 
+  filter(
+    id %in% keep_indicators
+  )
+
+csv_link <- obtain_links("https://www.england.nhs.uk/statistics/statistical-work-areas/ambulance-quality-indicators/") |> 
+  (function(x) x[grepl("csv$", x)])() |> 
+  (function(x) x[grepl("^AmbSYS", basename(x))])()
+
+file <- download_url_to_directory(
+  csv_link,
+  "Ambulance response times"
+)
+
+monthly_ambsys <- read.csv(
+  file,
+  na.strings = "."
+) |> 
+  tidyr::pivot_longer(
+    cols = starts_with("A"),
+    names_to = "id",
+    values_to = "value", 
+    values_transform = function(x) gsub(",", "", x)
+  ) |> 
+  inner_join(
+    ambsys_lookup,
+    by = join_by(id)
+  ) |> 
+  mutate(
+    description = gsub(" response", "", description)
+  ) |> 
+  select(!c("id")) |> 
+  tidyr::pivot_wider(
+    names_from = metric,
+    values_from = value
+  ) |> 
+  rename(
+    numerator = "total time",
+    denominator = "incident count"
+  ) |> 
+  mutate(
+    across(
+      c(numerator, denominator),
+      as.numeric
+    ),
+    metric = paste0(
+      "Mean ambulance response time (",
+      description,
+      ")"
+    ),
+    value = numerator / denominator,
+    frequency = "monthly"
+  ) |> 
+  filter(
+    !is.na(numerator),
+    !is.na(denominator)
+  ) |> 
+  select(
+    year = "Year",
+    month = "Month",
+    org = "Org.Code",
+    org_name = "Org.Name",
+    "metric",
+    "value",
+    "numerator",
+    "denominator",
+    "frequency"
+  )
+
+quarterly_ambsys <- monthly_to_quarterly_sum(
+  monthly_ambsys
+)
+
+annual_ambsys <- monthly_to_annual_sum(
+  monthly_ambsys
+)
+
+bind_rows(
+  monthly_ambsys,
+  quarterly_ambsys,
+  annual_ambsys
+) |> 
+  write.csv(
+    "data/ambulance-response-times.csv",
+    row.names = FALSE
+)
+
+# No criteria to reside
+url <- "https://www.england.nhs.uk/statistics/statistical-work-areas/discharge-delays-acute-data/"
+excel_links <- obtain_links(url)
+excel_links <- excel_links[grepl("xlsx$", excel_links)]
+excel_links <- excel_links[!grepl("[[:alpha:]].*[0-9]{4}-[[:alpha:]].*[0-9]{4}", excel_links)]
+
+files <- purrr::map_chr(
+  excel_links,
+  ~ download_url_to_directory(
+    url = .x,
+    new_directory = "No criteria to reside"
+  )
+)
+
+tidy_nctr_files <- purrr::map_chr(
+  files,
+  tidy_nctr_file
+)
+
+monthly_nctr <- purrr::map_dfr(
+  tidy_nctr_files,
+  aggregate_nctr_to_month
+)
+
+quarterly_nctr <- monthly_to_quarterly_sum(
+  monthly_nctr
+)
+
+annual_nctr <- monthly_to_annual_sum(
+  monthly_nctr
+)
+
+bind_rows(
+  monthly_nctr,
+  quarterly_nctr,
+  annual_nctr
+) |> 
+  write.csv(
+    "data/no-criteria-to-reside.csv",
+    row.names = FALSE
+  )
+
+# 62 day cancer waiting times
+url <- "https://www.england.nhs.uk/statistics/statistical-work-areas/cancer-waiting-times/"
+excel_links <- obtain_links(url)
+excel_links <- excel_links[grepl("xlsx$", excel_links)]
+excel_links <- excel_links[grepl("Commissioner", excel_links)]
+excel_links <- excel_links[grepl("Revision", excel_links)]
+
+files <- purrr::map_chr(
+  excel_links,
+  ~ download_url_to_directory(
+    url = .x,
+    new_directory = "Cancer wait times"
+  )
+)
+
+monthly_cancer_wait_times <- purrr::map_dfr(
+  files,
+  tidy_cancer_wait_times
+)
+
+quarterly_cancer_wait_times <- monthly_to_quarterly(
+  monthly_cancer_wait_times
+)
+
+annual_cancer_wait_times <- monthly_to_annual(
+  monthly_cancer_wait_times
+)
+
+bind_rows(
+  monthly_cancer_wait_times,
+  quarterly_cancer_wait_times,
+  annual_cancer_wait_times
+) |> 
+  write.csv(
+    "data/62-day-cancer-wait-times.csv",
+    row.names = FALSE
+  )
+
+# A&E 4 hour waits
+
+url <- "https://www.england.nhs.uk/statistics/statistical-work-areas/ae-waiting-times-and-activity/"
+
+monthly_data_links <- obtain_links(url) |> 
+  (function(x) x[grepl("ae-attendances", basename(x))])() |> 
+  unique()
+
+excel_file_links <- purrr::map(
+  monthly_data_links,
+  obtain_links
+  ) |> 
+  unlist() |> 
+  (function(x) x[grepl("xls$|xlsx$", x)])() |> 
+  (function(x) x[grepl(paste(month.name, collapse = "|"),
+                       basename(x))])()
