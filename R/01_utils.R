@@ -435,10 +435,135 @@ tidy_a_and_e <- function(filepath) {
         "Proportion of A&E attendances greater than 4 hours (",
         metric,
         ")"
-      )
+      ),
+      frequency = "monthly"
     )
   
   return(a_and_e_tidy)
+}
+
+rename_rtt_files <- function(filepath) {
+  monthyear <- stringr::str_extract(
+    filepath,
+    "[A-za-z]{3}[0-9]{2}"
+  )
+  
+  extension <- tools::file_ext(filepath)
+  
+  if (grepl("Adjusted", filepath)) {
+    description <- "adjusted."
+  } else if (grepl("NonAdmitted", filepath)) {
+    description <- "nonadmitted."
+  } else if (grepl("Admitted", filepath)) {
+    description <- "admitted."
+  }
+  
+  filename <- paste0(
+    dirname(filepath),
+    "/",
+    monthyear,
+    "_",
+    description,
+    extension
+  )
+  
+  file.rename(
+    from = filepath,
+    to = filename
+  )
+  return(filename)
+}
+
+tidy_rtt <- function(filepath) {
+  if (grepl("nonadmitted", filepath)) {
+    admission_type <- "not admitted"
+  } else if (grepl("adjusted", filepath)) {
+    admission_type <- "admitted - adjusted"
+  } else if (grepl("admitted", filepath)) {
+    admission_type <- "admitted"
+  }
+  
+  rtt <- readxl::read_excel(
+    filepath,
+    sheet = "Provider",
+    range = "R2C2:R10000C150",
+    col_names = paste0("col", 1:149)
+  ) |> 
+    unpivotr::as_cells() |> 
+    filter(
+      !is.na(chr),
+      row > 12
+    ) |> 
+    behead(
+      direction = "left",
+      name = "region"
+    ) |> 
+    behead(
+      direction = "left",
+      name = "org"
+    ) |> 
+    behead(
+      direction = "left",
+      name = "org_name"
+    ) |> 
+    behead(
+      direction = "left",
+      name = "treatment_function_code"
+    ) |> 
+    behead(
+      direction = "left",
+      name = "treatment_function"
+    ) |> 
+    behead(
+      direction = "up",
+      name = "measure"
+    ) |> 
+    mutate(
+      type = case_when(
+        measure %in% paste0(">", 0:17,"-", 1:18) ~ "numerator",
+        measure == "Total number of completed pathways (with a known clock start)" ~ "denominator",
+        .default = "not required"
+      ),
+      chr = gsub("-", "0", chr),
+      count = as.numeric(chr)
+    ) |> 
+    filter(
+      type != "not required"
+    ) |> 
+    summarise(
+      count = sum(count, na.rm = TRUE),
+      .by = c(
+        org,
+        org_name,
+        type
+      )
+    ) |> 
+    tidyr::pivot_wider(
+      names_from = type,
+      values_from = count
+    ) |> 
+    mutate(
+      month = match(substr(
+        basename(filepath),
+        1, 3
+      ), month.abb),
+      year = as.integer(
+        paste0(
+          "20",
+          substr(
+            basename(filepath),
+            4, 5
+          )
+        )
+      ),
+      metric = paste0(
+        "Proportion of completed pathways within 18 weeks from referral (",
+        admission_type,
+        ")"
+      )
+    )
+  
+  return(rtt)
 }
 
 # data processing ---------------------------------------------------------

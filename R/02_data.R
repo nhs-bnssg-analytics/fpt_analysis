@@ -618,4 +618,70 @@ excel_file_links <- purrr::map(
   unlist() |> 
   (function(x) x[grepl("xls$|xlsx$", x)])() |> 
   (function(x) x[grepl(paste(month.name, collapse = "|"),
-                       basename(x))])()
+                       basename(x))])() |> 
+  (function(x) x[grepl("by-provider", x)])()
+
+files <- purrr::map_chr(
+  excel_file_links,
+  ~ download_url_to_directory(
+    url = .x,
+    new_directory = "A and E wait times"
+  )
+)
+
+monthly_a_and_e <- purrr::map_dfr(
+  files, 
+  tidy_a_and_e
+)
+
+quarterly_a_and_e <- monthly_to_quarterly_sum(
+  monthly_a_and_e
+)
+
+annual_a_and_e <- monthly_to_annual_sum(
+  monthly_a_and_e
+)  
+
+bind_rows(
+  monthly_a_and_e,
+  quarterly_a_and_e,
+  annual_a_and_e
+) |> 
+  write.csv(
+    "data/a-and-e-4-hours.csv",
+    row.names = FALSE
+  )
+
+# referral to treatment
+url <- "https://www.england.nhs.uk/statistics/statistical-work-areas/rtt-waiting-times/"
+annual_urls <- obtain_links(url) |> 
+  (function(x) x[grepl("^https://www.england.nhs.uk/statistics/statistical-work-areas/rtt-waiting-times/", x)])() |> 
+  (function(x) x[grep("[0-9]{4}-[0-9]{2}", x)])() |> 
+  unique()
+
+xl_files <- purrr::map(
+  annual_urls,
+  obtain_links
+) |> 
+  unlist() |> 
+  (function(x) x[grepl("xls$|xlsx$", x)])() |> 
+  (function(x) x[grepl("Provider", x)])() |> 
+  (function(x) x[grepl("Admitted", x)])() |> 
+  (function(x) x[!grepl("12|11", x)])()
+
+files <- purrr::map_chr(
+  xl_files,
+  ~ download_url_to_directory(
+    url = .x,
+    new_directory = "Referral to Treatment"
+  )
+) |> 
+  purrr::map_chr(
+    rename_rtt_files
+  )
+
+
+monthly_rtt <- files |> 
+  purrr::map_dfr(
+    tidy_rtt
+  )
