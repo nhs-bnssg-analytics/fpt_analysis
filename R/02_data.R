@@ -265,6 +265,10 @@ risk_factors <- fingertipsR::indicators() |>
     frequency = case_when(
       grepl("/", year) ~ "annual financial",
       .default = "annual calendar"
+    ),
+    year = stringr::str_extract(
+      year,
+      "^[0-9]{4}"
     )
   )
 
@@ -685,3 +689,22 @@ monthly_rtt <- files |>
   purrr::map_dfr(
     tidy_rtt
   )
+
+quarterly_rtt <- monthly_to_quarterly_sum(
+  monthly_rtt
+)
+
+annual_rtt <- monthly_to_annual_sum(
+  monthly_rtt
+)
+
+bind_rows(
+  monthly_rtt,
+  quarterly_rtt,
+  annual_rtt
+) |> 
+  write.csv(
+    "data/referral-to-treatment.csv",
+    row.names = FALSE
+  )
+

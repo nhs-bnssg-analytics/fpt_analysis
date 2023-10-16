@@ -526,7 +526,7 @@ tidy_rtt <- function(filepath) {
     ) |> 
     filter(
       type != "not required",
-      treatment_function_code == "C_999"
+      treatment_function == "Total"
     ) |> 
     mutate(
       chr = gsub("-", "0", chr),
@@ -564,7 +564,8 @@ tidy_rtt <- function(filepath) {
         "Proportion of completed pathways greater than 18 weeks from referral (",
         admission_type,
         ")"
-      )
+      ),
+      frequency = "monthly"
     )
   
   return(rtt)
