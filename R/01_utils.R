@@ -485,14 +485,13 @@ tidy_rtt <- function(filepath) {
   
   rtt <- readxl::read_excel(
     filepath,
-    sheet = "Provider",
-    range = "R2C2:R10000C150",
-    col_names = paste0("col", 1:149)
+    .name_repair = "minimal",
+    sheet = "Provider"
   ) |> 
     unpivotr::as_cells() |> 
     filter(
       !is.na(chr),
-      row > 12
+      row > 11
     ) |> 
     behead(
       direction = "left",
@@ -523,12 +522,15 @@ tidy_rtt <- function(filepath) {
         measure %in% paste0(">", 0:17,"-", 1:18) ~ "numerator",
         measure == "Total number of completed pathways (with a known clock start)" ~ "denominator",
         .default = "not required"
-      ),
-      chr = gsub("-", "0", chr),
-      count = as.numeric(chr)
+      )
     ) |> 
     filter(
-      type != "not required"
+      type != "not required",
+      treatment_function_code == "C_999"
+    ) |> 
+    mutate(
+      chr = gsub("-", "0", chr),
+      count = as.numeric(chr)
     ) |> 
     summarise(
       count = sum(count, na.rm = TRUE),
@@ -556,8 +558,10 @@ tidy_rtt <- function(filepath) {
           )
         )
       ),
+      numerator = denominator - numerator,
+      value = numerator / denominator,
       metric = paste0(
-        "Proportion of completed pathways within 18 weeks from referral (",
+        "Proportion of completed pathways greater than 18 weeks from referral (",
         admission_type,
         ")"
       )
