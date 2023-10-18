@@ -571,6 +571,128 @@ tidy_rtt <- function(filepath) {
   return(rtt)
 }
 
+rename_remove_social_care_files <- function(filepath) {
+  if (!("T1" %in% readxl::excel_sheets(filepath))) {
+    file.remove(filepath)
+    return("deleted")
+  } else {
+    new_name <- readxl::read_excel(
+      path = filepath,
+      sheet = "Title",
+      col_names = paste0("col", 1:2)
+    ) |> 
+      filter(
+        grepl("^Adult Social Care Activity and Finance", col1)
+      ) |> 
+      pull(col1) |> 
+      (function(x) paste0(
+        dirname(filepath),
+        "/",
+        gsub(":", "", x),
+        ".",
+        tools::file_ext(filepath)
+      ))()
+    file.rename(
+      from = filepath,
+      to = new_name
+    )
+    return(new_name)
+  }
+  
+}
+
+tidy_social_care_funding <- function(filepath) {
+  tidy_sc_funding <- tidyxl::xlsx_cells(
+    path = filepath,
+    sheets = "T1"
+  ) 
+  
+  min_row <- tidy_sc_funding |> 
+    filter(character %in% c("Geography code",
+                            "Local Authority code and description")) |> 
+    pull(row)
+  
+  tidy_sc_funding <- tidy_sc_funding |> 
+    filter(
+      !is.na(content),
+      row >= min_row
+    ) |> 
+    behead(
+      direction = "left",
+      name = "org"
+    ) |> 
+    behead(
+      direction = "left",
+      name = "number"
+    ) |> 
+    behead(
+      direction = "left",
+      name = "org_name"
+    ) |> 
+    behead(
+      direction = "left",
+      name = "region"
+    ) |> 
+    behead(
+      direction = "left",
+      name = "region_name"
+    ) |> 
+    behead(
+      direction = "up-left",
+      name = "metric"
+    ) |> 
+    behead(
+      direction = "up",
+      name = "age_band"
+    ) |> 
+    mutate(
+      type = case_when(
+        metric == "Gross Total Expenditure" ~ "numerator",
+        metric == "Long Term Support during the year" ~ "denominator",
+        .default = "Not required"
+      )
+    ) |> 
+    filter(
+      metric != "Not required"
+    ) |> 
+    summarise(
+      numeric = sum(numeric),
+      .by = c(
+        org, region, type
+      )
+    ) |> 
+    mutate(
+      org = case_when(
+        is.na(org) ~ region,
+        org == "" ~ region,
+        .default = org
+      ),
+      numeric = as.numeric(numeric)
+    ) |> 
+    tidyr::pivot_wider(
+      names_from = type,
+      values_from = numeric
+    ) |> 
+    select(
+      "org", 
+      "numerator",
+      "denominator"
+    ) |> 
+    mutate(
+      value = numerator / denominator,
+      metric = "Gross Total Expenditure ($000s) per individual with long term support during the year",
+      frequency = "annual financial",
+      year = stringr::str_extract(
+        filepath, "[0-9]{4}"
+      )
+    ) |> 
+    filter(
+      grepl("^E", org)
+    )
+  
+  return(tidy_sc_funding)
+}
+
 # data processing ---------------------------------------------------------
 
 reformat_bed_availability_data <- function(filepath, bed_type) {

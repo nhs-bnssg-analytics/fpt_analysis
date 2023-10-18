@@ -200,6 +200,48 @@ bind_rows(
     row.names = FALSE
     )
 
+# Social care funding
+url <- "https://www.gov.uk/government/publications/social-care-grant-allocations-2022-to-2023"
+url <- "https://digital.nhs.uk/data-and-information/publications/statistical/adult-social-care-outcomes-framework-ascof"
+url <- "https://digital.nhs.uk/data-and-information/publications/statistical/adult-social-care-activity-and-finance-report"
+
+annual_links <- obtain_links(url) |> 
+  (function(x) x[grepl("[0-9]{4}-[0-9]{2}$", x)])() |>
+  (function(x) paste0("https://digital.nhs.uk",
+                      x))()
+  
+excel_links <- purrr::map(
+    .x = annual_links,
+    .f = obtain_links
+  ) |> 
+  unlist() |> 
+  (function(x) x[grepl("xls$|xlsx$", x)])() |> 
+  (function(x) x[!grepl("dash|comm-care|per-soc|pss-exp|summary", x, ignore.case = TRUE)])()
+
+xl_files <- purrr::map_chr(
+  excel_links,
+  ~ download_url_to_directory(
+    url = .x,
+    new_directory = "Social care funding"
+  )
+) 
+
+xl_files <- xl_files |> 
+  purrr::map_chr(
+    rename_remove_social_care_files
+  ) |> 
+  (function(x) x[!grepl("deleted", x)])()
+
+annual_social_care <- purrr::map_dfr(
+  xl_files,
+  tidy_social_care_funding
+)
+
+write.csv(
+  annual_social_care,
+  "data/annual-social-care-expenditure.csv",
+  row.names = FALSE
+)
 
 # Demand ------------------------------------------------------------------
 
