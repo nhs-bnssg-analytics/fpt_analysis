@@ -942,7 +942,7 @@ monthly_to_annual_mean <- function(data) {
     ) |> 
     mutate(
       value = numerator / denominator,
-      frequency = "calendar annual"
+      frequency = "annual calendar"
     )
   
   return(data)
@@ -964,7 +964,7 @@ monthly_to_annual_sum <- function(data) {
     ) |> 
     mutate(
       value = numerator / denominator,
-      frequency = "calendar annual"
+      frequency = "annual calendar"
     )
   
   return(data)
@@ -986,7 +986,7 @@ quarterly_to_annual_mean <- function(data) {
     ) |> 
     mutate(
       value = numerator / denominator,
-      frequency = "calendar annual"
+      frequency = "annual calendar"
     )
   
   return(data)
@@ -1008,7 +1008,7 @@ quarterly_to_annual_sum <- function(data) {
     ) |> 
     mutate(
       value = numerator / denominator,
-      frequency = "calendar annual"
+      frequency = "annual calendar"
     )
   
   return(data)
