@@ -186,7 +186,7 @@ quarterly_sickness_absence <- monthly_to_quarterly_mean(
   monthly_sickness_absence
 )
 
-annual_sickness_absence <- monthly_to_annual(
+annual_sickness_absence <- monthly_to_annual_mean(
   monthly_sickness_absence
 )
 
@@ -201,8 +201,6 @@ bind_rows(
     )
 
 # Social care funding
-url <- "https://www.gov.uk/government/publications/social-care-grant-allocations-2022-to-2023"
-url <- "https://digital.nhs.uk/data-and-information/publications/statistical/adult-social-care-outcomes-framework-ascof"
 url <- "https://digital.nhs.uk/data-and-information/publications/statistical/adult-social-care-activity-and-finance-report"
 
 annual_links <- obtain_links(url) |> 
@@ -631,11 +629,11 @@ monthly_cancer_wait_times <- purrr::map_dfr(
   tidy_cancer_wait_times
 )
 
-quarterly_cancer_wait_times <- monthly_to_quarterly(
+quarterly_cancer_wait_times <- monthly_to_quarterly_sum(
   monthly_cancer_wait_times
 )
 
-annual_cancer_wait_times <- monthly_to_annual(
+annual_cancer_wait_times <- monthly_to_annual_sum(
   monthly_cancer_wait_times
 )
 
