@@ -169,10 +169,20 @@ tidy_nctr_file <- function(filepath) {
     sheets = "Table 2"
   ) |> 
     filter(
-      row > 3,
       !is.na(content)
+    )
+  
+  min_row <- nctr |> 
+    filter(
+      col == 5
     ) |> 
-    # select(!c("date")) |> 
+    pull(row) |> 
+    min()
+  
+  nctr <- nctr |> 
+    filter(
+      row >= min_row
+    ) |> 
     behead(
       direction = "up-left",
       name = "date_field"
@@ -585,6 +595,8 @@ rename_remove_social_care_files <- function(filepath) {
         grepl("^Adult Social Care Activity and Finance", col1)
       ) |> 
       pull(col1) |> 
+      (function(x) gsub("(\\n)|(\\r)", " ", x))() |> 
+      stringr::str_squish() |> 
       (function(x) paste0(
         dirname(filepath),
         "/",
@@ -869,7 +881,7 @@ monthly_to_quarterly_mean <- function(data) {
     summarise(
       across(
         c(numerator, denominator),
-        mean
+        ~ mean(.x, na.rm = TRUE)
       ),
       .by = any_of(
         c("year", "quarter", "org", "org_name", "metric")
@@ -900,7 +912,7 @@ monthly_to_quarterly_sum <- function(data) {
     summarise(
       across(
         c(numerator, denominator),
-        sum
+        ~ sum(.x, na.rm = TRUE)
       ),
       .by = any_of(
         c("year", "quarter", "org", "org_name", "metric")
@@ -922,7 +934,7 @@ monthly_to_annual_mean <- function(data) {
     summarise(
       across(
         c(numerator, denominator),
-        mean
+        ~ mean(.x, na.rm = TRUE)
       ),
       .by = any_of(
         c("year", "org", "org_name", "metric")
@@ -944,7 +956,7 @@ monthly_to_annual_sum <- function(data) {
     summarise(
       across(
         c(numerator, denominator),
-        sum
+        ~ sum(.x, na.rm = TRUE)
       ),
       .by = any_of(
         c("year", "org", "org_name", "metric")
@@ -966,7 +978,7 @@ quarterly_to_annual_mean <- function(data) {
     summarise(
       across(
         c(numerator, denominator),
-        mean
+        ~ mean(.x, na.rm = TRUE)
       ),
       .by = any_of(
         c("year", "org", "org_name", "metric")
@@ -988,7 +1000,7 @@ quarterly_to_annual_sum <- function(data) {
     summarise(
       across(
         c(numerator, denominator),
-        sum
+        ~ sum(.x, na.rm = TRUE)
       ),
       .by = any_of(
         c("year", "org", "org_name", "metric")
@@ -1001,3 +1013,24 @@ quarterly_to_annual_sum <- function(data) {
   
   return(data)
 }
+
+
+
+# lookups -----------------------------------------------------------------
+
+ccg_to_icb <- function() {
+  url <- "https://www.sbs.nhs.uk/ccg-icb-list"
+  ccg_to_icb <- url |> 
+    rvest::read_html() |> 
+    rvest::html_nodes("tbody") |> 
+    rvest::html_table(
+      header = FALSE
+    ) |> 
+    purrr::pluck(1) |> 
+    purrr::set_names(
+      c("ccg_code", "ccg_name", "icb_code", "icb_name")
+    )
+  
+  return(ccg_to_icb)
+}
+
