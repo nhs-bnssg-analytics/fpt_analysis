@@ -959,6 +959,18 @@ convert_ons_to_health_code <- function(data, area_type = "stp") {
         !c("CCG21CD", "STP21CDH")
       )
   } else if (area_type == "icb") {
+    icb22_ons_code_lkp <- download_url_to_directory(
+      url = "https://www.arcgis.com/sharing/rest/content/items/25ba241a775e4a9db8e5c721ee73d85d/data",
+      new_directory = "Lookups",
+      filename = "ICB22_name_lookup.xlsx"
+    ) |> 
+      readxl::read_excel() |> 
+      select(
+        c(
+          ICBCD = "ICB22CD", 
+          ICBCDH = "ICB22CDH")
+      )
+    
     url <- "https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/ICB_APR_2023_EN_NC/FeatureServer/0/query?outFields=*&where=1%3D1&f=geojson"
     icb_ons_code_lkp <- jsonlite::fromJSON(
       txt = url
@@ -968,32 +980,34 @@ convert_ons_to_health_code <- function(data, area_type = "stp") {
         "properties"
       ) |> 
       select(
-        "ICB23CD",
-        "ICB23CDH"
+        ICBCD = "ICB23CD",
+        ICBCDH = "ICB23CDH"
+      ) |> 
+      union(
+        icb22_ons_code_lkp
       )
     
     data <- data |> 
       mutate(
-        ICB23CD = case_when(
+        ICBCD = case_when(
           grepl("^E", org) ~ org,
           .default = NA_character_
         )
       ) |> 
       left_join(
         icb_ons_code_lkp,
-        by = join_by(ICB23CD)
+        by = join_by(ICBCD)
       ) |> 
       mutate(
         org = case_when(
-          !is.na(ICB23CDH) ~ ICB23CDH,
+          !is.na(ICBCDH) ~ ICBCDH,
           .default = org
         )
       ) |> 
       select(
-        !c("ICB23CD", "ICB23CDH")
+        !c("ICBCD", "ICBCDH")
       )
   }
-  
   
   return(data)
 }

@@ -41,7 +41,8 @@ quarterly_overnight_beds <- list.files(
   )
 
 annual_overnight_beds <- quarterly_to_annual_sum(
-  quarterly_overnight_beds
+  quarterly_overnight_beds,
+  year_type = "financial"
 )
 
 bind_rows(
@@ -88,7 +89,8 @@ quarterly_day_beds <- list.files(
   )
 
 annual_day_beds <- quarterly_to_annual_sum(
-  quarterly_day_beds
+  quarterly_day_beds,
+  year_type = "financial"
 )
 
 bind_rows(
@@ -139,7 +141,8 @@ quarterly_gps_per_population <- fingertipsR::fingertips_data(
   )
 
 annual_gps_per_population <- quarterly_to_annual_mean(
-  quarterly_gps_per_population
+  quarterly_gps_per_population,
+  year_type = "financial"
 )
 
 bind_rows(
@@ -187,7 +190,8 @@ quarterly_sickness_absence <- monthly_to_quarterly_mean(
 )
 
 annual_sickness_absence <- monthly_to_annual_mean(
-  monthly_sickness_absence
+  monthly_sickness_absence,
+  year_type = "financial"
 )
 
 bind_rows(
@@ -264,7 +268,18 @@ older_population <- fingertipsR::fingertips_data(
   ) |> 
   mutate(
     frequency = "annual calendar"
-  )
+  ) |> 
+  convert_ons_to_health_code(
+    area_type = "ccg"
+  ) |> 
+  summarise(
+    across(
+      c(numerator, denominator),
+      sum
+    ),
+    .by = c(year, org, metric, frequency)
+  ) |> 
+  mutate(value = numerator / denominator)
 
 write.csv(
   older_population,
@@ -310,6 +325,9 @@ risk_factors <- fingertipsR::indicators() |>
       year,
       "^[0-9]{4}"
     )
+  ) |> 
+  convert_ons_to_health_code(
+    area_type = "icb"
   )
 
 write.csv(
@@ -447,7 +465,8 @@ quarterly_gp_wait_times <- monthly_to_quarterly_sum(
 )
 
 annual_gp_wait_times <- monthly_to_annual_sum(
-  monthly_gp_wait_times
+  monthly_gp_wait_times,
+  year_type = "financial"
 )
 
 
@@ -554,7 +573,8 @@ quarterly_ambsys <- monthly_to_quarterly_sum(
 )
 
 annual_ambsys <- monthly_to_annual_sum(
-  monthly_ambsys
+  monthly_ambsys,
+  year_type = "financial"
 )
 
 bind_rows(
@@ -596,7 +616,8 @@ quarterly_nctr <- monthly_to_quarterly_sum(
 )
 
 annual_nctr <- monthly_to_annual_sum(
-  monthly_nctr
+  monthly_nctr,
+  year_type = "financial"
 )
 
 bind_rows(
@@ -634,7 +655,8 @@ quarterly_cancer_wait_times <- monthly_to_quarterly_sum(
 )
 
 annual_cancer_wait_times <- monthly_to_annual_sum(
-  monthly_cancer_wait_times
+  monthly_cancer_wait_times,
+  year_type = "financial"
 )
 
 bind_rows(
@@ -676,14 +698,16 @@ files <- purrr::map_chr(
 monthly_a_and_e <- purrr::map_dfr(
   files, 
   tidy_a_and_e
-)
+) |> 
+  convert_ons_to_health_code()
 
 quarterly_a_and_e <- monthly_to_quarterly_sum(
   monthly_a_and_e
 )
 
 annual_a_and_e <- monthly_to_annual_sum(
-  monthly_a_and_e
+  monthly_a_and_e,
+  year_type = "financial"
 )  
 
 bind_rows(
@@ -735,7 +759,8 @@ quarterly_rtt <- monthly_to_quarterly_sum(
 )
 
 annual_rtt <- monthly_to_annual_sum(
-  monthly_rtt
+  monthly_rtt,
+  year_type = "financial"
 )
 
 bind_rows(
