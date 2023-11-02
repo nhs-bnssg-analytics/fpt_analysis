@@ -14,7 +14,7 @@ obtain_links <- function(url) {
 
 # downloading files -------------------------------------------------------
 
-download_url_to_directory <- function(url, new_directory) {
+download_url_to_directory <- function(url, new_directory, filename) {
   new_directory <- paste0(
     "data-raw/",
     new_directory,
@@ -23,10 +23,19 @@ download_url_to_directory <- function(url, new_directory) {
   if (!isTRUE(file.info(new_directory)$isdir)) 
     dir.create(new_directory, recursive = TRUE)
   
-  new_filename <- paste0(
-    new_directory,
-    basename(url)
-  )
+  
+  if (missing(filename)) {
+    new_filename <- paste0(
+      new_directory,
+      basename(url)
+    )
+  } else {
+    new_filename <- paste0(
+      new_directory,
+      filename
+    )
+  }
+  
   
   download.file(
     url,
@@ -139,9 +148,6 @@ unzip_summarise_write_data <- function(zipped_csv_file, temp_file, file_director
       COUNT_OF_APPOINTMENTS = sum(COUNT_OF_APPOINTMENTS),
       .by = c(
         ICB_STP_ONS_CODE,
-        # APPT_STATUS,
-        # HCP_TYPE,
-        # APPT_MODE,
         TIME_BETWEEN_BOOK_AND_APPT
       )
     )
@@ -360,7 +366,24 @@ tidy_a_and_e <- function(filepath) {
   sheets <- readxl::excel_sheets(
     filepath
   ) |> 
-    (function(x) x[grepl("Provider Level Data|A&E Data", x)])()
+    # (function(x) x[grepl("Provider Level Data|A&E Data", x)])()
+    (function(x) x[grepl("STP Level Data|System Level Data", x)])()
+  
+  if (length(sheets) == 0) {
+    return(
+      tibble(
+        org = character(),
+        org_name = character(),
+        metric = character(),
+        denominator = numeric(),
+        numerator = numeric(),
+        year = numeric(),
+        month = numeric(),
+        value = numeric(),
+        frequency = character()
+      )
+    )
+  }
   
   a_and_e_tidy <- readxl::read_xls(
     filepath,
@@ -398,12 +421,12 @@ tidy_a_and_e <- function(filepath) {
     ) |> 
     behead(
       direction = "left",
-      name = "region"
-    ) |> 
-    behead(
-      direction = "left",
       name = "org_name"
     ) |> 
+    # behead(
+    #   direction = "left",
+    #   name = "org_name"
+    # ) |> 
     behead(
       direction = "up",
       name = "metric"
@@ -414,7 +437,8 @@ tidy_a_and_e <- function(filepath) {
         category %in% c("A&E attendances > 4 hours from arrival to admission, transfer or discharge",
                         "A&E attendances greater than 4 hours from arrival to admission, transfer or discharge") ~ "numerator",
         .default = "error"
-      )
+      ),
+      metric = replace(metric, metric == "Total Attendances > 4 hours", "Total attendances")
     ) |> 
     filter(
       category != "error",
@@ -429,7 +453,7 @@ tidy_a_and_e <- function(filepath) {
       "row",
       "col",
       "data_type",
-      "region",
+      # "region",
       "lgl"
     )) |> 
     tidyr::pivot_wider(
@@ -692,7 +716,7 @@ tidy_social_care_funding <- function(filepath) {
     ) |> 
     mutate(
       value = numerator / denominator,
-      metric = "Gross Total Expenditure ($000s) per individual with long term support during the year",
+      metric = "Gross Total Expenditure (£000s) per individual with long term support during the year",
       frequency = "annual financial",
       year = stringr::str_extract(
         filepath, "[0-9]{4}"
@@ -862,6 +886,118 @@ year_from_financial_year <- function(fyear) {
   return(as.integer(year))
 }
 
+# This function is for converting ons "E" codes to "Health" codes. Note, for
+# STPs, there were boundary changes prior to 2020, which means that earlier STPs
+# don't map exactly to ICBs
+convert_ons_to_health_code <- function(data, area_type = "stp") {
+  
+  area_type <- match.arg(area_type, c("stp", "ccg", "icb"))
+  
+  if (area_type == "stp") {
+    stp_ons_code_lkp <- download_url_to_directory(
+      url = "https://www.arcgis.com/sharing/rest/content/items/bec635f6c83e4582bcf76ce02c2be840/data",
+      new_directory = "Lookups",
+      filename = "STP21_name_lookup.xlsx"
+    ) |> 
+      readxl::read_excel() |> 
+      select(
+        c("STP21CD", "STP21CDH")
+      )
+    
+    data <- data |> 
+      mutate(
+        STP21CD = case_when(
+          grepl("^E", org) ~ org,
+          .default = NA_character_
+        )
+      ) |> 
+      left_join(
+        stp_ons_code_lkp,
+        by = join_by(STP21CD)
+      ) |> 
+      mutate(
+        org = case_when(
+          !is.na(STP21CDH) ~ STP21CDH,
+          .default = org
+        )
+      ) |> 
+      select(
+        !c("STP21CD", "STP21CDH")
+      )
+  } else if (area_type == "ccg") {
+    url <- "https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/CCG21_STP21_EN_LU_1ce1f924d3dd44eca0797b516db80280/FeatureServer/0/query?outFields=*&where=1%3D1&f=geojson"
+    ccg_ons_code_lkp <- jsonlite::fromJSON(
+      txt = url
+    ) |> 
+      pluck(
+        "features",
+        "properties"
+      ) |> 
+      select(
+        "CCG21CD",
+        "STP21CDH"
+      )
+    
+    data <- data |> 
+      mutate(
+        CCG21CD = case_when(
+          grepl("^E", org) ~ org,
+          .default = NA_character_
+        )
+      ) |> 
+      left_join(
+        ccg_ons_code_lkp,
+        by = join_by(CCG21CD)
+      ) |> 
+      mutate(
+        org = case_when(
+          !is.na(STP21CDH) ~ STP21CDH,
+          .default = org
+        )
+      ) |> 
+      select(
+        !c("CCG21CD", "STP21CDH")
+      )
+  } else if (area_type == "icb") {
+    url <- "https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/ICB_APR_2023_EN_NC/FeatureServer/0/query?outFields=*&where=1%3D1&f=geojson"
+    icb_ons_code_lkp <- jsonlite::fromJSON(
+      txt = url
+    ) |> 
+      pluck(
+        "features",
+        "properties"
+      ) |> 
+      select(
+        "ICB23CD",
+        "ICB23CDH"
+      )
+    
+    data <- data |> 
+      mutate(
+        ICB23CD = case_when(
+          grepl("^E", org) ~ org,
+          .default = NA_character_
+        )
+      ) |> 
+      left_join(
+        icb_ons_code_lkp,
+        by = join_by(ICB23CD)
+      ) |> 
+      mutate(
+        org = case_when(
+          !is.na(ICB23CDH) ~ ICB23CDH,
+          .default = org
+        )
+      ) |> 
+      select(
+        !c("ICB23CD", "ICB23CDH")
+      )
+  }
+  
+  
+  return(data)
+}
+
 # aggregation tasks -------------------------------------------------------
 
 # takes a mean of numerator and denominator for each month in the quarter and
@@ -929,7 +1065,20 @@ monthly_to_quarterly_sum <- function(data) {
 # takes a mean of numerator and denominator for each month in the year and
 # calculates a new value based on that. Requires the columns year, month, org,
 # org_name, metric, numerator and denominator
-monthly_to_annual_mean <- function(data) {
+monthly_to_annual_mean <- function(data, year_type = "financial") {
+  
+  year_type <- match.arg(year_type, c("financial", "calendar"))
+  
+  if (year_type == "financial") {
+    data <- data |> 
+      mutate(
+        year = case_when(
+          month %in% 1:3 ~ year - 1,
+          .default = year
+        )
+      )
+  }
+  
   data <- data |> 
     summarise(
       across(
@@ -942,7 +1091,10 @@ monthly_to_annual_mean <- function(data) {
     ) |> 
     mutate(
       value = numerator / denominator,
-      frequency = "annual calendar"
+      frequency = paste(
+        "annual",
+        year_type
+      )
     )
   
   return(data)
@@ -951,7 +1103,19 @@ monthly_to_annual_mean <- function(data) {
 # takes a mean of numerator and denominator for each month in the year and
 # calculates a new value based on that. Requires the columns year, month, org,
 # org_name, metric, numerator and denominator
-monthly_to_annual_sum <- function(data) {
+monthly_to_annual_sum <- function(data, year_type = "financial") {
+  year_type <- match.arg(year_type, c("financial", "calendar"))
+  
+  if (year_type == "financial") {
+    data <- data |> 
+      mutate(
+        year = case_when(
+          month %in% 1:3 ~ year - 1,
+          .default = year
+        )
+      )
+  }
+  
   data <- data |> 
     summarise(
       across(
@@ -964,7 +1128,10 @@ monthly_to_annual_sum <- function(data) {
     ) |> 
     mutate(
       value = numerator / denominator,
-      frequency = "annual calendar"
+      frequency = paste(
+        "annual",
+        year_type
+      )
     )
   
   return(data)
@@ -973,7 +1140,19 @@ monthly_to_annual_sum <- function(data) {
 # takes a mean of numerator and denominator for each quarter in the year and
 # calculates a new value based on that. Requires the columns year, month, org,
 # org_name, metric, numerator and denominator
-quarterly_to_annual_mean <- function(data) {
+quarterly_to_annual_mean <- function(data, year_type) {
+  year_type <- match.arg(year_type, c("financial", "calendar"))
+  
+  if (year_type == "financial") {
+    data <- data |> 
+      mutate(
+        year = case_when(
+          quarter == 1 ~ year - 1,
+          .default = year
+        )
+      )
+  }
+  
   data <- data |> 
     summarise(
       across(
@@ -986,7 +1165,10 @@ quarterly_to_annual_mean <- function(data) {
     ) |> 
     mutate(
       value = numerator / denominator,
-      frequency = "annual calendar"
+      frequency = paste(
+        "annual",
+        year_type
+      )
     )
   
   return(data)
@@ -995,7 +1177,19 @@ quarterly_to_annual_mean <- function(data) {
 # takes a sum of numerator and denominator for each quarter in the year and
 # calculates a new value based on that. Requires the columns year, month, org,
 # org_name, metric, numerator and denominator
-quarterly_to_annual_sum <- function(data) {
+quarterly_to_annual_sum <- function(data, year_type) {
+  year_type <- match.arg(year_type, c("financial", "calendar"))
+  
+  if (year_type == "financial") {
+    data <- data |> 
+      mutate(
+        year = case_when(
+          quarter == 1 ~ year - 1,
+          .default = year
+        )
+      )
+  }
+  
   data <- data |> 
     summarise(
       across(
@@ -1008,7 +1202,10 @@ quarterly_to_annual_sum <- function(data) {
     ) |> 
     mutate(
       value = numerator / denominator,
-      frequency = "annual calendar"
+      frequency = paste(
+        "annual",
+        year_type
+      )
     )
   
   return(data)
