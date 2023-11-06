@@ -1228,7 +1228,7 @@ quarterly_to_annual_sum <- function(data, year_type) {
 
 
 # lookups -----------------------------------------------------------------
-
+# scrapes table from NHS Shared Business services. 
 ccg_to_icb <- function() {
   url <- "https://www.sbs.nhs.uk/ccg-icb-list"
   ccg_to_icb <- url |> 
@@ -1245,3 +1245,237 @@ ccg_to_icb <- function() {
   return(ccg_to_icb)
 }
 
+# provides all available information from the Organsiational Data Services API
+# based on provided health code
+ods_info <- function(health_org_code) {
+  
+  url <- paste0(
+    "https://directory.spineservices.nhs.uk/ORD/2-0-0/organisations/",
+    health_org_code
+  )
+  
+  httpResponse <- GET(url, accept_json())
+  ods_information <- jsonlite::fromJSON(
+    content(
+      httpResponse, 
+      "text", 
+      encoding="UTF-8"
+    )
+  )
+  return(ods_information)
+}
+
+
+ods_lookup <- function(health_org_code, table1, table2, filter_category) {
+  if (is.na(health_org_code)) return(NA)
+  
+  ods_information <- ods_info(health_org_code)
+  
+  
+  lkp <- purrr::pluck(
+    ods_information,
+    "Organisation",
+    table1,
+    table2
+  )
+  
+  if (!is.null(lkp)) {
+    if (filter_category == "Active") {
+      lkp <- lkp |> 
+        filter(
+          Status == "Active"
+        )
+    } else if (filter_category == "Successor") {
+      lkp <- lkp |> 
+        filter(
+          Type == "Successor"
+        )
+    }
+    
+    if (nrow(lkp) > 0) {
+      lkp <- lkp |> 
+        tibble() |> 
+        unnest(cols = Target) |> 
+        unnest(cols = OrgId) |> 
+        pull(extension)
+    } else {
+      lkp <- NA
+    }
+    
+  } else {
+    lkp <- NA
+  }
+  
+}
+
+
+# identifies active parent organisations for health org code provided
+health_org_lookup <- function(health_org_code) {
+  lkp <- ods_lookup(
+    health_org_code,
+    table1 = "Rels",
+    table2 = "Rel",
+    filter_category = "Active"
+  )
+  
+  return(lkp)
+}
+
+# identifies successor organisations for health org code provided
+health_org_successors <- function(health_org_code) {
+  lkp <- ods_lookup(
+    health_org_code,
+    table1 = "Succs",
+    table2 = "Succ",
+    filter_category = "Successor"
+  )
+  
+  return(lkp)
+}
+
+#' returns icb22 code from health org code by retrieving the post code of the
+#' health org from the ods API, and looking up the LSOA code using the
+#' postcodes.io API, then using the LSOA to ICB lookup from the open geography
+#' portal
+org_to_icb_postcode_lookup_method <- function(health_org_code) {
+  
+  filepath <- "data-raw/Lookups/lsoa_icb.xlsx"
+  
+  if (!file.exists(filepath)) {
+    lsoa_icb <- download_url_to_directory(
+      "https://www.arcgis.com/sharing/rest/content/items/1ac8547e9a8945478f0b5ea7ffe1a6b1/data",
+      new_directory = "Lookups",
+      filename = "lsoa_icb.xlsx"
+    ) 
+  }
+  
+  lsoa_icb <- readxl::read_excel(
+    filepath,
+    sheet = "LSOA11_LOC22_ICB22_LAD22"
+  ) |> 
+    select(LSOA11CD, ICB22CDH)
+  
+  site_postcode <- ods_info(health_org_code) |> 
+    pluck(
+      "Organisation",
+      "GeoLoc",
+      "Location",
+      "PostCode"
+    )
+  
+  validate_postcodes <- function(postcode) {
+    valid_postcodes <- tryCatch({
+      lkp <- PostcodesioR::postcode_lookup(postcode)
+      postcode
+    },
+    warning = function(w) {
+      new_postcode <- PostcodesioR::postcode_autocomplete(
+        substr(
+          postcode,
+          1, nchar(postcode) - 1
+        ), limit = 1) |> 
+        pull(postcode)
+      
+      return(new_postcode)
+    },
+    error = function(e) {
+      print("this had an error")
+      return(NULL)
+    }
+    )
+  }
+  
+  
+  icb_code <- site_postcode |> 
+    validate_postcodes() |> 
+    PostcodesioR::postcode_lookup() |> 
+    select(lsoa_code) |> 
+    left_join(
+      lsoa_icb,
+      by = join_by(
+        lsoa_code == LSOA11CD
+      )
+    ) |> 
+    pull(ICB22CDH)
+  
+  return(icb_code)
+}
+
+#' @description provides table of health org and ICB code. 
+#' @details ICB codes are identified from the Shared Business services website.
+#' Then, any successor organisations to the codes provided are identified from the ODS API. 
+#' Sometimes an organisation can be divided into multiple organisations, 
+#' so these are all included. Then the ODS API is used to identify active 
+#' "relative" organisations - and these organisations are cross checked with the 
+#' ICB codes previously obtained. Finally, where ICBs are not yet identified, 
+#' the post code for the organisation is retrieve from the ODS API, this is 
+#' used to identify the LSOA using the Postcodes.io API, which is then used to 
+#' identify ICB22 using the Open Geography Portal.
+attach_icb_to_org <- function(health_org) {
+  
+  icb_codes <- ccg_to_icb() |> 
+    pull(icb_code) |> 
+    unique()
+  
+  lkp <- tibble(
+    health_org_code = health_org
+  ) |> 
+    mutate(
+      successor_code = purrr::map(
+        health_org_code,
+        health_org_successors
+      )
+    ) |> 
+    tidyr::unnest(
+      cols = successor_code
+    ) |> 
+    mutate(
+      code_for_lkp = case_when(
+        is.na(successor_code) ~ health_org_code,
+        .default = successor_code
+      ),
+      parent_code = purrr::map(
+        code_for_lkp,
+        health_org_lookup
+      )
+    ) |> 
+    tidyr::unnest(
+      cols = parent_code
+    ) |> 
+    distinct() |> 
+    mutate(
+      icb_code = case_when(
+        parent_code %in% icb_codes ~ parent_code,
+        .default = NA_character_
+      )
+    ) |> 
+    mutate(
+      retain = sum(!is.na(icb_code)),
+      .by = health_org_code
+    ) |> 
+    select(!c("successor_code", "code_for_lkp")) |> 
+    distinct() |> 
+    anti_join(
+      tibble(
+        icb_code = NA,
+        retain = 1
+      ),
+      by = join_by(icb_code, retain)
+    ) |> 
+    select(!c("retain")) |> 
+    mutate(
+      icb_code = map2_chr(
+        .x  = icb_code,
+        .y = health_org_code,
+        .f = function(x, y) if (is.na(x)) {
+          org_to_icb_postcode_lookup_method(y)
+        } else {
+          x
+        }
+      )
+    ) |> 
+    select(
+      health_org_code, icb_code
+    )
+  return(lkp)
+}

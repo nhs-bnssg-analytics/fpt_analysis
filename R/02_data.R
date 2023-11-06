@@ -40,6 +40,28 @@ quarterly_overnight_beds <- list.files(
     )
   )
 
+orgs <- quarterly_overnight_beds |> 
+  pull(org) |> 
+  unique()
+
+org_lkp <- attach_icb_to_org(orgs)
+
+quarterly_overnight_beds <- quarterly_overnight_beds |> 
+  left_join(
+    org_lkp,
+    by = join_by(
+      org == health_org_code
+    )
+  ) |> 
+  summarise(
+    across(
+      c(numerator, denominator),
+      ~ sum(.x, na.rm = TRUE)
+    ),
+    .by = c(year, quarter, icb_code, metric, frequency)
+  ) |> 
+  mutate(value = numerator / denominator)
+
 annual_overnight_beds <- quarterly_to_annual_sum(
   quarterly_overnight_beds,
   year_type = "financial"
@@ -87,6 +109,28 @@ quarterly_day_beds <- list.files(
       bed_type = "day"
     )
   )
+
+orgs <- quarterly_day_beds |> 
+  pull(org) |> 
+  unique()
+
+org_lkp <- attach_icb_to_org(orgs)
+
+quarterly_day_beds <- quarterly_day_beds |> 
+  left_join(
+    org_lkp,
+    by = join_by(
+      org == health_org_code
+    )
+  ) |> 
+  summarise(
+    across(
+      c(numerator, denominator),
+      ~ sum(.x, na.rm = TRUE)
+    ),
+    .by = c(year, quarter, icb_code, metric, frequency)
+  ) |> 
+  mutate(value = numerator / denominator)
 
 annual_day_beds <- quarterly_to_annual_sum(
   quarterly_day_beds,
