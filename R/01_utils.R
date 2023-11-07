@@ -453,7 +453,7 @@ tidy_a_and_e <- function(filepath) {
       "row",
       "col",
       "data_type",
-      # "region",
+      "org_name",
       "lgl"
     )) |> 
     tidyr::pivot_wider(
@@ -471,6 +471,9 @@ tidy_a_and_e <- function(filepath) {
         ")"
       ),
       frequency = "monthly"
+    ) |> 
+    filter(
+      !is.na(org)
     )
   
   return(a_and_e_tidy)
@@ -1331,6 +1334,25 @@ health_org_successors <- function(health_org_code) {
   )
   
   return(lkp)
+}
+
+health_org_role <- function(health_org_code) {
+  role <- ods_info(health_org_code) |> 
+    pluck(
+      "Organisation",
+      "Roles",
+      "Role"
+    )
+  
+  if (is.null(role)) {
+    role <- NA
+  } else {
+    role <- role |> 
+      filter(primaryRole == TRUE) |> 
+      pull(id)
+  }
+  
+  return(role)
 }
 
 #' returns icb22 code from health org code by retrieving the post code of the
