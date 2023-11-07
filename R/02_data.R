@@ -60,6 +60,9 @@ quarterly_overnight_beds <- quarterly_overnight_beds |>
     ),
     .by = c(year, quarter, icb_code, metric, frequency)
   ) |> 
+  rename(
+    org = icb_code
+  ) |> 
   mutate(value = numerator / denominator)
 
 annual_overnight_beds <- quarterly_to_annual_sum(
@@ -129,6 +132,9 @@ quarterly_day_beds <- quarterly_day_beds |>
       ~ sum(.x, na.rm = TRUE)
     ),
     .by = c(year, quarter, icb_code, metric, frequency)
+  ) |> 
+  rename(
+    org = icb_code
   ) |> 
   mutate(value = numerator / denominator)
 
@@ -694,6 +700,35 @@ monthly_cancer_wait_times <- purrr::map_dfr(
   tidy_cancer_wait_times
 )
 
+orgs <- monthly_cancer_wait_times |> 
+  pull(org) |> 
+  unique() |> 
+  (\(x) x[!grepl("UNKNOWN", x)])()
+  
+org_lkp <- orgs |> 
+  attach_icb_to_org()
+
+monthly_cancer_wait_times <- monthly_cancer_wait_times |> 
+  left_join(
+    org_lkp,
+    by = join_by(org == health_org_code)
+  ) |> 
+  summarise(
+    across(
+      c(numerator, denominator),
+      ~ sum(.x, na.rm = TRUE)
+    ),
+    .by = c(
+      year, month, icb_code, metric, frequency
+    )
+  ) |> 
+  rename(
+    org = icb_code
+  ) |> 
+  mutate(
+    value = numerator / denominator
+  )
+
 quarterly_cancer_wait_times <- monthly_to_quarterly_sum(
   monthly_cancer_wait_times
 )
@@ -729,7 +764,11 @@ excel_file_links <- purrr::map(
   (function(x) x[grepl("xls$|xlsx$", x)])() |> 
   (function(x) x[grepl(paste(month.name, collapse = "|"),
                        basename(x))])() |> 
-  (function(x) x[grepl("by-provider", x)])()
+  # (function(x) x[grepl("by-provider", x)])()
+  (function(x) x[!grepl("Growth", x)])() |> 
+  (function(x) x[!grepl("Quarter", x)])() |> 
+  (function(x) x[!grepl("Supplementary", x)])() |> 
+  (\(x) x[!grepl("Attribution", x)])()
 
 files <- purrr::map_chr(
   excel_file_links,
