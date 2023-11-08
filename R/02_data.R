@@ -205,6 +205,7 @@ bind_rows(
 )
 
 # sickness absence
+# April 2009 to March 2022 file
 url <- "https://files.digital.nhs.uk/A6/67E0C1/ESR_ABSENCE_CSV_NHSE.csv"
 
 monthly_sickness_absence <- read.csv(url) |> 
@@ -220,7 +221,11 @@ monthly_sickness_absence <- read.csv(url) |>
       ),
       tolower(month.abb)
     ),
-    metric = "ESR absence",
+    metric = paste0(
+      "ESR absence (",
+      tolower(Org.Type),
+      " organisation type)"
+      ),
     frequency = "monthly"
   ) |> 
   select(
@@ -233,6 +238,116 @@ monthly_sickness_absence <- read.csv(url) |>
     denominator = "FTE.Days.Available",
     value = "SA.Rate....",
     "frequency"
+  )
+
+# monthly files April 2022 onwards
+url <- "https://digital.nhs.uk/data-and-information/publications/statistical/nhs-sickness-absence-rates"
+
+links <- obtain_links(url) |> 
+  (\(x) x[grepl(tolower(paste(month.name, collapse = "|")), x)])() |> 
+  (\(x) x[!grepl(tolower(paste(2014:2021, collapse = "|")), x)])() |> 
+  (\(x) x[!grepl(tolower(paste(c("january", "february"), 2022, 
+                               sep = "-", 
+                               collapse = "|")), x)])()
+
+csv_links <- purrr::map(
+  .x = paste0(
+    "https://digital.nhs.uk/",
+    links
+  ),
+  .f = obtain_links
+) |> 
+  unlist() |> 
+  (\(x) x[grepl("csv$", x)])() |> 
+  (\(x) x[!grepl("benchmarking|reason|COVID|ESR_ABSENCE_CSV_NHSE", x, ignore.case = TRUE)])()
+
+monthly_sickness_monthly_files <- purrr::map_dfr(
+  csv_links,
+  read.csv
+) |> 
+  mutate(
+    year = as.integer(
+      substr(
+        DATE, nchar(DATE) - 3, nchar(DATE)
+      )
+    ),
+    month = as.integer(
+      substr(
+        DATE, nchar(DATE) - 6, nchar(DATE) - 5
+      )
+    ),
+    metric = paste0(
+      "ESR absence (",
+      tolower(ORG_TYPE),
+      " organisation type)"
+    ),
+    frequency = "monthly"
+  ) |> 
+  select(
+    "year",
+    "month",
+    "metric",
+    org = "ORG_CODE",
+    org_name = "ORG_NAME",
+    numerator = "FTE_DAYS_LOST",
+    denominator = "FTE_DAYS_AVAILABLE",
+    value = "SICKNESS_ABSENCE_RATE_PERCENT",
+    "frequency"
+  )
+
+monthly_sickness_absence <- bind_rows(
+    monthly_sickness_absence, 
+    monthly_sickness_monthly_files
+  )
+
+org_icb_lkp <- monthly_sickness_absence |> 
+  distinct(org) |> 
+  mutate(
+    role = map_chr(
+      .x = org,
+      .f = health_org_role
+    )
+  ) |> 
+  filter(
+    role %in% c(
+      # "RO98" CCG 200
+      "RO107", # care trust 11
+      # "RO108" # care trust sites 0
+      # "RO116" Executive agency programme 3
+      "RO157", # Independent providers 4
+      # "RO162" Executive agency programme 3
+      "RO172", # Independent Sector Healthcare providers 32
+      # "RO189" Special Health Authorities 13
+      "RO197" # NHS trust 259
+      # "RO198", # NHS trust sites 0
+      # "RO213" Commissioning Support Units 32
+      # "RO261" Executive Agency Programme 42
+    )
+  ) |> 
+  pull(org) |> 
+  attach_icb_to_org()
+
+monthly_sickness_absence <- monthly_sickness_absence |> 
+  inner_join(
+    org_icb_lkp,
+    by = join_by(
+      org == health_org_code
+    )
+  ) |> 
+  summarise(
+    across(
+      c(numerator, denominator),
+      ~ sum(.x, na.rm = TRUE)
+    ),
+    .by = c(
+      year, month, metric, icb_code, frequency
+    )
+  ) |> 
+  mutate(
+    value = numerator / denominator
+  ) |> 
+  rename(
+    org = icb_code
   )
 
 quarterly_sickness_absence <- monthly_to_quarterly_mean(
