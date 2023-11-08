@@ -382,8 +382,8 @@ excel_links <- purrr::map(
     .f = obtain_links
   ) |> 
   unlist() |> 
-  (function(x) x[grepl("xls$|xlsx$", x)])() |> 
-  (function(x) x[!grepl("dash|comm-care|per-soc|pss-exp|summary", x, ignore.case = TRUE)])()
+  (\(x) x[grepl("xls$|xlsx$", x)])() |> 
+  (\(x) x[!grepl("dash|comm-care|per-soc|pss-exp|summary", x, ignore.case = TRUE)])()
 
 xl_files <- purrr::map_chr(
   excel_links,
@@ -754,9 +754,9 @@ bind_rows(
 
 # No criteria to reside
 url <- "https://www.england.nhs.uk/statistics/statistical-work-areas/discharge-delays-acute-data/"
-excel_links <- obtain_links(url)
-excel_links <- excel_links[grepl("xlsx$", excel_links)]
-excel_links <- excel_links[!grepl("[[:alpha:]].*[0-9]{4}-[[:alpha:]].*[0-9]{4}", excel_links)]
+excel_links <- obtain_links(url) |> 
+  (\(x) x[grepl("xlsx$", x)])() |> 
+  (\(x) x[!grepl("[[:alpha:]].*[0-9]{4}-[[:alpha:]].*[0-9]{4}", x)])()
 
 files <- purrr::map_chr(
   excel_links,

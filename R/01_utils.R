@@ -218,7 +218,8 @@ tidy_nctr_file <- function(filepath) {
       value = "numeric"
     ) |> 
     filter(
-      metric != "Number of patients discharged"
+      metric != "Number of patients discharged",
+      grepl("^Q", org)
     ) |> 
     mutate(
       metric = case_when(
@@ -758,7 +759,8 @@ tidy_social_care_funding <- function(filepath) {
       )
     ) |> 
     filter(
-      grepl("^E", org)
+      grepl("^E", org),
+      !grepl("E92|E12", org)
     )
   
   return(tidy_sc_funding)
