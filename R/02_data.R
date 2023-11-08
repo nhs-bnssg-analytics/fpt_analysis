@@ -415,42 +415,42 @@ write.csv(
 # population
 
 
-older_population <- fingertipsR::fingertips_data(
-  IndicatorID = c(336, 641, 642),
-  AreaTypeID = 167
-  ) |> 
-  filter(
-    AreaType == "CCGs (from Apr 2021)"
-  ) |> 
-  select(
-    year = "Timeperiod",
-    org = "AreaCode",
-    org_name = "AreaName",
-    metric = "IndicatorName",
-    numerator = "Count",
-    denominator = "Denominator",
-    value = "Value",
-  ) |> 
-  mutate(
-    frequency = "annual calendar"
-  ) |> 
-  convert_ons_to_health_code(
-    area_type = "ccg"
-  ) |> 
-  summarise(
-    across(
-      c(numerator, denominator),
-      sum
-    ),
-    .by = c(year, org, metric, frequency)
-  ) |> 
-  mutate(value = numerator / denominator)
-
-write.csv(
-  older_population,
-  "data/older-population.csv",
-  row.names = FALSE
-)  
+# older_population <- fingertipsR::fingertips_data(
+#   IndicatorID = c(336, 641, 642),
+#   AreaTypeID = 221
+#   ) |> 
+#   filter(
+#     AreaType == "CCGs (from Apr 2021)"
+#   ) |> 
+#   select(
+#     year = "Timeperiod",
+#     org = "AreaCode",
+#     org_name = "AreaName",
+#     metric = "IndicatorName",
+#     numerator = "Count",
+#     denominator = "Denominator",
+#     value = "Value",
+#   ) |> 
+#   mutate(
+#     frequency = "annual calendar"
+#   ) |> 
+#   convert_ons_to_health_code(
+#     area_type = "ccg"
+#   ) |> 
+#   summarise(
+#     across(
+#       c(numerator, denominator),
+#       sum
+#     ),
+#     .by = c(year, org, metric, frequency)
+#   ) |> 
+#   mutate(value = numerator / denominator)
+# 
+# write.csv(
+#   older_population,
+#   "data/older-population.csv",
+#   row.names = FALSE
+# )  
 
 # risk factors
 
