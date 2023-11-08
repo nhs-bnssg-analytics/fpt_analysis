@@ -921,9 +921,10 @@ bind_rows(
 # referral to treatment
 url <- "https://www.england.nhs.uk/statistics/statistical-work-areas/rtt-waiting-times/"
 annual_urls <- obtain_links(url) |> 
-  (function(x) x[grepl("^https://www.england.nhs.uk/statistics/statistical-work-areas/rtt-waiting-times/", x)])() |> 
-  (function(x) x[grep("[0-9]{4}-[0-9]{2}", x)])() |> 
-  unique()
+  (\(x) x[grepl("^https://www.england.nhs.uk/statistics/statistical-work-areas/rtt-waiting-times/", x)])() |> 
+  (\(x) x[grep("[0-9]{4}-[0-9]{2}", x)])() |> 
+  unique() |> 
+  (\(x) x[!grepl("2011-12|2012-13", x)])()
 
 xl_files <- purrr::map(
   annual_urls,
@@ -931,9 +932,8 @@ xl_files <- purrr::map(
 ) |> 
   unlist() |> 
   (function(x) x[grepl("xls$|xlsx$", x)])() |> 
-  (function(x) x[grepl("Provider", x)])() |> 
-  (function(x) x[grepl("Admitted", x)])() |> 
-  (function(x) x[!grepl("12|11", x)])()
+  (function(x) x[grepl("Commissioner", x)])() |> 
+  (function(x) x[grepl("Admitted", x)])()
 
 files <- purrr::map_chr(
   xl_files,
@@ -946,10 +946,68 @@ files <- purrr::map_chr(
     rename_rtt_files
   )
 
+# replace unadjusted files with adjusted ones where they exist
+for (file in files) {
+  if (grepl("adjusted", file)) {
+    unadjusted_file <- gsub("adjusted", "admitted", file)
+    if (file.exists(unadjusted_file)) {
+      file.remove(
+        unadjusted_file
+      )
+      
+      file.rename(
+        from = file,
+        to = unadjusted_file
+      )
+    }
+    
+  }
+}
 
+# obtain new list of files in the folder
+files <- list.files(
+  "data-raw/Referral to Treatment",
+  full.names = TRUE
+)
+
+
+# tidy the data in the files
 monthly_rtt <- files |> 
   purrr::map_dfr(
     tidy_rtt
+  )
+
+org_icb_lkp <- monthly_rtt |> 
+  distinct(
+    org
+  ) |> 
+  filter(
+    org != "-"
+  ) |> 
+  pull() |> 
+  attach_icb_to_org()
+
+monthly_rtt <- monthly_rtt |> 
+  inner_join(
+    org_icb_lkp,
+    by = join_by(
+      org == health_org_code
+    )
+  ) |> 
+  summarise(
+    across(
+      c(numerator, denominator),
+      ~ sum(.x, na.rm = TRUE)
+    ),
+    .by = c(
+      year, month, icb_code, metric, frequency
+    )
+  ) |> 
+  rename(
+    org = "icb_code"
+  ) |> 
+  mutate(
+    value = numerator / denominator
   )
 
 quarterly_rtt <- monthly_to_quarterly_sum(
