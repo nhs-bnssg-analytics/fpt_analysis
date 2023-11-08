@@ -485,6 +485,20 @@ rename_rtt_files <- function(filepath) {
     "[A-za-z]{3}[0-9]{2}"
   )
   
+  if (is.na(monthyear)) {
+    monthyear <- readxl::read_excel(
+      filepath,
+      sheet = 1,
+      range = "R1C2:R20C3",
+      col_names = c("col1", "col2")
+    ) %>% 
+      filter(
+        col1 == "Period:"
+      ) %>% 
+      pull(col2) |> 
+      gsub(" 20", "", x = _)
+  }
+  
   extension <- tools::file_ext(filepath)
   
   if (grepl("Adjusted", filepath)) {
@@ -520,20 +534,38 @@ tidy_rtt <- function(filepath) {
     admission_type <- "admitted"
   }
   
+  # check sheet names
+  sh_names <- readxl::excel_sheets(
+    filepath
+  )
+  
+  if ("System" %in% sh_names) {
+    use_sheet <- "System"
+  } else if ("ICB" %in% sh_names) {
+    use_sheet <- "ICB"
+  } else if ("Commissioner" %in% sh_names) {
+    use_sheet <- "Commissioner"
+  }
+  
   rtt <- readxl::read_excel(
     filepath,
     .name_repair = "minimal",
-    sheet = "Provider"
+    sheet = use_sheet
   ) |> 
     unpivotr::as_cells() |> 
     filter(
       !is.na(chr),
       row > 11
-    ) |> 
-    behead(
-      direction = "left",
-      name = "region"
-    ) |> 
+    )
+  
+  if (use_sheet == "Commissioner") {
+    rtt <- rtt |> 
+      behead(
+        direction = "left",
+        name = "region"
+      )
+  }
+  rtt <- rtt |> 
     behead(
       direction = "left",
       name = "org"
@@ -1467,6 +1499,7 @@ attach_icb_to_org <- function(health_org) {
     distinct() |> 
     mutate(
       icb_code = case_when(
+        health_org_code %in% icb_codes ~ health_org_code,
         parent_code %in% icb_codes ~ parent_code,
         .default = NA_character_
       )
