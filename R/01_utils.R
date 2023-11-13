@@ -766,6 +766,146 @@ tidy_social_care_funding <- function(filepath) {
   return(tidy_sc_funding)
 }
 
+
+open_pops_file <- function(raw_pops_file) {
+  
+  yr <- stringr::str_extract(
+    raw_pops_file,
+    "[0-9]{4}"
+  )
+  
+  if (grepl("zip$", raw_pops_file)) {
+    fl <- unzip(
+      raw_pops_file, 
+      list = TRUE
+    ) |> 
+      pull(Name)
+    
+    persons_sheet <- readxl::excel_sheets(
+      unzip(
+        raw_pops_file, 
+        fl
+      )
+    ) |> 
+      (\(x) x[grepl("Persons", x)])()
+    
+    all_persons <- unzip(
+      raw_pops_file, 
+      fl
+    )
+  } else if (grepl("xlsx$", raw_pops_file)) {
+    
+    persons_sheet <- readxl::excel_sheets(
+      raw_pops_file
+    ) |> 
+      (\(x) x[grepl("Persons", x)])()
+    
+    all_persons <- raw_pops_file
+  }
+  
+  all_persons <- all_persons |> 
+    readxl::read_excel(
+      sheet = persons_sheet,
+      skip = 4
+    )
+  
+  lsoa_field <- names(all_persons)[1]
+  all_persons <- all_persons |> 
+    rename(LSOA11CD = lsoa_field)
+  
+  return(all_persons)
+  
+}
+
+
+calculate_icb_populations <- function(raw_pops_file) {
+  
+  lsoa_lkp_file <- "data-raw/Lookups/lsoa_icb.xlsx"
+  
+  if (!file.exists(lsoa_lkp_file)) {
+    lsoa_icb <- download_url_to_directory(
+      "https://www.arcgis.com/sharing/rest/content/items/1ac8547e9a8945478f0b5ea7ffe1a6b1/data",
+      new_directory = "Lookups",
+      filename = "lsoa_icb.xlsx"
+    )
+  }
+  
+  lsoa_icb_lkp <- readxl::read_excel(
+    lsoa_lkp_file
+  ) |> 
+    select(
+      "LSOA11CD",
+      "ICB22CDH"
+    )
+  
+  all_persons <- open_pops_file(raw_pops_file)
+  
+  all_persons <- all_persons |> 
+    select(
+      LSOA11CD,
+      as.character(0:89),
+      "90+"
+    ) |>
+    filter(
+      grepl("^E", LSOA11CD)
+    ) |> 
+    pivot_longer(
+      cols = !c("LSOA11CD"),
+      names_to = "age",
+      values_to = "population"
+    ) |> 
+    mutate(
+      age = ifelse(age == "90+", 90, age),
+      age_band = floor(as.numeric(age) / 10) * 10
+    ) |> 
+    left_join(
+      lsoa_icb_lkp,
+      by = join_by(LSOA11CD)
+    ) |> 
+    summarise(
+      numerator = sum(population),
+      .by = c(
+        ICB22CDH,
+        age_band
+      )
+    ) |> 
+    mutate(
+      metric = case_when(
+        age_band != "90" ~ paste(age_band, age_band + 9, sep = "-"),
+        .default = "90+"
+      ),
+      metric = paste0(
+        "Proportion of population in age band (",
+        metric,
+        ")"
+      )
+    ) |> 
+    mutate(
+      denominator = sum(numerator),
+      .by = ICB22CDH
+    ) |> 
+    mutate(
+      value = numerator / denominator,
+      year = yr,
+      frequency = "annual calendar"
+    ) |> 
+    select(
+      !c("age_band")
+    ) |> 
+    rename(
+      org = "ICB22CDH"
+    )
+}
+
+lsoa_populations <- function(raw_pops_file) {
+  lsoa_populations <- open_pops_file(raw_pops_file) |> 
+    select(
+      "LSOA11CD",
+      "All Ages"
+    )
+  
+  return(lsoa_populations)
+}
 # data processing ---------------------------------------------------------
 
 reformat_bed_availability_data <- function(filepath, bed_type) {
