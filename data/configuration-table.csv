@@ -1,9 +1,6 @@
 metric_id,metric,domain,numerator_description,denominator_description,raw_area_type
 ,% active smokers (GPPS),Demand,Self-reported active smokers (GPPS survey),Total number of GPPS survey respondents,ICB
 ,% former smokers (GPPS),Demand,Self-reported former smokers (GPPS survey),Total number of GPPS survey respondents,ICB
-,% population aged 65+ yrs (GP registered),Demand,Population 65 years and over,Total population,ICB
-,% population aged 75+ yrs (GP registered),Demand,Population 75 years and over,Total population,ICB
-,% population aged 85+ yrs (GP registered),Demand,Population 85 years and over,Total population,ICB
 ,62 Day Wait - Consultant Ref (proportion within standard),Performance,Number treated within 62 days,Number treated,CCG and ICB
 ,62 Day Wait - GP Referral (proportion within standard),Performance,Number treated within 62 days,Number treated,CCG and ICB
 ,62 Day Wait - Screening Ref (proportion within standard),Performance,Number treated within 62 days,Number treated,CCG and ICB
@@ -40,7 +37,6 @@ metric_id,metric,domain,numerator_description,denominator_description,raw_area_t
 ,Proportion of attended appointments (2 to 3 weeks wait time),Performance,Number of attended appointments who had a wait time between 2 and 3 weeks from booking,Total attended appointments,ICB and STP
 ,Proportion of attended appointments (3 to 4 weeks wait time),Performance,Number of attended appointments who had a wait time between 3 and 4 weeks from booking,Total attended appointments,ICB and STP
 ,Proportion of attended appointments (Over 4 weeks wait time),Performance,Number of attended appointments who had a wait time of over 4 weeks from booking,Total attended appointments,ICB and STP
-,Proportion of completed pathways greater than 18 weeks from referral (admitted - adjusted),Performance,Completed pathways greater than 18 weeks,Total number of completed pathways (with a known clock start),Provider trust
 ,Proportion of completed pathways greater than 18 weeks from referral (admitted),Performance,Completed pathways greater than 18 weeks,Total number of completed pathways (with a known clock start),Provider trust
 ,Proportion of completed pathways greater than 18 weeks from referral (not admitted),Performance,Completed pathways greater than 18 weeks,Total number of completed pathways (with a known clock start),Provider trust
 ,Reception: Prevalence of overweight (including obesity),Demand,Number of children in Reception (aged 4-5 years) with a valid height and weight measured by the NCMP with a BMI classified as overweight or living with obesity.,Number of children in Reception (aged 4-5 years) with a valid height and weight measured by the NCMP.,ICB
@@ -62,3 +58,18 @@ metric_id,metric,domain,numerator_description,denominator_description,raw_area_t
 ,bed availability - overnight - Total ,Capacity,Number of occupied overnight bed days in period,Number of available overnight bed days in period,Provider trust
 ,"new hypertension patients, aged 30-74, with a CV risk assessment >= 20% treated with statins (denominator incl. PCAs) - retired after 2019/20",Demand,"Patients aged 30-74 yrs, with a new diagnosis of hypertension recorded between the preceding 1 April to 31 March (excluding those with a pre-existing CHD, diabetes, stroke and/or TIA), who have a recorded CVD risk assessment score (using an assessment tool agreed with the NHS CB) of â‰¥ 20% in the preceding 12 months and are currently treated with statins.","Patients with a new diagnosis of hypertension (excluding those with pre-existing CHD, diabetes, stroke and/or TIA) recorded between the preceding 1 April to 31 March (includes exceptions/patients with Personal Care Adjustments (PCAs); for more details see Rationale).",ICB
 ,Gross Total Expenditure (£000s) per individual with long term support during the year,Capacity,Gross Total Expenditure ($000s) from the Adult Social Care Activity and Finance report,Individuals with Long Term Support during the year,Upper Tier Local Authority
+,Smoking status at time of delivery,Demand,Number of women known to smoke at time of delivery,Number of maternities where smoking status is known,ICB
+,Year 6 prevalence of overweight (including obesity),Demand,Number of overweight and obese pupils in Year 6,Number of pupils in Year 6,ICB
+,Reception prevalence of overweight (including obesity),Demand,Number of overweight and obese pupils in Reception,Number of pupils in Reception,ICB
+,Proportion of population in age band (0-9),Demand,Resident population in age band,Total resident population,ICB
+,Proportion of population in age band (10-19),Demand,Resident population in age band,Total resident population,ICB
+,Proportion of population in age band (20-29),Demand,Resident population in age band,Total resident population,ICB
+,Proportion of population in age band (30-39),Demand,Resident population in age band,Total resident population,ICB
+,Proportion of population in age band (40-49),Demand,Resident population in age band,Total resident population,ICB
+,Proportion of population in age band (50-59),Demand,Resident population in age band,Total resident population,ICB
+,Proportion of population in age band (60-69),Demand,Resident population in age band,Total resident population,ICB
+,Proportion of population in age band (70-79),Demand,Resident population in age band,Total resident population,ICB
+,Proportion of population in age band (80-89),Demand,Resident population in age band,Total resident population,ICB
+,Proportion of population in age band (90+),Demand,Resident population in age band,Total resident population,ICB
+,Estimated prevalence of common mental disorders: % of population aged 16 & over,Demand,,,
+,Estimated prevalence of common mental disorders: % of population aged 65 & over,Demand,,,
