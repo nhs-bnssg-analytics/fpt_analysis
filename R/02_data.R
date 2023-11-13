@@ -2,6 +2,97 @@ source("R/00_libraries.R")
 source("R/01_utils.R")
 
 
+# Demand data sources-----------------------------------------------------------
+
+# population
+
+url <- "https://www.ons.gov.uk/peoplepopulationandcommunity/populationandmigration/populationestimates/datasets/lowersuperoutputareamidyearpopulationestimates"
+zip_files <- obtain_links(url) |> 
+  (\(x) x[grepl("zip$|xlsx$", x)])() |> 
+  (\(x) x[!grepl("2018on20", x)])() |> 
+  (\(x) x[grepl("unformatted", x)])() |> 
+  (\(x) x[!grepl("^rft-lsoa", basename(x))])() |> 
+  (\(x) x[!grepl("males.zip$", x)])() |> 
+  (\(x) x[!grepl("sape19|sape18", x)])() |> 
+  (\(x) x[!grepl("^rft", basename(x))])()
+
+
+
+files <- purrr::map_chr(
+  paste0(
+    "https://www.ons.gov.uk/",
+    zip_files
+  ),
+  ~ download_url_to_directory(
+    url = .x,
+    new_directory = "Population",
+    filename = basename(.x)
+  )
+)
+
+
+
+older_population <- purrr::map_dfr(
+  files,
+  calculate_icb_populations
+)
+
+write.csv(
+  older_population,
+  "data/population.csv",
+  row.names = FALSE
+)
+
+# risk factors
+
+risk_factors <- fingertipsR::indicators() |> 
+  filter(
+    grepl("[Rr]isk", DomainName),
+    grepl("[Ff]actor", DomainName)
+  ) |> 
+  pull(
+    IndicatorID
+  ) |> 
+  unique() |> 
+  fingertipsR::fingertips_data(
+    AreaTypeID = 221
+  ) |> 
+  filter(
+    AreaType == "ICBs"
+  ) |> 
+  mutate(
+    AreaCode = gsub("n", "", AreaCode)
+  ) |> 
+  select(
+    year = "Timeperiod",
+    org = "AreaCode",
+    org_name = "AreaName",
+    metric = "IndicatorName",
+    numerator = "Count",
+    denominator = "Denominator",
+    value = "Value",
+  ) |> 
+  mutate(
+    frequency = case_when(
+      grepl("/", year) ~ "annual financial",
+      .default = "annual calendar"
+    ),
+    year = stringr::str_extract(
+      year,
+      "^[0-9]{4}"
+    )
+  ) |> 
+  convert_ons_to_health_code(
+    area_type = "icb"
+  )
+
+write.csv(
+  risk_factors,
+  "data/risk-factors-fingertips.csv",
+  row.names = FALSE
+)
+
+
 # Capacity data sources ---------------------------------------------------
 
 ## Hospital beds
@@ -410,96 +501,6 @@ write.csv(
   row.names = FALSE
 )
 
-# Demand ------------------------------------------------------------------
-
-# population
-
-
-# older_population <- fingertipsR::fingertips_data(
-#   IndicatorID = c(336, 641, 642),
-#   AreaTypeID = 221
-#   ) |> 
-#   filter(
-#     AreaType == "CCGs (from Apr 2021)"
-#   ) |> 
-#   select(
-#     year = "Timeperiod",
-#     org = "AreaCode",
-#     org_name = "AreaName",
-#     metric = "IndicatorName",
-#     numerator = "Count",
-#     denominator = "Denominator",
-#     value = "Value",
-#   ) |> 
-#   mutate(
-#     frequency = "annual calendar"
-#   ) |> 
-#   convert_ons_to_health_code(
-#     area_type = "ccg"
-#   ) |> 
-#   summarise(
-#     across(
-#       c(numerator, denominator),
-#       sum
-#     ),
-#     .by = c(year, org, metric, frequency)
-#   ) |> 
-#   mutate(value = numerator / denominator)
-# 
-# write.csv(
-#   older_population,
-#   "data/older-population.csv",
-#   row.names = FALSE
-# )  
-
-# risk factors
-
-risk_factors <- fingertipsR::indicators() |> 
-  filter(
-    grepl("[Rr]isk", DomainName),
-    grepl("[Ff]actor", DomainName)
-) |> 
-  pull(
-    IndicatorID
-  ) |> 
-  unique() |> 
-  fingertipsR::fingertips_data(
-    AreaTypeID = 221
-  ) |> 
-  filter(
-    AreaType == "ICBs"
-  ) |> 
-  mutate(
-    AreaCode = gsub("n", "", AreaCode)
-  ) |> 
-  select(
-    year = "Timeperiod",
-    org = "AreaCode",
-    org_name = "AreaName",
-    metric = "IndicatorName",
-    numerator = "Count",
-    denominator = "Denominator",
-    value = "Value",
-  ) |> 
-  mutate(
-    frequency = case_when(
-      grepl("/", year) ~ "annual financial",
-      .default = "annual calendar"
-    ),
-    year = stringr::str_extract(
-      year,
-      "^[0-9]{4}"
-    )
-  ) |> 
-  convert_ons_to_health_code(
-    area_type = "icb"
-  )
-
-write.csv(
-  risk_factors,
-  "data/risk-factors-fingertips.csv",
-  row.names = FALSE
-)
 
 
 # Performance -------------------------------------------------------------
