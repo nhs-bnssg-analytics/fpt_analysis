@@ -152,7 +152,7 @@ all_data |>
 
 ```
 
-For the annual metric (fanancial year), these are the number of record we have for each year (this is related to the geography the metric is published at):
+For the annual metric (financial year), these are the number of record we have for each year (this is related to the geography the metric is published at):
 
 ```{r}
 #| label: annual-metric-counts
