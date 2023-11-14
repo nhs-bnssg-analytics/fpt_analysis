@@ -781,18 +781,18 @@ open_pops_file <- function(raw_pops_file) {
     ) |> 
       pull(Name)
     
+    unzipped_file <- unzip(
+      raw_pops_file, 
+      fl,
+      exdir = dirname(raw_pops_file)
+    )
+    
     persons_sheet <- readxl::excel_sheets(
-      unzip(
-        raw_pops_file, 
-        fl
-      )
+      unzipped_file
     ) |> 
       (\(x) x[grepl("Persons", x)])()
     
-    all_persons <- unzip(
-      raw_pops_file, 
-      fl
-    )
+    all_persons <- unzipped_file
   } else if (grepl("xlsx$", raw_pops_file)) {
     
     persons_sheet <- readxl::excel_sheets(
@@ -811,8 +811,9 @@ open_pops_file <- function(raw_pops_file) {
   
   lsoa_field <- names(all_persons)[1]
   all_persons <- all_persons |> 
-    rename(LSOA11CD = lsoa_field)
+    rename(LSOA11CD = all_of(lsoa_field))
   
+  if (grepl("zip$", raw_pops_file)) file.remove(unzipped_file)
   return(all_persons)
   
 }
@@ -1674,5 +1675,171 @@ attach_icb_to_org <- function(health_org) {
     select(
       health_org_code, icb_code
     )
+  return(lkp)
+}
+
+lsoa_utla_icb_weighted_pops <- function() {
+  # LSOA11 to UTLA lookups
+  urls <- c(
+    `2016` = "https://opendata.arcgis.com/api/v3/datasets/2f18c0488b514dd9b1369345a91a196c_0/downloads/data?format=csv&spatialRefId=4326&where=1%3D1",
+    `2017` = "https://opendata.arcgis.com/api/v3/datasets/2f18c0488b514dd9b1369345a91a196c_0/downloads/data?format=csv&spatialRefId=4326&where=1%3D1",
+    `2018` = "https://opendata.arcgis.com/api/v3/datasets/2f18c0488b514dd9b1369345a91a196c_0/downloads/data?format=csv&spatialRefId=4326&where=1%3D1",
+    `2019` = "https://opendata.arcgis.com/api/v3/datasets/6f5221e8123a480883874849ddf5cbd8_0/downloads/data?format=csv&spatialRefId=4326&where=1%3D1",
+    `2020` = "https://opendata.arcgis.com/api/v3/datasets/77ade1327615430eb4bc5dadb8bbeafa_0/downloads/data?format=csv&spatialRefId=4326&where=1%3D1",
+    `2021` = "https://opendata.arcgis.com/api/v3/datasets/24322a71f0f54446bcdb406b54e42956_0/downloads/data?format=csv&spatialRefId=4326&where=1%3D1"
+  )
+  
+  file <- purrr::lmap(
+    urls, 
+    ~ list(
+      download_url_to_directory(
+        url = .x,
+        new_directory = "Lookups",
+        filename = paste0(
+          "LSOA11_UTLA",
+          names(.x),
+          ".csv"
+        )
+      )
+    )
+  )
+  
+  names(file) <- names(urls)
+  
+  process_lsoa_lkp_file <- function(filepath) {
+    lkp <- read.csv(filepath) |> 
+      filter(
+        grepl("^E", LSOA11CD)
+      ) |> 
+      select(
+        "LSOA11CD", starts_with("UTLA")
+      ) |> 
+      select(
+        ends_with("CD")
+      ) |> 
+      rename(
+        UTLACD = starts_with("UTLA")
+      )
+  }
+  
+  lkp <- purrr::map_df(
+    file,
+    process_lsoa_lkp_file,
+    .id = "year"
+  ) |> 
+    mutate(year = as.integer(year))
+  
+  
+  
+  # create all ages population of LSOA11 to UTLA by year
+  # Note, missing 2021 and 2022 populations
+  pops <- list.files("data-raw/Population/",
+                     full.names = TRUE) |> 
+    set_names(
+      nm = function(x) str_extract(x, "[0-9]{4}")
+    )
+  
+  pops <- pops[names(pops) %in% names(urls)] |> 
+    purrr::map_df(
+      lsoa_populations,
+      .id = "year"
+    ) |> 
+    filter(
+      grepl("^E", LSOA11CD)
+    ) |> 
+    rename(
+      population = "All Ages"
+    ) |> 
+    mutate(
+      year = as.integer(year)
+    )
+  
+  
+  # 2021 pops from the census via the ONS census API
+  ons_end_point <- "https://api.beta.ons.gov.uk/v1/"
+  
+  lsoa21_pops <- jsonlite::read_json(
+    paste0(
+      ons_end_point,
+      "population-types/UR/census-observations?area-type=lsoa&dimensions=sex"
+    )
+  ) |> 
+    pluck("observations") |> 
+    map_df(
+      ~ data.frame(
+        LSOA21CD = pluck(.x, 1, 1, "option_id"),
+        sex = pluck(.x, 1, 2, "option"),
+        population = pluck(.x, "observation")
+      )
+    ) |> 
+    summarise(
+      population = sum(population),
+      .by = LSOA21CD
+    ) |> 
+    mutate(
+      year = 2021
+    ) |> 
+    filter(grepl("^E", LSOA21CD))
+  
+  lsoa11_pops_year_2021 <- "https://opendata.arcgis.com/api/v3/datasets/e99a92fb7607495689f2eeeab8108fd6_0/downloads/data?format=csv&spatialRefId=4326&where=1%3D1" |> 
+    download_url_to_directory(
+      new_directory = "Lookups",
+      filename = "lsoa11_lsoa21.csv"
+    ) |> 
+    read.csv() |> 
+    filter(
+      grepl("^E", LSOA11CD)
+    ) |> 
+    select(
+      "LSOA11CD",
+      "LSOA21CD",
+      "CHGIND"
+    ) |> 
+    left_join(
+      lsoa21_pops,
+      by = join_by(LSOA21CD)
+    ) |> 
+    mutate(
+      # divide the population equally between LSOAs the LSOAs have merged (eg, 2
+      # LSOA11 merged into 1 LSOA21) or there have been irregular boundary changes
+      # (eg, 2 LSOA11s have turned into 2 new LSOA11s)
+      population = population / n(),
+      .by = LSOA21CD
+    ) |> 
+    summarise(
+      population = sum(population),
+      .by = c(
+        LSOA11CD, year
+      )
+    )
+  
+  pops <- bind_rows(
+    pops,
+    lsoa11_pops_year_2021
+  )
+  
+  lsoa_icb_lkp <- readxl::read_excel(
+    "data-raw/Lookups/lsoa_icb.xlsx"
+  ) |> 
+    select(
+      "LSOA11CD",
+      "ICB22CDH"
+    )
+  
+  lkp <- lkp |> 
+    left_join(
+      pops,
+      by = join_by(
+        year,
+        LSOA11CD
+      )
+    ) |> 
+    left_join(
+      lsoa_icb_lkp,
+      by = join_by(
+        LSOA11CD
+      )
+    )
+  
   return(lkp)
 }

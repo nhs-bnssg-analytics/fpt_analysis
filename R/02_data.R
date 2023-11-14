@@ -495,8 +495,53 @@ annual_social_care <- purrr::map_dfr(
   tidy_social_care_funding
 )
 
+pop_weighted_utla_lkp <- lsoa_utla_icb_weighted_pops()
+
+# convert utla to icb
+annual_social_care_icb <- annual_social_care |> 
+  mutate(
+    year = as.integer(year)
+  ) |> 
+  inner_join(
+    pop_weighted_utla_lkp,
+    by = join_by(
+      year == year,
+      org == UTLACD
+    )
+  ) |> 
+  mutate(
+    weighted_pop = population / sum(population),
+    .by = c(
+      year, org
+    )
+  ) |> 
+  mutate(
+    across(
+      c(numerator, denominator),
+      function(x) x * weighted_pop
+    )
+  ) |> 
+  summarise(
+    across(
+      c(numerator, denominator),
+      sum
+    ),
+    .by = c(
+      ICB22CDH, 
+      metric,
+      frequency,
+      year
+    )
+  ) |> 
+  mutate(
+    value = numerator / denominator
+  ) |> 
+  rename(
+    org = ICB22CDH
+  )
+
 write.csv(
-  annual_social_care,
+  annual_social_care_icb,
   "data/annual-social-care-expenditure.csv",
   row.names = FALSE
 )
