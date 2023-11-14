@@ -77,3 +77,11 @@ There are challenges around interpretation of metrics. The value of a
 metric can be influenced by many factors. To ensure that the outputs are
 practical, these factors need to be considered at all stages to ensure
 the metrics are most useful to the end user.
+
+### COVID-19 pandemic
+
+The pandemic period will heavily influence a lot of metrics. Each metric
+may have been influenced in different ways and not represent
+business-as-usual, therefore relationships between metrics may
+drastically differ during that period from the non-pandemic period. This
+will impact any predictive model.
