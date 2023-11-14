@@ -802,7 +802,8 @@ bind_rows(
 url <- "https://www.england.nhs.uk/statistics/statistical-work-areas/discharge-delays-acute-data/"
 excel_links <- obtain_links(url) |> 
   (\(x) x[grepl("xlsx$", x)])() |> 
-  (\(x) x[!grepl("[[:alpha:]].*[0-9]{4}-[[:alpha:]].*[0-9]{4}", x)])()
+  (\(x) x[!grepl("[[:alpha:]].*[0-9]{4}-[[:alpha:]].*[0-9]{4}", x)])() |> 
+  (\(x) x[grepl("sitrep", x)])()
 
 files <- purrr::map_chr(
   excel_links,
@@ -812,13 +813,13 @@ files <- purrr::map_chr(
   )
 )
 
-tidy_nctr_files <- purrr::map_chr(
+tidy_nctr <- purrr::map(
   files,
   tidy_nctr_file
 )
 
 monthly_nctr <- purrr::map_dfr(
-  tidy_nctr_files,
+  tidy_nctr,
   aggregate_nctr_to_month
 )
 

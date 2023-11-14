@@ -247,31 +247,7 @@ tidy_nctr_file <- function(filepath) {
       "denominator"
     )
   
-  filename <- gsub(
-    "Daily-discharge-sitrep-monthly-data-webfile-",
-    "",
-    basename(filepath)
-  )
-  
-  filename <- stringr::str_extract(
-    filename,
-    "[[:alpha:]].*[0-9]{4}"
-  )
-  
-  filename <- paste0(
-    dirname(filepath),
-    "/",
-    filename,
-    ".csv"
-  )
-  
-  write.csv(
-    nctr,
-    filename,
-    row.names = FALSE
-  )
-  
-  return(filename)
+  return(nctr)
 }
 
 tidy_cancer_wait_times <- function(filepath) {
@@ -814,7 +790,8 @@ open_pops_file <- function(raw_pops_file) {
     rename(LSOA11CD = all_of(lsoa_field))
   
   if (grepl("zip$", raw_pops_file)) file.remove(unzipped_file)
-  return(all_persons)
+  
+  return(list('year' = yr, 'data' = all_persons))
   
 }
 
@@ -839,7 +816,10 @@ calculate_icb_populations <- function(raw_pops_file) {
       "ICB22CDH"
     )
   
-  all_persons <- open_pops_file(raw_pops_file)
+  dta <- open_pops_file(raw_pops_file)
+  yr <- dta$year
+  all_persons <- dta$data
+  
   
   all_persons <- all_persons |> 
     select(
@@ -896,10 +876,13 @@ calculate_icb_populations <- function(raw_pops_file) {
     rename(
       org = "ICB22CDH"
     )
+  
+  return(all_persons)
 }
 
 lsoa_populations <- function(raw_pops_file) {
   lsoa_populations <- open_pops_file(raw_pops_file) |> 
+    pluck("data") |> 
     select(
       "LSOA11CD",
       "All Ages"
@@ -1007,8 +990,8 @@ reformat_bed_availability_data <- function(filepath, bed_type) {
   return(tidy_data)
 }
 
-aggregate_nctr_to_month <- function(filepath) {
-  monthly_nctr <- read.csv(filepath) |> 
+aggregate_nctr_to_month <- function(daily_nctr) {
+  monthly_nctr <- daily_nctr |> 
     mutate(
       month = lubridate::month(date),
       year = lubridate::year(date)
