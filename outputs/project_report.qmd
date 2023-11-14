@@ -52,6 +52,12 @@ dc_data <- list.files(
     "year", "quarter", "month", "frequency",
     "org", "org_name", 
     "numerator", "denominator", "value"
+  ) |> 
+  mutate(
+    across(
+      c(year, quarter, month),
+      as.integer
+    )
   )
 
 ```
@@ -186,5 +192,73 @@ all_data |>
     scales = "free_y",
     space = "free_y"
   )
+```
+
+### Sense check data
+
+The following plots help to understand the data distribution over the years to sense check each year is consistent with previous years.
+
+```{r}
+#| label: box-plots
+#| warning: false
+#| results: 'asis'
+#| fig-width: 12
+#| fig-height: 15
+
+sense_check <- all_data |> 
+  filter(
+    grepl("annual", frequency)
+  )
+
+boxplot_domains <- function(data) {
+  p <- data |> 
+    mutate(
+      metric = stringr::str_wrap(metric, 30)
+    ) |>
+    ggplot(
+      aes(
+        x = as.factor(year),
+        y = value
+        )
+      ) + 
+    geom_boxplot() +
+    theme_minimal() +
+    facet_wrap(
+      facets = vars(metric),
+      scales = "free"
+    ) +
+    labs(
+      x = "",
+      y = ""
+    ) +
+    theme(
+      axis.text.x = element_text(
+        angle = 45,
+        hjust = 1
+      )
+    )
+  
+  return(p)
+}
+
+cat("::: {.panel-tabset}\n\n")
+
+for (dom in (unique(sense_check$domain))) {
+  cat(paste("##",
+          dom,
+          "\n\n"))
+  
+  p <- sense_check |> 
+    filter(domain == dom) |> 
+    boxplot_domains()
+  
+  print(p)
+  
+  cat("\n\n")
+}
+
+cat(":::")
+
+
 ```
 
