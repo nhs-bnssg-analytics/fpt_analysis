@@ -46,6 +46,19 @@ download_url_to_directory <- function(url, new_directory, filename) {
   return(new_filename)
 }
 
+check_and_download <- function(filepath, url) {
+  
+  if (!file.exists(filepath)) {
+    filepath <- download_url_to_directory(
+      url = url,
+      new_directory = basename(dirname(filepath)),
+      filename = basename(filepath)
+    )
+  }
+  
+  return(filepath)
+}
+
 # file processing ---------------------------------------------------------
 
 rename_hospital_beds_xls <- function(filepath) {
@@ -798,19 +811,11 @@ open_pops_file <- function(raw_pops_file) {
 
 calculate_icb_populations <- function(raw_pops_file) {
   
-  lsoa_lkp_file <- "data-raw/Lookups/lsoa_icb.xlsx"
-  
-  if (!file.exists(lsoa_lkp_file)) {
-    lsoa_icb <- download_url_to_directory(
-      "https://www.arcgis.com/sharing/rest/content/items/1ac8547e9a8945478f0b5ea7ffe1a6b1/data",
-      new_directory = "Lookups",
-      filename = "lsoa_icb.xlsx"
-    )
-  }
-  
-  lsoa_icb_lkp <- readxl::read_excel(
-    lsoa_lkp_file
-  ) |> 
+  lsoa_lkp_file <- check_and_download(
+    filepath = "data-raw/Lookups/lsoa_icb.xlsx",
+    url = "https://www.arcgis.com/sharing/rest/content/items/1ac8547e9a8945478f0b5ea7ffe1a6b1/data"
+  )|> 
+    readxl::read_excel() |> 
     select(
       "LSOA11CD",
       "ICB22CDH"
@@ -1047,45 +1052,35 @@ year_from_financial_year <- function(fyear) {
   return(as.integer(year))
 }
 
-# This function is for converting ons "E" codes to "Health" codes. Note, for
-# STPs, there were boundary changes prior to 2020, which means that earlier STPs
-# don't map exactly to ICBs
-convert_ons_to_health_code <- function(data, area_type = "stp") {
+#' @description This function is for converting ons "E" codes to "Health" codes.
+#'   Note, for STPs, there were boundary changes prior to 2020, which means that
+#'   earlier STPs don't map exactly to ICBs
+#' @param data tibble with a field called org, which is the field containing
+#'   "E%" values that need converting to "A%" values
+#' @param area_type string; one of "stp", "icb" or "ccg". The area type that the
+#'   E values refer to (that need converting)
+#' @param latest_codes_used logical; data that is publised monthly as it is
+#'   created will use the latest codes at the time of publishing, whereas some
+#'   datasets that are published retrospectively, will use up to date area
+#'   codes. This argument should be TRUE in the latter example (only works for
+#'   "stp" and "icb" currently)
+convert_ons_to_health_code <- function(data, area_type = "stp", latest_codes_used) {
+  
+  # some datasets move from ONS codes (eg, E%) to Health codes (eg, Q%) within
+  # the data set
+  data_q <- data |> 
+    filter(
+      grepl("^Q", org)
+    )
+  
+  data <- data |> 
+    filter(
+      grepl("^E", org)
+    )
   
   area_type <- match.arg(area_type, c("stp", "ccg", "icb"))
   
-  if (area_type == "stp") {
-    stp_ons_code_lkp <- download_url_to_directory(
-      url = "https://www.arcgis.com/sharing/rest/content/items/bec635f6c83e4582bcf76ce02c2be840/data",
-      new_directory = "Lookups",
-      filename = "STP21_name_lookup.xlsx"
-    ) |> 
-      readxl::read_excel() |> 
-      select(
-        c("STP21CD", "STP21CDH")
-      )
-    
-    data <- data |> 
-      mutate(
-        STP21CD = case_when(
-          grepl("^E", org) ~ org,
-          .default = NA_character_
-        )
-      ) |> 
-      left_join(
-        stp_ons_code_lkp,
-        by = join_by(STP21CD)
-      ) |> 
-      mutate(
-        org = case_when(
-          !is.na(STP21CDH) ~ STP21CDH,
-          .default = org
-        )
-      ) |> 
-      select(
-        !c("STP21CD", "STP21CDH")
-      )
-  } else if (area_type == "ccg") {
+  if (area_type == "ccg") {
     url <- "https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/CCG21_STP21_EN_LU_1ce1f924d3dd44eca0797b516db80280/FeatureServer/0/query?outFields=*&where=1%3D1&f=geojson"
     ccg_ons_code_lkp <- jsonlite::fromJSON(
       txt = url
@@ -1119,57 +1114,189 @@ convert_ons_to_health_code <- function(data, area_type = "stp") {
       select(
         !c("CCG21CD", "STP21CDH")
       )
-  } else if (area_type == "icb") {
-    icb22_ons_code_lkp <- download_url_to_directory(
-      url = "https://www.arcgis.com/sharing/rest/content/items/25ba241a775e4a9db8e5c721ee73d85d/data",
-      new_directory = "Lookups",
-      filename = "ICB22_name_lookup.xlsx"
-    ) |> 
-      readxl::read_excel() |> 
-      select(
-        c(
-          ICBCD = "ICB22CD", 
-          ICBCDH = "ICB22CDH")
-      )
+  } else if (area_type %in% c("icb", "stp")) {
     
-    url <- "https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/ICB_APR_2023_EN_NC/FeatureServer/0/query?outFields=*&where=1%3D1&f=geojson"
-    icb_ons_code_lkp <- jsonlite::fromJSON(
-      txt = url
-    ) |> 
-      pluck(
-        "features",
-        "properties"
-      ) |> 
-      select(
-        ICBCD = "ICB23CD",
-        ICBCDH = "ICB23CDH"
-      ) |> 
-      union(
-        icb22_ons_code_lkp
-      )
+    if (latest_codes_used == TRUE) {
+      post_2022 <- data
+      between_2017_2021 <- data |> 
+        filter(org == "junk")
+      pre_2017 <- data |>
+        filter(org == "junk")
+    } else {
+      post_2022 <- data |> 
+        filter(year >= 2022)
+      
+      between_2017_2021 <- data |> 
+        filter(year %in% 2017:2021)
+      
+      pre_2017 <- data |> 
+        filter(year < 2017)
+    }
     
-    data <- data |> 
-      mutate(
-        ICBCD = case_when(
-          grepl("^E", org) ~ org,
-          .default = NA_character_
-        )
-      ) |> 
-      left_join(
-        icb_ons_code_lkp,
-        by = join_by(ICBCD)
-      ) |> 
-      mutate(
-        org = case_when(
-          !is.na(ICBCDH) ~ ICBCDH,
-          .default = org
-        )
-      ) |> 
-      select(
-        !c("ICBCD", "ICBCDH")
+    if (nrow(post_2022) > 0) {
+      icb_lkp <- check_and_download(
+        filepath = "data-raw/Lookups/ICB22_name_lookup.xlsx",
+        url = "https://www.arcgis.com/sharing/rest/content/items/25ba241a775e4a9db8e5c721ee73d85d/data"
       )
+      
+      icb22_ons_code_lkp <- readxl::read_excel(icb_lkp) |> 
+        select(
+          c(
+            ICBCD = "ICB22CD", 
+            ICBCDH = "ICB22CDH")
+        )
+      
+      url <- "https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/ICB_APR_2023_EN_NC/FeatureServer/0/query?outFields=*&where=1%3D1&f=geojson"
+      icb_ons_code_lkp <- jsonlite::fromJSON(
+        txt = url
+      ) |> 
+        pluck(
+          "features",
+          "properties"
+        ) |> 
+        select(
+          ICBCD = "ICB23CD",
+          ICBCDH = "ICB23CDH"
+        ) |> 
+        union(
+          icb22_ons_code_lkp
+        )
+      
+      post_2022 <- post_2022 |> 
+        mutate(
+          ICBCD = case_when(
+            grepl("^E", org) ~ org,
+            .default = NA_character_
+          )
+        ) |> 
+        left_join(
+          icb_ons_code_lkp,
+          by = join_by(ICBCD)
+        ) |> 
+        mutate(
+          org = case_when(
+            !is.na(ICBCDH) ~ ICBCDH,
+            .default = org
+          )
+        ) |> 
+        select(
+          !c("ICBCD", "ICBCDH")
+        )
+    }
+    
+    if (nrow(pre_2017) > 0 | nrow(between_2017_2021) > 0) {
+      weighted_pops <- lsoa_stp_icb_weighted_pops()
+    }
+    
+    if (nrow(pre_2017) > 0) {
+      years_required <- unique(pre_2017$year)
+      
+      pre_2017_weighted_pops <- weighted_pops |> 
+        filter(
+          year == min(year)
+        ) |> 
+        select(!c("year")) |> 
+        cross_join(
+          tibble(
+            year = years_required
+          )
+        )
+      
+      pre_2017 <- pre_2017 |> 
+        left_join(
+          pre_2017_weighted_pops,
+          by = join_by(
+            year,
+            org == STPCD
+          ),
+          relationship = "many-to-many"
+        ) |> 
+        mutate(
+          population = population / sum(population),
+          .by = c(
+            year, 
+            any_of(c("month", "quarter")),
+            metric, 
+            org
+          )
+        ) |> 
+        summarise(
+          across(
+            c(numerator, denominator),
+            function(x) x * population
+          ),
+          .by = c(
+            year, ICB22CDH, metric, frequency, any_of(c("month", "quarter"))
+          )
+        ) |> 
+        mutate(
+          value = numerator / denominator
+        ) |> 
+        rename(
+          org = "ICB22CDH"
+        )
+      
+    }
+    
+    if (nrow(between_2017_2021) > 0) {
+      
+      between_2017_2021 <- between_2017_2021 |> 
+        inner_join(
+          weighted_pops,
+          by = join_by(
+            year,
+            org == STPCD
+          ),
+          relationship = "many-to-many"
+        ) |> 
+        mutate(
+          population = population / sum(population),
+          .by = c(
+            year, 
+            any_of(c("month", "quarter")),
+            metric,
+            org
+          )
+        ) |> 
+        mutate(
+          across(
+            c(numerator, denominator),
+            function(x) x * population
+          )
+        ) |> 
+        summarise(
+          across(
+            c(numerator, denominator),
+            sum
+          ),
+          .by = c(
+            year, ICB22CDH, metric, frequency, any_of(c("month", "quarter"))
+          )
+        ) |> 
+        mutate(
+          value = numerator / denominator
+        ) |> 
+        rename(
+          org = "ICB22CDH"
+        )
+    }
+    
+    data <- bind_rows(
+      pre_2017,
+      between_2017_2021,
+      post_2022,
+      data_q
+    )
   }
   
+  return(data)
+}
+
+clean_names <- function(data) {
+  data_names <- names(data) |> 
+    (\(x) gsub("^X...", "", x))()
+  
+  names(data) <- data_names
   return(data)
 }
 
@@ -1519,15 +1646,10 @@ health_org_role <- function(health_org_code) {
 #' portal
 org_to_icb_postcode_lookup_method <- function(health_org_code) {
   
-  filepath <- "data-raw/Lookups/lsoa_icb.xlsx"
-  
-  if (!file.exists(filepath)) {
-    lsoa_icb <- download_url_to_directory(
-      "https://www.arcgis.com/sharing/rest/content/items/1ac8547e9a8945478f0b5ea7ffe1a6b1/data",
-      new_directory = "Lookups",
-      filename = "lsoa_icb.xlsx"
-    ) 
-  }
+  filepath <- check_and_download(
+    filepath = "data-raw/Lookups/lsoa_icb.xlsx",
+    url = "https://www.arcgis.com/sharing/rest/content/items/1ac8547e9a8945478f0b5ea7ffe1a6b1/data"
+  )
   
   lsoa_icb <- readxl::read_excel(
     filepath,
@@ -1672,20 +1794,28 @@ lsoa_utla_icb_weighted_pops <- function() {
     `2021` = "https://opendata.arcgis.com/api/v3/datasets/24322a71f0f54446bcdb406b54e42956_0/downloads/data?format=csv&spatialRefId=4326&where=1%3D1"
   )
   
-  file <- purrr::lmap(
-    urls, 
-    ~ list(
-      download_url_to_directory(
-        url = .x,
-        new_directory = "Lookups",
-        filename = paste0(
-          "LSOA11_UTLA",
-          names(.x),
-          ".csv"
+  file <- paste0(
+    "data-raw/Lookups/LSOA11_UTLA", 
+    names(urls), 
+    ".csv"
+    )
+  
+  if (any(!file.exists(file))) {
+    file <- purrr::lmap(
+      urls, 
+      ~ list(
+        download_url_to_directory(
+          url = .x,
+          new_directory = "Lookups",
+          filename = paste0(
+            "LSOA11_UTLA",
+            names(.x),
+            ".csv"
+          )
         )
       )
     )
-  )
+  }
   
   names(file) <- names(urls)
   
@@ -1764,37 +1894,7 @@ lsoa_utla_icb_weighted_pops <- function() {
     ) |> 
     filter(grepl("^E", LSOA21CD))
   
-  lsoa11_pops_year_2021 <- "https://opendata.arcgis.com/api/v3/datasets/e99a92fb7607495689f2eeeab8108fd6_0/downloads/data?format=csv&spatialRefId=4326&where=1%3D1" |> 
-    download_url_to_directory(
-      new_directory = "Lookups",
-      filename = "lsoa11_lsoa21.csv"
-    ) |> 
-    read.csv() |> 
-    filter(
-      grepl("^E", LSOA11CD)
-    ) |> 
-    select(
-      "LSOA11CD",
-      "LSOA21CD",
-      "CHGIND"
-    ) |> 
-    left_join(
-      lsoa21_pops,
-      by = join_by(LSOA21CD)
-    ) |> 
-    mutate(
-      # divide the population equally between LSOAs the LSOAs have merged (eg, 2
-      # LSOA11 merged into 1 LSOA21) or there have been irregular boundary changes
-      # (eg, 2 LSOA11s have turned into 2 new LSOA11s)
-      population = population / n(),
-      .by = LSOA21CD
-    ) |> 
-    summarise(
-      population = sum(population),
-      .by = c(
-        LSOA11CD, year
-      )
-    )
+  lsoa11_pops_year_2021 <- get_lsoa21_pops_with_lsoa11_codes()
   
   pops <- bind_rows(
     pops,
@@ -1825,4 +1925,188 @@ lsoa_utla_icb_weighted_pops <- function() {
     )
   
   return(lkp)
+}
+
+
+lsoa_stp_icb_weighted_pops <- function() {
+  # LSOA11 to STP lookups
+  urls <- c(
+    `2017` = "https://opendata.arcgis.com/api/v3/datasets/d02e4a70dc594ffc9438b2f3d73988a2_0/downloads/data?format=csv&spatialRefId=4326&where=1%3D1",
+    `2018` = "https://opendata.arcgis.com/api/v3/datasets/30b31100dc994d9898f7c2bb77de4a25_0/downloads/data?format=csv&spatialRefId=4326&where=1%3D1",
+    `2019` = "https://opendata.arcgis.com/api/v3/datasets/122bd531f25b46fcb5e9c292bd8d6fe0_0/downloads/data?format=csv&spatialRefId=4326&where=1%3D1",
+    `2020` = "https://opendata.arcgis.com/api/v3/datasets/bb40c565f684400c9f01f7abdc26dd63_0/downloads/data?format=csv&spatialRefId=4326&where=1%3D1",
+    `2021` = "https://opendata.arcgis.com/api/v3/datasets/60c96f6f776a4059b3ef23af3290a9fc_0/downloads/data?format=csv&spatialRefId=4326&where=1%3D1"
+  )
+  
+  file <- paste0(
+    "data-raw/Lookups/LSOA11_STP", 
+    names(urls), 
+    ".csv"
+  )
+  
+  if (any(!file.exists(file))) {
+    file <- purrr::lmap(
+      urls, 
+      ~ list(
+        download_url_to_directory(
+          url = .x,
+          new_directory = "Lookups",
+          filename = paste0(
+            "LSOA11_STP",
+            names(.x),
+            ".csv"
+          )
+        )
+      )
+    )
+  }
+  
+  names(file) <- names(urls)
+  
+  process_lsoa_lkp_file <- function(filepath) {
+    lkp <- read.csv(filepath) |> 
+      clean_names() |> 
+      filter(
+        grepl("^E", LSOA11CD)
+      ) |> 
+      select(
+        "LSOA11CD", starts_with("STP")
+      ) |> 
+      select(
+        ends_with("CD")
+      ) |> 
+      rename(
+        STPCD = starts_with("STP")
+      ) |> 
+      distinct()
+  }
+  
+  lkp <- purrr::map_df(
+    file,
+    process_lsoa_lkp_file,
+    .id = "year"
+  ) |> 
+    mutate(year = as.integer(year))
+  
+  
+  
+  # create all ages population of LSOA11 to UTLA by year
+  # Note, missing 2021 and 2022 populations
+  pops <- list.files("data-raw/Population/",
+                     full.names = TRUE) |> 
+    set_names(
+      nm = function(x) str_extract(x, "[0-9]{4}")
+    )
+  
+  pops <- pops[names(pops) %in% names(urls)] |> 
+    purrr::map_df(
+      lsoa_populations,
+      .id = "year"
+    ) |> 
+    filter(
+      grepl("^E", LSOA11CD)
+    ) |> 
+    rename(
+      population = "All Ages"
+    ) |> 
+    mutate(
+      year = as.integer(year)
+    )
+  
+  lsoa11_pops_year_2021 <- get_lsoa21_pops_with_lsoa11_codes()
+  
+  pops <- bind_rows(
+    pops,
+    lsoa11_pops_year_2021
+  )
+  
+  lsoa_icb_lkp <- readxl::read_excel(
+    "data-raw/Lookups/lsoa_icb.xlsx"
+  ) |> 
+    select(
+      "LSOA11CD",
+      "ICB22CDH"
+    )
+  
+  lkp <- lkp |> 
+    left_join(
+      pops,
+      by = join_by(
+        year,
+        LSOA11CD
+      )
+    ) |> 
+    left_join(
+      lsoa_icb_lkp,
+      by = join_by(
+        LSOA11CD
+      )
+    )
+  
+  return(lkp)
+}
+
+
+get_lsoa21_pops_with_lsoa11_codes <- function() {
+  # 2021 pops from the census via the ONS census API
+  ons_end_point <- "https://api.beta.ons.gov.uk/v1/"
+  
+  lsoa21_pops <- jsonlite::read_json(
+    paste0(
+      ons_end_point,
+      "population-types/UR/census-observations?area-type=lsoa&dimensions=sex"
+    )
+  ) |> 
+    pluck("observations") |> 
+    map_df(
+      ~ data.frame(
+        LSOA21CD = pluck(.x, 1, 1, "option_id"),
+        sex = pluck(.x, 1, 2, "option"),
+        population = pluck(.x, "observation")
+      )
+    ) |> 
+    summarise(
+      population = sum(population),
+      .by = LSOA21CD
+    ) |> 
+    mutate(
+      year = 2021
+    ) |> 
+    filter(grepl("^E", LSOA21CD))
+  
+  lsoa11_pops_year_2021 <- check_and_download(
+    filepath = "data-raw/Lookups/lsoa11_lsoa21.csv",
+    url = "https://opendata.arcgis.com/api/v3/datasets/e99a92fb7607495689f2eeeab8108fd6_0/downloads/data?format=csv&spatialRefId=4326&where=1%3D1"
+  )
+  
+  lsoa11_pops_year_2021 <- read.csv(
+    lsoa11_pops_year_2021
+  ) |> 
+    clean_names() |> 
+    filter(
+      grepl("^E", LSOA11CD)
+    ) |> 
+    select(
+      "LSOA11CD",
+      "LSOA21CD"
+    ) |> 
+    left_join(
+      lsoa21_pops,
+      by = join_by(LSOA21CD)
+    ) |> 
+    mutate(
+      # divide the population equally between LSOAs the LSOAs have merged (eg, 2
+      # LSOA11 merged into 1 LSOA21) or there have been irregular boundary changes
+      # (eg, 2 LSOA11s have turned into 2 new LSOA11s)
+      population = population / n(),
+      .by = LSOA21CD
+    ) |> 
+    summarise(
+      population = sum(population),
+      .by = c(
+        LSOA11CD, year
+      )
+    )
+  
+  return(lsoa11_pops_year_2021)
 }

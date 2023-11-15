@@ -63,6 +63,19 @@ risk_factors <- fingertipsR::indicators() |>
   mutate(
     AreaCode = gsub("n", "", AreaCode)
   ) |> 
+  # remove unnecessary sex/age groups from Smoking prevalence indicator
+  anti_join(
+    tibble(
+      IndicatorID = 92443,
+      Sex = c("Male", "Female", "Persons"),
+      Age = c("18+ yrs", "18+ yrs", "18-64 yrs")
+    ),
+    by = join_by(
+      IndicatorID,
+      Sex,
+      Age
+    )
+  ) |> 
   select(
     year = "Timeperiod",
     org = "AreaCode",
@@ -77,13 +90,16 @@ risk_factors <- fingertipsR::indicators() |>
       grepl("/", year) ~ "annual financial",
       .default = "annual calendar"
     ),
-    year = stringr::str_extract(
-      year,
-      "^[0-9]{4}"
+    year = as.integer(
+      stringr::str_extract(
+        year,
+        "^[0-9]{4}"
+      )
     )
   ) |> 
   convert_ons_to_health_code(
-    area_type = "icb"
+    area_type = "icb",
+    latest_codes_used = TRUE
   )
 
 write.csv(
@@ -844,10 +860,10 @@ bind_rows(
 
 # 62 day cancer waiting times
 url <- "https://www.england.nhs.uk/statistics/statistical-work-areas/cancer-waiting-times/"
-excel_links <- obtain_links(url)
-excel_links <- excel_links[grepl("xlsx$", excel_links)]
-excel_links <- excel_links[grepl("Commissioner", excel_links)]
-excel_links <- excel_links[grepl("Revision", excel_links)]
+excel_links <- obtain_links(url) |> 
+  (\(x) x[grepl("xlsx$", x)])() |> 
+  (\(x) x[grepl("Commissioner", x)])() |> 
+  (\(x) x[grepl("Revision", x)])()
 
 files <- purrr::map_chr(
   excel_links,
@@ -871,6 +887,14 @@ org_lkp <- orgs |>
   attach_icb_to_org()
 
 monthly_cancer_wait_times <- monthly_cancer_wait_times |> 
+  filter(
+    # remove welsh organisations and Unknown
+    !(org %in% c(
+      paste0("7A", 1:7),
+      "6A8",
+      "UNKNOWN"
+    ))
+  ) |> 
   left_join(
     org_lkp,
     by = join_by(org == health_org_code)
@@ -944,7 +968,9 @@ monthly_a_and_e <- purrr::map_dfr(
   files, 
   tidy_a_and_e
 ) |> 
-  convert_ons_to_health_code()
+  convert_ons_to_health_code(
+    latest_codes_used = FALSE
+  )
 
 quarterly_a_and_e <- monthly_to_quarterly_sum(
   monthly_a_and_e
