@@ -589,9 +589,16 @@ url_links <- obtain_links(url) |>
     } else {
       x
     }
-    
   ) |> 
-  unlist()
+  unlist() |> 
+  (\(x) x[grepl("[a-z]{3}_{0,1}[0-9]{2}", x, ignore.case = TRUE)])() |> 
+  (\(x) x[grepl(paste(month.abb, collapse = "|"), x, ignore.case = TRUE)])() |> 
+  (\(x) x[seq(1, length(x), 4)])()
+
+list.files("data-raw/GP wait times/",
+           full.names = TRUE) |> 
+  file.remove() |> 
+  invisible()
 
 files <- purrr::walk(
   url_links,
@@ -601,7 +608,7 @@ files <- purrr::walk(
 monthly_gp_wait_times <- setNames(
   list.files(
     "data-raw/GP wait times/"
-    ),
+  ),
   nm = gsub(".csv", "", list.files(
     "data-raw/GP wait times/"
   ))) |> 
@@ -625,7 +632,7 @@ monthly_gp_wait_times <- setNames(
         "20",
         substr(
           date, 5, 6
-          )
+        )
       )
     ),
     month = match(
@@ -676,10 +683,17 @@ monthly_gp_wait_times <- setNames(
     value = numerator / denominator,
     frequency = "monthly"
   ) |> 
+  rename(
+    org = "ICB_STP_ONS_CODE"
+  ) |> 
+  convert_ons_to_health_code(
+    latest_codes_used = FALSE,
+    retain_fields = c("month")
+  ) |> 
   select(
     "year",
     "month",
-    org = "ICB_STP_ONS_CODE",
+    "org",
     "metric",
     "numerator",
     "denominator",
