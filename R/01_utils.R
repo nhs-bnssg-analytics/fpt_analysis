@@ -123,7 +123,6 @@ download_unzip_gp_wait_times <- function(zip_url) {
     zipped_files <- zipped_files[!grepl(paste(existing_files, collapse = "|"), zipped_files)]
   }
   
-  
   # unzip the new csvs and summarise them to icb/stp geography before saving
   # them in the data-raw folder
   complete <- lapply(
@@ -139,6 +138,7 @@ download_unzip_gp_wait_times <- function(zip_url) {
 }
 
 unzip_summarise_write_data <- function(zipped_csv_file, temp_file, file_directory) {
+  
   data <- read.csv(
     unz(
       temp_file, 
@@ -153,9 +153,11 @@ unzip_summarise_write_data <- function(zipped_csv_file, temp_file, file_director
         )
       )
     ) |> 
-    
     filter(
-      APPT_STATUS == "Attended"
+      if_all(
+        any_of(c("APPT_STATUS", "APPOINTMENT_STATUS")),
+        ~ .x == "Attended"
+      )
     ) |> 
     summarise(
       COUNT_OF_APPOINTMENTS = sum(COUNT_OF_APPOINTMENTS),
@@ -165,18 +167,20 @@ unzip_summarise_write_data <- function(zipped_csv_file, temp_file, file_director
       )
     )
   
-  
-  write.csv(
-    data,
-    paste0(
-      file_directory,
-      stringr::str_extract(
-        zipped_csv_file, 
-        "[[:alpha:]]{3}_[0-9]{2}.csv"
+  if (nrow(data) > 0) {
+    data |> 
+      write.csv(
+        paste0(
+          file_directory,
+          stringr::str_extract(
+            zipped_csv_file, 
+            "[[:alpha:]]{3}_[0-9]{2}.csv"
+          )
+        ),
+        row.names = FALSE
       )
-    ),
-    row.names = FALSE
-  )
+  }
+  
   return(TRUE)
 }
 
@@ -1064,7 +1068,8 @@ year_from_financial_year <- function(fyear) {
 #'   datasets that are published retrospectively, will use up to date area
 #'   codes. This argument should be TRUE in the latter example (only works for
 #'   "stp" and "icb" currently)
-convert_ons_to_health_code <- function(data, area_type = "stp", latest_codes_used) {
+#' @retain_fields string; field names of any fields to retain during this step
+convert_ons_to_health_code <- function(data, area_type = "stp", latest_codes_used, retain_fields = c("month", "quarter")) {
   
   # some datasets move from ONS codes (eg, E%) to Health codes (eg, Q%) within
   # the data set
@@ -1123,14 +1128,30 @@ convert_ons_to_health_code <- function(data, area_type = "stp", latest_codes_use
       pre_2017 <- data |>
         filter(org == "junk")
     } else {
-      post_2022 <- data |> 
-        filter(year >= 2022)
       
       between_2017_2021 <- data |> 
         filter(year %in% 2017:2021)
       
       pre_2017 <- data |> 
         filter(year < 2017)
+      
+      if (nrow(pre_2017) > 0 | nrow(between_2017_2021) > 0) {
+        weighted_pops <- lsoa_stp_icb_weighted_pops()
+      }
+      
+      incorrect_2017_2021_orgs <- between_2017_2021 |> 
+        filter(!(org %in% weighted_pops$STPCD))
+      
+      incorrect_pre2017_orgs <- pre_2017 |> 
+        filter(!(org %in% weighted_pops$STPCD))
+      
+      post_2022 <- data |> 
+        filter(year >= 2022) |> 
+        bind_rows(
+          incorrect_2017_2021_orgs,
+          incorrect_pre2017_orgs
+        )
+      
     }
     
     if (nrow(post_2022) > 0) {
@@ -1184,9 +1205,6 @@ convert_ons_to_health_code <- function(data, area_type = "stp", latest_codes_use
         )
     }
     
-    if (nrow(pre_2017) > 0 | nrow(between_2017_2021) > 0) {
-      weighted_pops <- lsoa_stp_icb_weighted_pops()
-    }
     
     if (nrow(pre_2017) > 0) {
       years_required <- unique(pre_2017$year)
@@ -1203,7 +1221,7 @@ convert_ons_to_health_code <- function(data, area_type = "stp", latest_codes_use
         )
       
       pre_2017 <- pre_2017 |> 
-        left_join(
+        inner_join(
           pre_2017_weighted_pops,
           by = join_by(
             year,
@@ -1226,7 +1244,7 @@ convert_ons_to_health_code <- function(data, area_type = "stp", latest_codes_use
             function(x) x * population
           ),
           .by = c(
-            year, ICB22CDH, metric, frequency, any_of(c("month", "quarter"))
+            year, ICB22CDH, metric, frequency, any_of(retain_fields)
           )
         ) |> 
         mutate(
@@ -1270,7 +1288,7 @@ convert_ons_to_health_code <- function(data, area_type = "stp", latest_codes_use
             sum
           ),
           .by = c(
-            year, ICB22CDH, metric, frequency, any_of(c("month", "quarter"))
+            year, ICB22CDH, metric, frequency, any_of(retain_fields)
           )
         ) |> 
         mutate(
