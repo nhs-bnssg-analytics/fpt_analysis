@@ -8,7 +8,6 @@ metric_id,metric,domain,numerator_description,denominator_description,raw_area_t
 ,Average daily proportion of patients who no longer meet the criteria to reside that remain in hospital,Performance,Average number of daily patients remaining in hospital who no longer meet the criteria to reside,Average number of daily patients who no longer meet the criteria to reside,ICB
 ,CVD-PP: QOF prevalence (30-74 yrs) - retired after 2019/20,Demand,"Patients aged 30-74 yrs, with a new diagnosis of hypertension, excluding those with a pre-existing coronary heart disease (CHD), diabetes and stroke/transient ischaemic attack (TIA); (CVD-PP register).",Total number of patients aged 30-74 yrs registered with the practice.,ICB
 ,Depression: QOF prevalence (18+ yrs),Demand,"All patients aged 18 or over, diagnosed on or after 1 April 2006, who have an unresolved record of depression in their patient record.",All patients aged 18 or over registered at a GP Practice in England.,ICB
-,Deprivation score (IMD 2019),Demand,,,ICB
 ,ESR absence (acute organisation type),Capacity,Number of FTE days sick,Number of FTE days available,All health locations
 ,ESR absence (ambulance organisation type),Capacity,Number of FTE days sick,Number of FTE days available,All health locations
 ,ESR absence (community provider trust organisation type),Capacity,Number of FTE days sick,Number of FTE days available,All health locations
@@ -73,3 +72,8 @@ metric_id,metric,domain,numerator_description,denominator_description,raw_area_t
 ,Proportion of population in age band (90+),Demand,Resident population in age band,Total resident population,ICB
 ,Estimated prevalence of common mental disorders: % of population aged 16 & over,Demand,,,
 ,Estimated prevalence of common mental disorders: % of population aged 65 & over,Demand,,,
+,Proportion of resident population in national deprivation quintile (Least deprived quintile) - IMD 2019,Demand,Resident population in deprivation quintile,Resident population in area,ICB
+,Proportion of resident population in national deprivation quintile (Second least deprived) - IMD 2019,Demand,Resident population in deprivation quintile,Resident population in area,ICB
+,Proportion of resident population in national deprivation quintile (Average deprived) - IMD 2019,Demand,Resident population in deprivation quintile,Resident population in area,ICB
+,Proportion of resident population in national deprivation quintile (Second most deprived ) - IMD 2019,Demand,Resident population in deprivation quintile,Resident population in area,ICB
+,Proportion of resident population in national deprivation quintile (Most deprived) - IMD 2019,Demand,Resident population in deprivation quintile,Resident population in area,ICB

@@ -48,7 +48,8 @@ write.csv(
 risk_factors <- fingertipsR::indicators() |> 
   filter(
     grepl("[Rr]isk", DomainName),
-    grepl("[Ff]actor", DomainName)
+    grepl("[Ff]actor", DomainName),
+    !grepl("Deprivation score \\(IMD 2019\\)", IndicatorName)
   ) |> 
   pull(
     IndicatorID
@@ -108,7 +109,100 @@ write.csv(
   row.names = FALSE
 )
 
+# deprivation
+quintile_descriptions <- category_types() |> 
+  filter(CategoryTypeId == 6) |> 
+  select(
+    "Id", 
+    quintile_name = "ShortName"
+  )
 
+lsoa_icb_lkp <- check_and_download(
+  filepath = "data-raw/Lookups/lsoa_icb.xlsx",
+  url = "https://www.arcgis.com/sharing/rest/content/items/1ac8547e9a8945478f0b5ea7ffe1a6b1/data"
+) |> 
+  readxl::read_excel() |> 
+  select(
+    "LSOA11CD",
+    "ICB22CDH"
+  )
+
+pops_url <- "https://www.ons.gov.uk/file?uri=/peoplepopulationandcommunity/populationandmigration/populationestimates/datasets/lowersuperoutputareamidyearpopulationestimates/mid2019sape22dt2/sape22dt2mid2019lsoasyoaestimatesunformatted.zip"
+lsoa2019_pop <- check_and_download(
+  filepath = paste0("data-raw/Lookups/", basename(pops_url)),
+  url = pops_url
+) |> 
+  open_pops_file() |> 
+  pluck(
+    "data"
+  ) |> 
+  select(
+    "LSOA11CD", 
+    population = "All Ages"
+  )
+
+deprivation <- check_and_download(
+  filepath = "data-raw/Deprivation/deprivation.xlsx",
+  url = "https://assets.publishing.service.gov.uk/media/5d8b3b51ed915d036a455aa6/File_5_-_IoD2019_Scores.xlsx"
+) |> 
+  readxl::read_excel(
+    sheet = "IoD2019 Scores"
+  ) |> 
+  select(
+    LSOA11CD = "LSOA code (2011)",
+    imd = "Index of Multiple Deprivation (IMD) Score"
+  ) |> 
+  mutate(
+    quintile = as.integer(6 - ntile(imd, 5))
+  ) |> 
+  left_join(
+    quintile_descriptions,
+    by = join_by(quintile == Id)
+  ) |> 
+  left_join(
+    lsoa_icb_lkp,
+    by = join_by(
+      LSOA11CD
+    )
+  ) |> 
+  left_join(
+    lsoa2019_pop,
+    by = join_by(
+      LSOA11CD
+    )
+  ) |> 
+  summarise(
+    population = sum(population),
+    .by = c(
+      ICB22CDH, 
+      quintile_name
+    )
+  ) |> 
+  mutate(
+    denominator = sum(population),
+    .by = ICB22CDH
+  ) |> 
+  rename(
+    numerator = "population",
+    org = "ICB22CDH"
+  ) |> 
+  mutate(
+    value = numerator / denominator,
+    frequency = "annual calendar",
+    metric = paste0(
+      "Proportion of resident population in national deprivation quintile (",
+      quintile_name,
+      ") - IMD 2019"
+    ),
+    year = 2019
+  ) |> 
+  select(!c("quintile_name"))
+
+write.csv(
+  deprivation,
+  "data/deprivation.csv",
+  row.names = FALSE
+)
 # Capacity data sources ---------------------------------------------------
 
 ## Hospital beds
