@@ -42,9 +42,8 @@ dc_data <- list.files(
   here::here("data"), 
   full.names = TRUE
   ) |> 
-  (\(x) x[!grepl("configuration-table", x)])() |> 
+  (\(x) x[!grepl("configuration-table|modelling_data", x)])() |> 
   purrr::map_dfr(
-    # ~ read.csv(.x, encoding = "latin1")
     read.csv
   ) |> 
   select(
@@ -158,15 +157,15 @@ all_data |>
 
 ```
 
-For the annual metric (financial year), these are the number of record we have for each year (this is related to the geography the metric is published at):
+For the annual metric (financial and calendar year), these are the number of record we have for each year (this is related to the geography the metric is published at):
 
 ```{r}
 #| label: annual-metric-counts
-#| fig-height: 9
+#| fig-height: 11
 
 all_data |> 
   filter(
-    frequency == "annual financial"
+    grepl("annual", frequency)
   ) |> 
   count(domain, abbreviated_metric, year) |> 
   ggplot(
