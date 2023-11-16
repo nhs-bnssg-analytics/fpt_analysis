@@ -849,7 +849,7 @@ calculate_icb_populations <- function(raw_pops_file) {
       age_band = floor(as.numeric(age) / 10) * 10
     ) |> 
     left_join(
-      lsoa_icb_lkp,
+      lsoa_lkp_file,
       by = join_by(LSOA11CD)
     ) |> 
     summarise(
