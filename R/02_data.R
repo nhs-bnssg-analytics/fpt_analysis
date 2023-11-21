@@ -355,7 +355,179 @@ bind_rows(
 
 
 
-# GPs per population
+# NHS workforce per population
+# collecting the numerator
+url <- "https://digital.nhs.uk/data-and-information/publications/statistical/nhs-workforce-statistics"
+
+links <- obtain_links(url) |> 
+  (\(x) x[grepl(paste(month.abb, collapse = "|"), x, ignore.case = TRUE)])() |> 
+  (\(x) x[grepl("[0-9]{4}$", x)])() |> 
+  head(1) |> 
+  (\(x) paste0("https://digital.nhs.uk/", x))() |> 
+  obtain_links() |> 
+  (\(x) x[grepl("zip$", x)])() |> 
+  (\(x) x[grepl("csv", x)])()
+  
+
+file <- download_url_to_directory(
+  url = links,
+  new_directory = "Clinical workforce",
+  filename = "Latest workforce statistics.zip"
+)
+
+annual_workforce_fte <- unzip_file(
+  zip_filepath = file,
+  filename_pattern = "ICS"
+) |> 
+  filter(
+    Data.Type == "FTE"
+  ) |> 
+  mutate(
+    Date = as.Date(Date),
+    month = lubridate::month(Date),
+    year = lubridate::year(Date),
+    months_from_july = abs(7 - month)
+  ) |> 
+  filter(
+    months_from_july == min(months_from_july),
+    .by = year
+  ) |> 
+  mutate(
+    month = 7
+  ) |>
+  select(
+    "year",
+    "month",
+    org = "ICS.code",
+    "Staff.Group",
+    numerator = "Total"
+  )
+
+# collecting the denominator (populations by health areas)
+url <- "https://digital.nhs.uk/data-and-information/publications/statistical/patients-registered-at-a-gp-practice"
+
+links <- obtain_links_and_text(url) |> 
+  (\(x) x[grepl("[a-z]{,9}-[0-9]{4}", basename(x))])() |> 
+  (\(x) rlang::set_names(paste0("https://digital.nhs.uk", x),
+                         nm = names(x)))() |> 
+  (\(x) x[grepl("january|april|july|october", basename(x), ignore.case = TRUE)])() |> 
+  purrr::lmap(
+    ~ list(
+      obtain_links_and_text(
+        .x
+      )
+    )
+  ) |> 
+  unlist() |> 
+  (\(x) rlang::set_names(x, nm = sub("^.*?([A-Z])", "\\1", names(x))))() |> 
+  (\(x) rlang::set_names(x, nm = gsub("[\n].*$", "", names(x))))() |>
+  (\(x) x[grepl("zip$|csv$", x)])() |> 
+  (\(x) x[!grepl("lsoa|males|tall", basename(x))])() |> 
+  (\(x) x[grepl("ICB|CCG", names(x))])() |> 
+  # (\(x) x[grepl("all|ccg", x)])() |> 
+  tibble::enframe() |> 
+  mutate(
+    mnth = stringr::str_extract(
+      name,
+      pattern = paste(c(month.name, month.abb), collapse = "|")
+    ),
+    mnth = substr(mnth, 1, 3),
+    year = stringr::str_extract(
+      name,
+      pattern = "[0-9]{4}"
+    )
+  ) |> 
+  mutate(
+    n = n(),
+    .by = c(mnth, year)
+  ) |> 
+  mutate(
+    include = case_when(
+      n == 1 ~ TRUE,
+      .default = grepl("Single", name)
+    )
+  ) |> 
+  filter(
+    include == TRUE
+  ) |> 
+  mutate(
+    name = paste(
+      mnth,
+      year,
+      sep = "-"
+    )
+  ) |> 
+  select(c("name", "value")) |> 
+  tibble::deframe()
+
+files <- purrr::lmap(
+  links,
+  ~ as.list(
+    check_and_download(
+      filepath = paste0(
+        "data-raw/Health populations/", 
+        names(.x),
+        " ",
+        basename(.x)),
+      url = .x
+    )
+  )
+)
+
+health_pop_denominators <- purrr::map_df(
+  files,
+  summarise_health_pop_files
+) |> 
+  filter(health_org_code != "UNKNOWN")
+
+
+org_lkp <- unique(health_pop_denominators$health_org_code) |> 
+  attach_icb_to_org()
+
+quarterly_health_pop_denominators <- health_pop_denominators |> 
+  left_join(
+    org_lkp,
+    by = join_by(
+      health_org_code
+    )
+  ) |> 
+  summarise(
+    denominator = sum(denominator),
+    .by = c(
+      icb_code, year, month
+    )
+  ) |> 
+  rename(
+    org = "icb_code"
+  )
+
+workforce_metrics <- annual_workforce_fte |> 
+  inner_join(
+    quarterly_health_pop_denominators,
+    by = join_by(
+      org,
+      year, 
+      month
+    )
+  ) |> 
+  mutate(
+    metric = paste0(
+      "Workforce FTEs per 10,000 population (",
+      Staff.Group,
+      ")"
+    ),
+    value = numerator / (denominator / 1e4),
+    frequency = "annual calendar"
+  ) |> 
+  select(!c("Staff.Group", "month"))
+
+write.csv(
+  workforce_metrics,
+  "data/nhs_workforce_metrics.csv",
+  row.names = FALSE
+)
+
+# General practice workforce
 quarterly_gps_per_population <- fingertipsR::fingertips_data(
   IndicatorID = 93966,
   AreaTypeID = 221
