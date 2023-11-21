@@ -389,6 +389,10 @@ quarterly_gps_per_population <- fingertipsR::fingertips_data(
     denominator = "Denominator",
     value = "Value",
     "frequency"
+  ) |> 
+  convert_ons_to_health_code(
+    area_type = "icb",
+    latest_codes_used = TRUE
   )
 
 annual_gps_per_population <- quarterly_to_annual_mean(
