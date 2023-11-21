@@ -11,7 +11,24 @@ obtain_links <- function(url) {
   return(links)
 }
 
-
+obtain_links_and_text <- function(url){
+  # Create an html document from the url
+  webpage <- xml2::read_html(url)
+  # Extract the URLs
+  urls <- webpage %>%
+    rvest::html_nodes("a") %>%
+    rvest::html_attr("href")
+  # Extract the link text
+  links <- webpage %>%
+    rvest::html_nodes("a") %>%
+    rvest::html_text()
+  
+  links <- rlang::set_names(
+    urls,
+    nm = links
+  )
+  return(links)
+}
 # downloading files -------------------------------------------------------
 
 download_url_to_directory <- function(url, new_directory, filename) {
@@ -182,6 +199,50 @@ unzip_summarise_write_data <- function(zipped_csv_file, temp_file, file_director
   }
   
   return(TRUE)
+}
+
+unzip_file <- function(zip_filepath, filename_pattern) {
+  temp <- tempfile()
+  
+  if (!missing(filename_pattern)) {
+    zipped_files <- unzip(
+      zipfile = zip_filepath, 
+      list = TRUE
+    ) |> 
+      filter(
+        grepl(filename_pattern, Name)
+      ) |> 
+      pull(Name)
+    
+    df <- read.csv(
+      unz(
+        zip_filepath, 
+        zipped_files
+        )
+    )
+  } else {
+    zipped_files <- unzip(
+      zipfile = zip_filepath, 
+      list = TRUE
+    ) |> 
+      filter(
+        grepl("csv$", Name)
+      ) |> 
+      pull(Name)
+    
+    df <- zipped_files |> 
+      purrr::map(
+        ~ read.csv(
+          unz(
+            zip_filepath,
+            .x
+          )
+        )
+      )
+    
+  }
+  unlink(temp)
+  return(df)
 }
 
 # reformat no criteria to reside data
@@ -1318,6 +1379,68 @@ clean_names <- function(data) {
   return(data)
 }
 
+
+summarise_health_pop_files <- function(filepath) {
+  if (grepl("csv$", filepath)) {
+    pops <- read.csv(filepath)
+    
+    if ("ORG_TYPE" %in% names(pops)) {
+      pops <- pops |> 
+        filter(
+          ORG_TYPE %in% c("CCG", "ICB"),
+          AGE == "ALL",
+          SEX == "ALL"
+        )
+      
+    }
+  } else if (grepl("zip$", filepath)) {
+    pops <- unzip_file(
+      filepath,
+      "prac"
+    ) |> 
+      filter(
+        ORG_TYPE %in% c("CCG", "ICB"),
+        AGE == "ALL",
+        SEX == "ALL"
+      )
+  }
+  
+  possible_ccg_subicb_fields <- c(
+    "CCG_CODE",
+    "NHSE_CCG_CODE",
+    "ORG_CODE"
+  )
+  
+  possible_denominator_fields = c(
+    "NUMBER_OF_PATIENTS",
+    "TOTAL_ALL"
+  )
+  pops <- pops |> 
+    rename(
+      health_org_code = any_of(possible_ccg_subicb_fields),
+      denominator = any_of(possible_denominator_fields)
+    ) |> 
+    summarise(
+      denominator = sum(denominator),
+      .by = health_org_code
+    ) |> 
+    mutate(
+      year = as.integer(
+        stringr::str_extract(
+          filepath,
+          "[0-9]{4}"
+        )
+      ),
+      month = match(
+        substr(basename(filepath), 1, 3),
+        month.abb
+      )
+    )
+  
+  return(pops)
+}
+
+
 # aggregation tasks -------------------------------------------------------
 
 # takes a mean of numerator and denominator for each month in the quarter and
@@ -1530,8 +1653,6 @@ quarterly_to_annual_sum <- function(data, year_type) {
   
   return(data)
 }
-
-
 
 # lookups -----------------------------------------------------------------
 # scrapes table from NHS Shared Business services. 
