@@ -1,24 +1,9 @@
 ---
-title: "Demand and Capacity metrics and associations with performance"
+title: "Description"
 format: html
 execute: 
   echo: false
 ---
-
-## Introduction and aims
-
-The aims of this project are to use publicly available data to find associations between performance within Integrated Care Systems, and different demand and capacity metrics.
-
-The strong associations can then be explored as to whether there are actions that can be taken to improve performance.
-
-### Project aims
-
-A summary of the aims of the project (which will need refining over time!):
-
--   Identify associations between metrics that affect performance
--   Enable long term decision making
--   Forecast future performance based on different scenarios
--   Open source and reproducible code
 
 ## Data description
 
@@ -60,17 +45,7 @@ dc_data <- list.files(
 
 ```
 
-### Challenges
 
-There are some challenges in standardising the publicly available data. Data are published for different geographies, at different frequencies, for different time periods.
-
-Geographies pose the biggest challenge. The aim of this project is to predict performance at ICB geography from the input metrics. The input metrics are published at geographies and locations such as provider trust (including different sites within trusts), STP, CCG, PCT, ICB, Region, Local Authority. Within a metric, the geography can change over time - for example, reporting at CCG changes to ICB when CCGs were abolished.
-
-The next geography challenge is how data published at a smaller geography gets assigned to a larger geography. A simple example is for NHS Provider Trusts. The simple method is to assign the Trust the ICB that the Trust is located within. Undoubtedly, the Trust will be treating patients that reside outside the ICB it is located in, so policies created externally to the Trust will be having an effect on its performance (DISCUSSIONAL POINT).
-
-Frequencies pose a different challenge. Data for the metrics used are published for different frequencies. These are daily, monthly, quarterly and annually (both calendar and financial years). As the modelling is at a high level with the aim to inform long-term planning performing the modelling at an annual basis is optimum. Generally, aggregating higher frequency metrics is a simple process of summing the numerator and the denominator, and then recalculating the metric. For some metrics this is more complicated. For example, the "No Criteria to Reside" metric, which publishes daily figures, provides information on the number of patients in each trust each day that no longer meet the criteria to reside (denominator), and of those patients, the number that remain in hospital (numerator). Aggregating this information up to annual figures by ICB will lose lots of the variation and detail that the daily figures provide, and potentially reduce their usefulness to the modelling.
-
-Finally, time periods provide a challenge. Some metrics begin and end at different times, which makes it more difficult to be able to use them to predict into the future.
 
 ### Data description
 

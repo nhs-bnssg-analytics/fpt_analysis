@@ -1,3 +1,26 @@
 project:
   type: website
   output-dir: docs
+
+website:
+  title: "Spatio-temporal demand and capacity relationships with performance"
+  sidebar:
+    style: "docked"
+    background: "white"
+    logo: outputs/logo.png
+    search: true
+    contents:
+      - section: "Introduction"
+        contents:
+          - outputs/introduction_scope.qmd
+          - outputs/introduction_introduction_and_aims.qmd
+      - section: "Data"
+        contents:
+          - outputs/data_challenges.qmd
+          - outputs/data_description.qmd
+
+format:
+  html:
+    theme: cosmo
+    css: styles.css
+    toc: true
