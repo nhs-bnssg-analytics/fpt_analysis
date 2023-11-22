@@ -1,7 +1,6 @@
 ---
 title: "Spatio-temporal demand and capacity relationships with performance"
-format: docx
-reference-doc: Blank-Template-NHS75.docx
+format: html
 ---
 
 ## Background

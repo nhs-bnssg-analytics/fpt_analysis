@@ -1,7 +1,6 @@
 ---
 title: "Demand and Capacity metrics and associations with performance"
 format: html
-editor: visual
 execute: 
   echo: false
 ---

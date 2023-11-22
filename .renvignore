@@ -2,7 +2,11 @@
 .Rhistory
 .RData
 .Ruserdata
+.png
+.html
 
 data/
 data-raw/
 /.quarto/
+docs/
+
