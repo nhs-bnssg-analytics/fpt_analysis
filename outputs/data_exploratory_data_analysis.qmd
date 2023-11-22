@@ -1,0 +1,7 @@
+---
+title: "Exploratory data analysis"
+format: html
+execute: 
+  echo: false
+---
+
