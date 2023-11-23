@@ -1014,7 +1014,7 @@ reformat_bed_availability_data <- function(filepath, bed_type) {
           year_from_financial_year
         ),
         metric = paste(
-          "bed availability",
+          "Bed availability",
           bed_type,
           category,
           sep = " - "

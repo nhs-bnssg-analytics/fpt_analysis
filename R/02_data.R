@@ -245,19 +245,24 @@ orgs <- quarterly_overnight_beds |>
   pull(org) |> 
   unique()
 
-org_lkp <- attach_icb_to_org(orgs)
+org_lkp <- attach_icb_to_org(orgs) |> 
+  mutate(
+    divisor = n(),
+    .by = health_org_code
+  )
 
 quarterly_overnight_beds <- quarterly_overnight_beds |> 
   left_join(
     org_lkp,
     by = join_by(
       org == health_org_code
-    )
+    ),
+    relationship = "many-to-many"
   ) |> 
   summarise(
     across(
       c(numerator, denominator),
-      ~ sum(.x, na.rm = TRUE)
+      ~ sum(.x / divisor, na.rm = TRUE) # some health_orgs attributed to multiple icbs, so these are split equally between the icbs
     ),
     .by = c(year, quarter, icb_code, metric, frequency)
   ) |> 
@@ -318,19 +323,24 @@ orgs <- quarterly_day_beds |>
   pull(org) |> 
   unique()
 
-org_lkp <- attach_icb_to_org(orgs)
+org_lkp <- attach_icb_to_org(orgs) |> 
+  mutate(
+    divisor = n(),
+    .by = health_org_code
+  )
 
 quarterly_day_beds <- quarterly_day_beds |> 
   left_join(
     org_lkp,
     by = join_by(
       org == health_org_code
-    )
+    ),
+    relationship = "many-to-many"
   ) |> 
   summarise(
     across(
       c(numerator, denominator),
-      ~ sum(.x, na.rm = TRUE)
+      ~ sum(.x / divisor, na.rm = TRUE) # some health_orgs attributed to multiple icbs, so these are split equally between the icbs
     ),
     .by = c(year, quarter, icb_code, metric, frequency)
   ) |> 
