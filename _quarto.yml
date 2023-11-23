@@ -18,6 +18,7 @@ website:
         contents:
           - outputs/data_challenges.qmd
           - outputs/data_description.qmd
+          - outputs/data_exploratory_data_analysis.qmd
 
 format:
   html:
