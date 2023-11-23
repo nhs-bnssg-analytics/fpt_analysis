@@ -1867,14 +1867,17 @@ attach_icb_to_org <- function(health_org) {
         health_org_successors
       )
     ) |> 
+    # creates table of health_org_code and successor_code
     tidyr::unnest(
       cols = successor_code
     ) |> 
+    # use successor code for looking up ICB code if it exists
     mutate(
       code_for_lkp = case_when(
         is.na(successor_code) ~ health_org_code,
         .default = successor_code
       ),
+      # idenify parent codes (could be more than 1 for each code_for_lkp)
       parent_code = purrr::map(
         code_for_lkp,
         health_org_lookup
@@ -1884,6 +1887,8 @@ attach_icb_to_org <- function(health_org) {
       cols = parent_code
     ) |> 
     distinct() |> 
+    # where health_org_code is an icb_code, then keep it, otherwise keep the
+    # parent_code if it is an icb_code, otherwise make it NA
     mutate(
       icb_code = case_when(
         health_org_code %in% icb_codes ~ health_org_code,
@@ -1891,12 +1896,18 @@ attach_icb_to_org <- function(health_org) {
         .default = NA_character_
       )
     ) |> 
+    # mark health_org_codes for retaining where it has at least 1 icb_code
+    # identified
     mutate(
       retain = sum(!is.na(icb_code)),
       .by = health_org_code
     ) |> 
     select(!c("successor_code", "code_for_lkp")) |> 
     distinct() |> 
+    # remove records where the applicable icb_code is identified for a
+    # health_org_code in a separate record (eg, a health_org may have 3 records
+    # at this point, and the first one is the one with a valid icb_code; this
+    # step will remove the 2nd and 3rd record)
     anti_join(
       tibble(
         icb_code = NA,
@@ -1905,6 +1916,8 @@ attach_icb_to_org <- function(health_org) {
       by = join_by(icb_code, retain)
     ) |> 
     select(!c("retain")) |> 
+    # search for icb by postcode of health_org if there is no valid icb_code
+    # identified by the previous method
     mutate(
       icb_code = map2_chr(
         .x  = icb_code,

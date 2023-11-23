@@ -56,6 +56,9 @@ The metrics collated for the project are described in the table below:
 
 meta_table <- read.csv(here::here("data/configuration-table.csv"),
                        encoding = "latin1") |> 
+  filter(
+    status != "remove"
+  ) |> 
   select("domain", "metric") |> 
   arrange(domain, metric)
   
@@ -80,7 +83,7 @@ The frequencies these metrics have been collected at are displayed below:
 #| warning: false
 
 all_data <- dc_data |> 
-  left_join(
+  inner_join(
     meta_table,
     by = join_by(metric),
     relationship = "many-to-one"

@@ -5,12 +5,30 @@ execute:
   echo: false
 ---
 
-There are some challenges in standardising the publicly available data. Data are published for different geographies, at different frequencies, for different time periods.
+## Limitations
 
-Geographies pose the biggest challenge. The aim of this project is to predict performance at ICB geography from the input metrics. The input metrics are published at geographies and locations such as provider trust (including different sites within trusts), STP, CCG, PCT, ICB, Region, Local Authority. Within a metric, the geography can change over time - for example, reporting at CCG changes to ICB when CCGs were abolished.
+There are limitations with the data processing related to:
 
-The next geography challenge is how data published at a smaller geography gets assigned to a larger geography. A simple example is for NHS Provider Trusts. The simple method is to assign the Trust the ICB that the Trust is located within. Undoubtedly, the Trust will be treating patients that reside outside the ICB it is located in, so policies created externally to the Trust will be having an effect on its performance (DISCUSSIONAL POINT).
+### Geographies
 
-Frequencies pose a different challenge. Data for the metrics used are published for different frequencies. These are daily, monthly, quarterly and annually (both calendar and financial years). As the modelling is at a high level with the aim to inform long-term planning performing the modelling at an annual basis is optimum. Generally, aggregating higher frequency metrics is a simple process of summing the numerator and the denominator, and then recalculating the metric. For some metrics this is more complicated. For example, the "No Criteria to Reside" metric, which publishes daily figures, provides information on the number of patients in each trust each day that no longer meet the criteria to reside (denominator), and of those patients, the number that remain in hospital (numerator). Aggregating this information up to annual figures by ICB will lose lots of the variation and detail that the daily figures provide, and potentially reduce their usefulness to the modelling.
+Data are published at different geographies. While some geographies map coterminously with Integrated Care System geographies, some approximate methods of aggregation are needed for the ones that don't.
 
-Finally, time periods provide a challenge. Some metrics begin and end at different times, which makes it more difficult to be able to use them to predict into the future.
+### Time periods of published data
+
+Data are published at different time periods and frequencies. Data are generally published based on regulatory requirements. Metrics can change over time as well. Therefore, metrics may exist for a few years and then stop being published. Equally, metrics may only be introduced very recently.
+
+### Frequencies of published data
+
+Metrics can be published by month, quarter, and year (both financial or calendar). The outputs of the project are intended to inform long term strategic planning, so the shorter frequency metrics are aggregated up to an annual time period to allow for annual predictions.
+
+### Comparable metrics
+
+Data are generally published as raw figures. Without context, it is difficult to evaluate whether a figure is high or low. For added context, the metric needs to be calculated with some sort of denominator. This enables comparison with other areas. The choice of denominator determines the metric value and it can have a large influence on how the metric differs between areas. The description of the metric, along with the denominator and numerator description, can be found in the [configuration-table.csv](https://github.com/nhs-bnssg-analytics/d_and_c/blob/master/data/configuration-table.csv) file.
+
+### Interpretation
+
+There are challenges around interpretation of metrics. The value of a metric can be influenced by many factors. To ensure that the outputs are practical, these factors need to be considered at all stages to ensure the metrics are most useful to the end user.
+
+### COVID-19 pandemic
+
+The pandemic period will heavily influence a lot of metrics. Each metric may have been influenced in different ways and not represent business-as-usual, therefore relationships between metrics may drastically differ during that period from the non-pandemic period. This will impact any predictive model.
