@@ -1,0 +1,122 @@
+.title {
+    font-size: 30;
+    color: #003087;
+    font-family: Arial;
+    font-weight: 600;
+  }
+  
+  h1 {
+    page-break-before: always;
+    font-size: 26;
+    color: #003087;
+    font-weight: 600;
+    font-family: Arial;
+  }
+  h1.title, .title.h1 {
+    /*margin-top: 50%;*/
+    text-align: left;
+    
+  }
+  
+  h2 {
+    font-size: 18;
+    color: #003087;
+    font-weight: 600;
+    font-family: Arial;
+  }
+  
+  h3 {
+    font-size: 14;
+    color: #003087;
+    font-weight: 600;
+    font-family: Arial;
+  }
+  
+  h4 {
+    font-size: 12;
+    color: #003087;
+    font-weight: 600;
+    font-family: Arial;
+  }
+  
+  .header-section-number {
+    font-size: 26;
+    color: #003087;
+    font-weight: 600;
+    font-family: Arial;
+  }
+  
+  .table-fixed-header tbody{
+    overflow-y: auto;
+    height:500px;
+    width:100%;
+    
+    
+  }
+  
+  /* Add styles for the main caption class */
+  .table-fixed-header .main-caption {
+    font-size: 20px;  /* Adjust the font size */
+    font-weight: bold; /* Add bold style */
+    color: #003087;  /* Change the text color */
+    text-align: left;
+    padding-bottom: 5px;
+    padding-top: 5px;
+       }
+  
+  
+  /* Override the height for the specific table */
+  .special-table tbody {
+    height: auto; /* or any other value that suits your needs */
+    table-layout: fixed; 
+    width:730px;
+  }
+  
+  .table-fixed-header thead tr{
+    position: sticky; /* make the table heads sticky */
+    top: 0px; /* table head will be placed from the top of the table and sticks to it */
+  }
+  
+  /* Set font family, font size, and equal column widths for the whole table */
+  .table-fixed-header {
+    font-family: Arial, sans-serif;
+    font-size: 16px;
+    table-layout: fixed;
+    width: 730px;
+  }
+  
+  
+  /* Equal column widths for both headers and cells */
+  .table-fixed-header th,
+  .table-fixed-header td {
+    table-layout: fixed; 
+    width: 730px; /* Reset any existing width */
+  }
+  
+  /* Center align all table headers */
+  .table-fixed-header th {
+    text-align: center;
+  }
+  
+  /* Left align the first column in the table */
+  .table-fixed-header td:first-child {
+    text-align: left;
+  }
+  
+  /* Right align all other columns in the table */
+  .table-fixed-header td:not(:first-child) {
+    text-align: right;
+  }
+  
+  .infobox {
+    padding: 0.5em;
+    margin-bottom: 2px;
+    border: 1px solid #D9DADB;
+    background: #F8F9FA ;
+    font-size: 12;
+    font-family: Arial;
+  }
+  
+  .callout {
+    page-break-inside: avoid;
+  }

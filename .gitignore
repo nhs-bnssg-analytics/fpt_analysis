@@ -4,6 +4,6 @@
 .Ruserdata
 .docx
 
-data/
+/data/
 data-raw/
 /.quarto/
