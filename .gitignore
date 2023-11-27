@@ -2,6 +2,7 @@
 .Rhistory
 .RData
 .Ruserdata
+.docx
 
 data/
 data-raw/

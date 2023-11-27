@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Spatio-temporal demand and capacity relationships with performance - Exploratory data analysis</title>
+<title>Spatio-temporal demand and capacity relationships with performance - Scope</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -23,28 +23,28 @@ ul.task-list li input[type="checkbox"] {
 </style>
 
 
-<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
-<script src="../site_libs/quarto-nav/headroom.min.js"></script>
-<script src="../site_libs/clipboard/clipboard.min.js"></script>
-<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
-<script src="../site_libs/quarto-search/fuse.min.js"></script>
-<script src="../site_libs/quarto-search/quarto-search.js"></script>
-<meta name="quarto:offset" content="../">
-<script src="../site_libs/quarto-html/quarto.js"></script>
-<script src="../site_libs/quarto-html/popper.min.js"></script>
-<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
-<script src="../site_libs/quarto-html/anchor.min.js"></script>
-<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
-<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
-<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
-  "location": "sidebar",
+  "location": "navbar",
   "copy-button": false,
   "collapse-after": 3,
-  "panel-placement": "start",
-  "type": "textbox",
+  "panel-placement": "end",
+  "type": "overlay",
   "limit": 20,
   "language": {
     "search-no-results-text": "No results",
@@ -64,16 +64,40 @@ ul.task-list li input[type="checkbox"] {
 <link rel="stylesheet" href="styles.css">
 </head>
 
-<body class="nav-sidebar docked">
+<body class="nav-sidebar docked nav-fixed">
 
 <div id="quarto-search-results"></div>
   <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg navbar-dark ">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">Spatio-temporal demand and capacity relationships with performance</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/nhs-bnssg-analytics/d_and_c" rel="" target=""><i class="bi bi-github" role="img" aria-label="GitHub">
+</i> 
+ <span class="menu-text"></span></a>
+  </li>  
+</ul>
+            <div class="quarto-navbar-tools">
+</div>
+          </div> <!-- /navcollapse -->
+      </div> <!-- /container-fluid -->
+    </nav>
   <nav class="quarto-secondary-nav">
     <div class="container-fluid d-flex">
       <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
-      <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../outputs/data_challenges.html">Data</a></li><li class="breadcrumb-item"><a href="../outputs/data_exploratory_data_analysis.html">Exploratory data analysis</a></li></ol></nav>
+      <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../outputs/Introduction/index.html">Introduction</a></li></ol></nav>
       <a class="flex-grow-1" role="button" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
       </a>
       <button type="button" class="btn quarto-search-button" aria-label="" onclick="window.quartoOpenSearch();">
@@ -83,12 +107,12 @@ ul.task-list li input[type="checkbox"] {
   </nav>
 </header>
 <!-- content -->
-<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
   <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal sidebar-navigation docked overflow-auto">
     <div class="pt-lg-2 mt-2 text-left sidebar-header">
-      <a href="../index.html" class="sidebar-logo-link">
-      <img src="../outputs/logo.png" alt="" class="sidebar-logo py-0 d-lg-inline d-none">
+      <a href="../../index.html" class="sidebar-logo-link">
+      <img src="../../outputs/logo.png" alt="" class="sidebar-logo py-0 d-lg-inline d-none">
       </a>
       </div>
         <div class="mt-2 flex-shrink-0 align-items-center">
@@ -100,7 +124,7 @@ ul.task-list li input[type="checkbox"] {
     <ul class="list-unstyled mt-1">
         <li class="sidebar-item sidebar-item-section">
       <div class="sidebar-item-container"> 
-            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" aria-expanded="true">
+            <a href="../../outputs/Introduction/index.html" class="sidebar-item-text sidebar-link active">
  <span class="menu-text">Introduction</span></a>
           <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" aria-expanded="true" aria-label="Toggle section">
             <i class="bi bi-chevron-right ms-2"></i>
@@ -109,13 +133,7 @@ ul.task-list li input[type="checkbox"] {
       <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../outputs/introduction_scope.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Scope</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../outputs/introduction_introduction_and_aims.html" class="sidebar-item-text sidebar-link">
+  <a href="../../outputs/Introduction/introduction_introduction_and_aims.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Introduction and aims</span></a>
   </div>
 </li>
@@ -132,19 +150,19 @@ ul.task-list li input[type="checkbox"] {
       <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../outputs/data_challenges.html" class="sidebar-item-text sidebar-link">
+  <a href="../../outputs/Data/data_challenges.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Challenges</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../outputs/data_description.html" class="sidebar-item-text sidebar-link">
+  <a href="../../outputs/Data/data_description.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Description</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../outputs/data_exploratory_data_analysis.html" class="sidebar-item-text sidebar-link active">
+  <a href="../../outputs/Data/data_exploratory_data_analysis.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Exploratory data analysis</span></a>
   </div>
 </li>
@@ -160,7 +178,10 @@ ul.task-list li input[type="checkbox"] {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#correlation-plots" id="toc-correlation-plots" class="nav-link active" data-scroll-target="#correlation-plots">Correlation plots</a></li>
+  <li><a href="#background" id="toc-background" class="nav-link active" data-scroll-target="#background">Background</a></li>
+  <li><a href="#project-scope" id="toc-project-scope" class="nav-link" data-scroll-target="#project-scope">Project scope</a></li>
+  <li><a href="#questions-this-work-can-support" id="toc-questions-this-work-can-support" class="nav-link" data-scroll-target="#questions-this-work-can-support">Questions this work can support</a></li>
+  <li><a href="#proposed-outputs" id="toc-proposed-outputs" class="nav-link" data-scroll-target="#proposed-outputs">Proposed outputs</a></li>
   </ul>
 </nav>
     </div>
@@ -169,7 +190,7 @@ ul.task-list li input[type="checkbox"] {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Exploratory data analysis</h1>
+<h1 class="title">Scope</h1>
 </div>
 
 
@@ -184,40 +205,21 @@ ul.task-list li input[type="checkbox"] {
 
 </header>
 
-<section id="correlation-plots" class="level2">
-<h2 class="anchored" data-anchor-id="correlation-plots">Correlation plots</h2>
-<p>These plots highlight which of the variables are correlated.</p>
-<div class="tabset-margin-container"></div><div class="panel-tabset">
-<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-1-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-1" role="tab" aria-controls="tabset-1-1" aria-selected="true" aria-current="page">Capacity</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-2" role="tab" aria-controls="tabset-1-2" aria-selected="false">Demand</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-3-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-3" role="tab" aria-controls="tabset-1-3" aria-selected="false">Performance</a></li></ul>
-<div class="tab-content">
-<div id="tabset-1-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-1-1-tab">
-<p><img src="data_exploratory_data_analysis_files/figure-html/corr-plots-1.png" class="img-fluid" width="864"></p>
-<p>The following either provide too little data or are highly correlated with another metric, and have therefore been removed:</p>
-<ul>
-<li><p>ESR absence (pct organisation type)</p></li>
-<li><p>Bed availability - day - Learning Disabilities</p></li>
-<li><p>Bed availability - day - Maternity</p></li>
-<li><p>Bed availability - day - Mental Illness</p></li>
-<li><p>Bed availability - day - Total</p></li>
-<li><p>Bed availability - overnight - Total</p></li>
-<li><p>Workforce FTEs per 10,000 population (Total)</p></li>
-</ul>
-</div>
-<div id="tabset-1-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-1-2-tab">
-<p><img src="data_exploratory_data_analysis_files/figure-html/corr-plots-2.png" class="img-fluid" width="864"></p>
-<p>The following either provide too little data or are highly correlated with another metric, and have therefore been removed:</p>
-<ul>
-<li><p>Last BP reading of patients (&lt;80 yrs, with hypertension), in the last 12 months is &lt;= 140/90 mmHg (denominator incl.&nbsp;PCAs)</p></li>
-<li><p>Smoking status of patients with certain conditions recorded in the last 12 months (denominator incl.&nbsp;PCAs)</p></li>
-<li><p>Estimated prevalence of common mental disorders: % of population aged 16 &amp; over</p></li>
-<li><p>Estimated prevalence of common mental disorders: % of population aged 65 &amp; over</p></li>
-</ul>
-</div>
-<div id="tabset-1-3" class="tab-pane" role="tabpanel" aria-labelledby="tabset-1-3-tab">
-<p><img src="data_exploratory_data_analysis_files/figure-html/corr-plots-3.png" class="img-fluid" width="864"></p>
-</div>
-</div>
-</div>
+<section id="background" class="level2">
+<h2 class="anchored" data-anchor-id="background">Background</h2>
+<p>Understanding system demand and capacity is essential for operational and strategic healthcare planning. A common approach to demand and capacity planning is spreadsheet modelling and simulating patient flow through the health system. Within each Integrated Care System (ICS) these kinds of model are possible to make, and often already exist. It is much harder to do this at a regional level because the structures and population in each ICS are very different to one another. A tool that is developed to try and capture the intricacies and detail in one ICS is therefore likely to be unrepresentative and open to challenge if used to inform local decision making in another. Additionally, each ICS has developed their own bespoke tools to understand demand and capacity, which already supports local decision making, particularly in the acute setting.</p>
+</section>
+<section id="project-scope" class="level2">
+<h2 class="anchored" data-anchor-id="project-scope">Project scope</h2>
+<p>This project aims to understand demand and capacity in a novel way. Using temporal data on demand (e.g., population in older age groups) and capacity (e.g., social care funding) at ICS geography as model inputs, this project aims to predict performance metrics (e.g., No Criteria to Reside remaining in hospital) using modern spatio-temporal modelling techniques. The project would use publicly available data to generate predictions for each ICS. It would also identify which input metrics have the biggest influence on the performance metric being predicted.</p>
+</section>
+<section id="questions-this-work-can-support" class="level2">
+<h2 class="anchored" data-anchor-id="questions-this-work-can-support">Questions this work can support</h2>
+<p>Conceptually, the performance metrics should be impacted by the demand and capacity handles. Some of the demand and capacity metrics are ones that can be influenced by policy and investment. This work should be able to identify significant associations between the demand and capacity metrics and the resulting performance. This will help support high-level prioritisation for investment and policy making. For example, if it can be shown there is a strong relationship between social care funding and reducing No Criteria to Reside patients, this can be used to make a strong case for increasing social care funding, if this will be more than offset by the acute cost saving.</p>
+</section>
+<section id="proposed-outputs" class="level2">
+<h2 class="anchored" data-anchor-id="proposed-outputs">Proposed outputs</h2>
+<p>The outputs from this work would allow the ICSs to see the relationships between their demand and capacity metrics and performance. The baseline modelling will first produce a ‘do nothing’ performance trajectory, based on current/expected levels of demand and capacity. It will then allow users, through ‘what-if’ scenario analysis, to sensitivity test the models for future years to understand how changes to the input metrics will affect future predictions – thus allowing them to inform more optimal decisions on future spend and resource allocation.</p>
 
 
 </section>
