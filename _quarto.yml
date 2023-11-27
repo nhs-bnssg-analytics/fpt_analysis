@@ -4,21 +4,21 @@ project:
 
 website:
   title: "Spatio-temporal demand and capacity relationships with performance"
+  navbar:
+    right:
+      - icon: github
+        href: https://github.com/nhs-bnssg-analytics/d_and_c
+        aria-label: GitHub
   sidebar:
     style: "docked"
     background: "white"
     logo: outputs/logo.png
     search: true
-    contents:
-      - section: "Introduction"
-        contents:
-          - outputs/introduction_scope.qmd
-          - outputs/introduction_introduction_and_aims.qmd
-      - section: "Data"
-        contents:
-          - outputs/data_challenges.qmd
-          - outputs/data_description.qmd
-          - outputs/data_exploratory_data_analysis.qmd
+    contents: 
+      - section: Introduction
+        contents: outputs/Introduction/*
+      - section: Data
+        contents: outputs/Data/*
 
 format:
   html:
