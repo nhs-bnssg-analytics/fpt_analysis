@@ -18,7 +18,7 @@ website:
     background: "white"
     search: true
     contents: 
-      - outputs/index.qmd
+      - outputs/01_index.qmd
       - outputs/introduction_introduction_and_aims.qmd
       - section: Data
         contents: outputs/Data/*
