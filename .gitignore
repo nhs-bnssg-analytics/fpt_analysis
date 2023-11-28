@@ -2,8 +2,8 @@
 .Rhistory
 .RData
 .Ruserdata
-.docx
 
+/outputs/*.docx
 /data/
 data-raw/
 /.quarto/

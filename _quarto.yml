@@ -18,10 +18,13 @@ website:
     background: "white"
     search: true
     contents: 
-      - outputs/01_index.qmd
+      - text: "Scope"
+        file: outputs/01_index.qmd
       - outputs/introduction_introduction_and_aims.qmd
       - section: Data
         contents: outputs/Data/*
+      - section: Modelling
+        contents: outputs/Modelling/*
 
 format:
   html:
