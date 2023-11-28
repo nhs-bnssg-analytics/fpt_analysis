@@ -8,7 +8,7 @@ publicly available data.
 **NOTE, this is currently work in progress**
 
 See a description of the project and the findings as it progresses
-[here](https://nhs-bnssg-analytics.github.io/d_and_c/outputs/).
+[here](https://nhs-bnssg-analytics.github.io/d_and_c/outputs/01_index.html).
 
 ## Using this repository
 
