@@ -1,0 +1,18 @@
+---
+title: "Data preparation for modelling"
+order: 1
+---
+
+## Data structure
+
+The project aims to allow us to predict the value of a performance metric in future years (1, 2, 5 years, say) for each of the ICSs. Performance metrics could be impacted by demand and capacity metrics for the same years, or potentially years building up to that year.
+
+To enable testing different models, the data structure should consider the following for each ICS and each year:
+
+* a value for each target variable (performance metrics) - required
+* a value for each predictor variable (demand and capacity metrics) - optional
+* a lagged value (1 to x years lag) for target and predictor variable - optional
+
+## Missing data
+
+The input data has missing values. The data needs more investigation as to why it is missing (it could be really missing, eg, data not submitted, or it could be a zero, eg, a zero numerator for that metric). 

@@ -1,10 +1,18 @@
-source("R/00_libraries.R")
-source("R/01_utils.R")
+metrics <- read.csv(
+  here::here("data/configuration-table.csv"),
+  encoding = "latin1"
+) |> 
+  filter(!(status %in% c("incorrect geography", "remove"))) |> 
+  select(metric)
 
-dc_data <- list.files("data", full.names = TRUE) |> 
+dc_data <- list.files(here::here("data"), full.names = TRUE) |> 
   (\(x) x[!grepl("configuration-table|modelling_data", x)])() |> 
   purrr::map_dfr(
     read.csv
+  ) |> 
+  inner_join(
+    metrics,
+    by = join_by(metric)
   ) |> 
   filter(
     grepl("annual", frequency),
@@ -20,10 +28,3 @@ dc_data <- list.files("data", full.names = TRUE) |>
     names_from = metric,
     values_from = value
   )
-
-
-write.csv(
-  dc_data,
-  "data/modelling_data.csv",
-  row.names = FALSE
-)

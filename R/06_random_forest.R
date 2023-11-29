@@ -1,33 +1,9 @@
----
-title: "Random Forest"
-order: 3
----
+source("R/00_libraries.R")
+source("R/01_utils.R")
+source("R/03_collating_data.R")
+source("R/04_modelling_utils.R")
 
-## Setup
 
-Load in the libraries and useful functions.
-
-```{r}
-#| label: libraries
-#| message: false
-source(here::here("R/00_libraries.R"))
-source(here::here("R/01_utils.R"))
-
-```
-
-Load in the pre-prepared data.
-
-```{r}
-#| label: data
-source(here::here("R/03_collating_data.R"))
-```
-
-## Preprocessing
-
-Create dataframe with target and predictor variables.
-
-```{r}
-#| label: pre-processing
 target_variable <- "Proportion of completed pathways greater than 18 weeks from referral (admitted)"
 
 dc_data <- dc_data |> 
@@ -43,55 +19,29 @@ dc_data <- dc_data |>
         c(target_variable, "Proportion of population in age band (80-89)")), ~ !is.na(.))
   )
 
-# rows that contain nas
-rowSums(is.na(dc_data))
+names(dc_data)
 
-# columns that contain nas
+rowSums(is.na(dc_data))
 colSums(is.na(dc_data)) |> 
   tibble::enframe()
-```
-
-Add lag variables.
-
-```{r}
-#| label: lag-variables
-
-dc_data <- dc_data |> 
-  mutate(
-    across(
-      matches("^ESR|^Workforce|^Bed|age band|Year 6|GPPS"),
-      .names = "lag1_{.col}",
-      .fns = lag
-    ),
-    .by = org
-  ) |> 
-  arrange(year, org)
-```
 
 
-## {tidymodels}
 
-* Split the data
-* Select the modelling method (random forest from the ranger package)
-* Impute missing data (median)
+# RF stage ----------------------------------------------------------------
 
-```{r}
-#| label: splitting-data
 set.seed(321)
+
+proportions <- train_validation_proportions(dc_data)
 
 # split dataset into train, validation and test
 splits <- rsample::initial_validation_time_split(
-  data = dc_data#,
-  # lag = 1
+  data = dc_data,
+  prop = proportions
 )
 
 data_train <- rsample::training(splits)
 data_validation <- rsample::validation(splits)
 data_test <- rsample::testing(splits)
-data_train_validation <- bind_rows(
-  data_train,
-  data_validation
-)
 
 # check when train, validation and test data start and finish
 lapply(
@@ -99,6 +49,7 @@ lapply(
   function(x) range(x$year)
 )
 
+# create train and validation set for tuning hyperparameters
 data_validation_set <- validation_set(splits)
 
 # how many cores on the machine so we can parallelise
@@ -134,20 +85,12 @@ rf_recipe <- recipe(data_train) |>
     matches("^ESR|^Workforce|^Bed|age band|Year 6|GPPS"),
     new_role = "predictor"
   ) |> 
-  step_impute_median(all_of(missing_data))# %>%
-  # step_lag(matches("^ESR|^Workforce|^Bed|age band|Year 6|GPPS"),
-  #          lag = 1:2)
-
-```
-
-Set up {tidymodels} workflow:
-
-* Add model to workflow
-* Add recipe to workflow
-
-
-```{r}
-#| label: workflow
+  step_impute_knn(all_of(missing_data)) |> 
+  step_corr(all_predictors(),
+            threshold = 0.6)
+# %>%
+# step_lag(matches("^ESR|^Workforce|^Bed|age band|Year 6|GPPS"),
+#          lag = 1:2)
 
 
 # add recipe to workflow
@@ -156,12 +99,8 @@ rf_workflow <-
   add_model(rf_mod) %>% 
   add_recipe(rf_recipe)
 
-```
-
-Tune the hyperparameters.
-
-```{r}
-#| label: tune-hyperparameters
+# show what will be tuned
+extract_parameter_set_dials(rf_mod)
 
 
 # design the tuning of the hyperparameters
@@ -173,19 +112,15 @@ rf_res <-
 
 # show the best parameters
 rf_res %>% 
-  show_best(metric = "rmse")
+  show_best(metric = "rsq")
 
 
 autoplot(rf_res)
-```
 
-
-```{r}
-#| label: predict-test-data
 # select the best parameters
 rf_best <- 
   rf_res %>% 
-  select_best(metric = "rmse")
+  select_best(metric = "rsq")
 
 
 # the last model
@@ -205,18 +140,66 @@ last_rf_fit <-
   last_rf_workflow %>% 
   last_fit(splits)
 
+
+# plot predictions vs observed --------------------------------------------
+
+# fit a model to the training data
+rf_fit <- list(
+  train = data_train
+) |> 
+  bind_rows(
+    .id = "data_type"
+  ) |> 
+  fit(
+    data = _,
+    object = last_rf_workflow
+  )
+
+# view this fitted model on estimates for the training, validation (and test) data
+list(
+  train = data_train,
+  validation = data_validation,
+  test = data_test
+) |> 
+  bind_rows(
+    .id = "data_type"
+  ) |> 
+  mutate(
+    data_type = factor(
+      data_type,
+      levels = c("test", "validation", "train")
+      )
+    ) |> 
+  add_prediction_to_data(
+    model_fit = rf_fit
+  ) |> 
+  plot_observed_expected(
+    target_variable
+  )
+
+# evaluation metrics on validation data -----------------------------------
+
+list(
+  train = data_train,
+  validation = data_validation,
+  test = data_test
+) |> 
+  purrr::map_dfr(
+    ~ linear_model_metrics(
+      data = .x,
+      model_fit = rf_fit
+    ),
+    .id = "data"
+  ) |> 
+  tidyr::pivot_wider(
+    names_from = data,
+    values_from = .estimate
+  )
+
+
 last_rf_fit %>% 
   collect_metrics()
-```
 
-
-## Variable importance
-
-```{r}
-#| label: variable-importance
 last_rf_fit %>% 
   extract_fit_parsnip() %>% 
-  vip::vip(num_features = 20)
-
-```
-
+  vip::vip(num_features = 10)
