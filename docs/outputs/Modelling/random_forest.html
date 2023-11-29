@@ -256,163 +256,62 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 class="anchored" data-anchor-id="setup">Setup</h2>
 <p>Load in the libraries and useful functions.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">source</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"R/00_libraries.R"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: package 'tidymodels' was built under R version 4.3.2</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: package 'broom' was built under R version 4.3.2</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: package 'dials' was built under R version 4.3.2</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: package 'infer' was built under R version 4.3.2</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: package 'modeldata' was built under R version 4.3.2</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: package 'parsnip' was built under R version 4.3.2</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: package 'recipes' was built under R version 4.3.2</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: package 'rsample' was built under R version 4.3.2</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: package 'tune' was built under R version 4.3.2</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: package 'workflows' was built under R version 4.3.2</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: package 'workflowsets' was built under R version 4.3.2</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: package 'yardstick' was built under R version 4.3.2</code></pre>
-</div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: package 'vip' was built under R version 4.3.2</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">source</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"R/01_utils.R"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">source</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"R/00_libraries.R"</span>))</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">source</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"R/01_utils.R"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Load in the pre-prepared data.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>metrics <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data/configuration-table.csv"</span>),</span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>                    <span class="at">encoding =</span> <span class="st">"latin1"</span>) <span class="sc">|&gt;</span> </span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span>(status <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"incorrect geography"</span>, <span class="st">"remove"</span>))) <span class="sc">|&gt;</span> </span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(metric)</span>
-<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>dc_data <span class="ot">&lt;-</span> <span class="fu">list.files</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>), <span class="at">full.names =</span> <span class="cn">TRUE</span>) <span class="sc">|&gt;</span> </span>
-<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>  (\(x) x[<span class="sc">!</span><span class="fu">grepl</span>(<span class="st">"configuration-table|modelling_data"</span>, x)])() <span class="sc">|&gt;</span> </span>
-<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>  purrr<span class="sc">::</span><span class="fu">map_dfr</span>(</span>
-<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>    read.csv</span>
-<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span> </span>
-<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">inner_join</span>(</span>
-<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>    metrics,</span>
-<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">by =</span> <span class="fu">join_by</span>(metric)</span>
-<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span> </span>
-<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(</span>
-<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a>    <span class="fu">grepl</span>(<span class="st">"annual"</span>, frequency),</span>
-<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a>    <span class="fu">grepl</span>(<span class="st">"^Q"</span>, org)</span>
-<span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a>    ) <span class="sc">|&gt;</span> </span>
-<span id="cb16-19"><a href="#cb16-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(</span>
-<span id="cb16-20"><a href="#cb16-20" aria-hidden="true" tabindex="-1"></a>    <span class="st">"metric"</span>,</span>
-<span id="cb16-21"><a href="#cb16-21" aria-hidden="true" tabindex="-1"></a>    <span class="st">"year"</span>, </span>
-<span id="cb16-22"><a href="#cb16-22" aria-hidden="true" tabindex="-1"></a>    <span class="st">"org"</span>, </span>
-<span id="cb16-23"><a href="#cb16-23" aria-hidden="true" tabindex="-1"></a>    <span class="st">"value"</span></span>
-<span id="cb16-24"><a href="#cb16-24" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span> </span>
-<span id="cb16-25"><a href="#cb16-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_wider</span>(</span>
-<span id="cb16-26"><a href="#cb16-26" aria-hidden="true" tabindex="-1"></a>    <span class="at">names_from =</span> metric,</span>
-<span id="cb16-27"><a href="#cb16-27" aria-hidden="true" tabindex="-1"></a>    <span class="at">values_from =</span> value</span>
-<span id="cb16-28"><a href="#cb16-28" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>metrics <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data/configuration-table.csv"</span>),</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>                    <span class="at">encoding =</span> <span class="st">"latin1"</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span>(status <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">"incorrect geography"</span>, <span class="st">"remove"</span>))) <span class="sc">|&gt;</span> </span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(metric)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>dc_data <span class="ot">&lt;-</span> <span class="fu">list.files</span>(here<span class="sc">::</span><span class="fu">here</span>(<span class="st">"data"</span>), <span class="at">full.names =</span> <span class="cn">TRUE</span>) <span class="sc">|&gt;</span> </span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  (\(x) x[<span class="sc">!</span><span class="fu">grepl</span>(<span class="st">"configuration-table|modelling_data"</span>, x)])() <span class="sc">|&gt;</span> </span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  purrr<span class="sc">::</span><span class="fu">map_dfr</span>(</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>    read.csv</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span> </span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">inner_join</span>(</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>    metrics,</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">by =</span> <span class="fu">join_by</span>(metric)</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span> </span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>    <span class="fu">grepl</span>(<span class="st">"annual"</span>, frequency),</span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>    <span class="fu">grepl</span>(<span class="st">"^Q"</span>, org)</span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>    ) <span class="sc">|&gt;</span> </span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(</span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>    <span class="st">"metric"</span>,</span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>    <span class="st">"year"</span>, </span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>    <span class="st">"org"</span>, </span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>    <span class="st">"value"</span></span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span> </span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_wider</span>(</span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a>    <span class="at">names_from =</span> metric,</span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a>    <span class="at">values_from =</span> value</span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="preprocessing" class="level2">
 <h2 class="anchored" data-anchor-id="preprocessing">Preprocessing</h2>
 <p>Create dataframe with target and predictor variables.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>target_variable <span class="ot">&lt;-</span> <span class="st">"Proportion of completed pathways greater than 18 weeks from referral (admitted)"</span></span>
-<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>dc_data <span class="ot">&lt;-</span> dc_data <span class="sc">|&gt;</span> </span>
-<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(</span>
-<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">all_of</span>(<span class="fu">c</span>(<span class="st">"org"</span>, <span class="st">"year"</span>, target_variable)),</span>
-<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">matches</span>(<span class="st">"^ESR|^Workforce|^Bed|age band|Year 6|GPPS"</span>)</span>
-<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span> </span>
-<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">filter</span>(</span>
-<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>    <span class="co"># retain all rows where target variable is not na</span></span>
-<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>    <span class="co"># retain all rows where we have population age group information</span></span>
-<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a>    <span class="fu">if_all</span>(<span class="fu">c</span>(target_variable, <span class="st">"Proportion of population in age band (80-89)"</span>), <span class="sc">~</span> <span class="sc">!</span><span class="fu">is.na</span>(.))</span>
-<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: Using an external vector in selections was deprecated in tidyselect 1.1.0.
-ℹ Please use `all_of()` or `any_of()` instead.
-  # Was:
-  data %&gt;% select(target_variable)
-
-  # Now:
-  data %&gt;% select(all_of(target_variable))
-
-See &lt;https://tidyselect.r-lib.org/reference/faq-external-vector.html&gt;.</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(dc_data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code> [1] "org"                                                                                    
- [2] "year"                                                                                   
- [3] "Proportion of completed pathways greater than 18 weeks from referral (admitted)"        
- [4] "Bed availability - day - General &amp; Acute"                                               
- [5] "Workforce FTEs per 10,000 population (Professionally qualified clinical staff)"         
- [6] "Workforce FTEs per 10,000 population (HCHS Doctors)"                                    
- [7] "Workforce FTEs per 10,000 population (Consultant)"                                      
- [8] "Workforce FTEs per 10,000 population (Associate Specialist)"                            
- [9] "Workforce FTEs per 10,000 population (Specialty Doctor)"                                
-[10] "Workforce FTEs per 10,000 population (Staff Grade)"                                     
-[11] "Workforce FTEs per 10,000 population (Specialty Registrar)"                             
-[12] "Workforce FTEs per 10,000 population (Core Training)"                                   
-[13] "Workforce FTEs per 10,000 population (Foundation Doctor Year 2)"                        
-[14] "Workforce FTEs per 10,000 population (Foundation Doctor Year 1)"                        
-[15] "Workforce FTEs per 10,000 population (Hospital Practitioner / Clinical Assistant)"      
-[16] "Workforce FTEs per 10,000 population (Other and Local HCHS Doctor Grades)"              
-[17] "Workforce FTEs per 10,000 population (Nurses &amp; health visitors)"                        
-[18] "Workforce FTEs per 10,000 population (Midwives)"                                        
-[19] "Workforce FTEs per 10,000 population (Ambulance staff)"                                 
-[20] "Workforce FTEs per 10,000 population (Scientific, therapeutic &amp; technical staff)"       
-[21] "Workforce FTEs per 10,000 population (Support to clinical staff)"                       
-[22] "Workforce FTEs per 10,000 population (Support to doctors, nurses &amp; midwives)"           
-[23] "Workforce FTEs per 10,000 population (Support to ambulance staff)"                      
-[24] "Workforce FTEs per 10,000 population (Support to ST&amp;T staff)"                           
-[25] "Workforce FTEs per 10,000 population (NHS infrastructure support)"                      
-[26] "Workforce FTEs per 10,000 population (Central functions)"                               
-[27] "Workforce FTEs per 10,000 population (Hotel, property &amp; estates)"                       
-[28] "Workforce FTEs per 10,000 population (Senior managers)"                                 
-[29] "Workforce FTEs per 10,000 population (Managers)"                                        
-[30] "Workforce FTEs per 10,000 population (Other staff or those with unknown classification)"
-[31] "Bed availability - overnight - General &amp; Acute"                                         
-[32] "Bed availability - overnight - Learning Disabilities"                                   
-[33] "Bed availability - overnight - Maternity"                                               
-[34] "Bed availability - overnight - Mental Illness"                                          
-[35] "Proportion of population in age band (0-9)"                                             
-[36] "Proportion of population in age band (10-19)"                                           
-[37] "Proportion of population in age band (20-29)"                                           
-[38] "Proportion of population in age band (30-39)"                                           
-[39] "Proportion of population in age band (40-49)"                                           
-[40] "Proportion of population in age band (50-59)"                                           
-[41] "Proportion of population in age band (60-69)"                                           
-[42] "Proportion of population in age band (70-79)"                                           
-[43] "Proportion of population in age band (80-89)"                                           
-[44] "Proportion of population in age band (90+)"                                             
-[45] "Year 6 prevalence of overweight (including obesity)"                                    
-[46] "% active smokers (GPPS)"                                                                
-[47] "% former smokers (GPPS)"                                                                
-[48] "ESR absence (others organisation type)"                                                 
-[49] "ESR absence (acute organisation type)"                                                  
-[50] "ESR absence (mental health organisation type)"                                          
-[51] "ESR absence (ambulance organisation type)"                                              
-[52] "ESR absence (community provider trust organisation type)"                               </code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="fu">rowSums</span>(<span class="fu">is.na</span>(dc_data))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>target_variable <span class="ot">&lt;-</span> <span class="st">"Proportion of completed pathways greater than 18 weeks from referral (admitted)"</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>dc_data <span class="ot">&lt;-</span> dc_data <span class="sc">|&gt;</span> </span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">all_of</span>(<span class="fu">c</span>(<span class="st">"org"</span>, <span class="st">"year"</span>, target_variable)),</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">matches</span>(<span class="st">"^ESR|^Workforce|^Bed|age band|Year 6|GPPS"</span>)</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span> </span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">filter</span>(</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    <span class="co"># retain all rows where target variable is not na</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    <span class="co"># retain all rows where we have population age group information</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>    <span class="fu">if_all</span>(</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>      <span class="fu">all_of</span>(</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>        <span class="fu">c</span>(target_variable, <span class="st">"Proportion of population in age band (80-89)"</span>)), <span class="sc">~</span> <span class="sc">!</span><span class="fu">is.na</span>(.))</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="co"># rows that contain nas</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="fu">rowSums</span>(<span class="fu">is.na</span>(dc_data))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>  [1] 2 3 2 2 1 4 1 2 2 4 5 2 2 1 3 3 2 4 4 1 1 3 3 4 1 1 0 0 2 2 1 3 3 2 1 3 2
  [38] 5 3 5 3 1 2 3 2 1 1 2 1 2 2 4 5 1 2 2 3 3 2 5 4 1 1 3 2 4 2 1 0 0 3 2 1 3
@@ -425,126 +324,38 @@ See &lt;https://tidyselect.r-lib.org/reference/faq-external-vector.html&gt;.</co
 [297] 4 3 3 2 2 2 6 4 5 4 3 4 2 2 4 4 2 2 2 4 1 3 4 5 4 5 2 4 4 2 5 3 3 4 1 4 4
 [334] 3 2 2</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="fu">colSums</span>(<span class="fu">is.na</span>(dc_data))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># columns that contain nas</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">colSums</span>(<span class="fu">is.na</span>(dc_data)) <span class="sc">|&gt;</span> </span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  tibble<span class="sc">::</span><span class="fu">enframe</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>                                                                                    org 
-                                                                                      0 
-                                                                                   year 
-                                                                                      0 
-        Proportion of completed pathways greater than 18 weeks from referral (admitted) 
-                                                                                      0 
-                                               Bed availability - day - General &amp; Acute 
-                                                                                      0 
-         Workforce FTEs per 10,000 population (Professionally qualified clinical staff) 
-                                                                                      0 
-                                    Workforce FTEs per 10,000 population (HCHS Doctors) 
-                                                                                      0 
-                                      Workforce FTEs per 10,000 population (Consultant) 
-                                                                                      0 
-                            Workforce FTEs per 10,000 population (Associate Specialist) 
-                                                                                      0 
-                                Workforce FTEs per 10,000 population (Specialty Doctor) 
-                                                                                      0 
-                                     Workforce FTEs per 10,000 population (Staff Grade) 
-                                                                                     28 
-                             Workforce FTEs per 10,000 population (Specialty Registrar) 
-                                                                                      0 
-                                   Workforce FTEs per 10,000 population (Core Training) 
-                                                                                      0 
-                        Workforce FTEs per 10,000 population (Foundation Doctor Year 2) 
-                                                                                      0 
-                        Workforce FTEs per 10,000 population (Foundation Doctor Year 1) 
-                                                                                      0 
-      Workforce FTEs per 10,000 population (Hospital Practitioner / Clinical Assistant) 
-                                                                                      0 
-              Workforce FTEs per 10,000 population (Other and Local HCHS Doctor Grades) 
-                                                                                     14 
-                        Workforce FTEs per 10,000 population (Nurses &amp; health visitors) 
-                                                                                      0 
-                                        Workforce FTEs per 10,000 population (Midwives) 
-                                                                                      0 
-                                 Workforce FTEs per 10,000 population (Ambulance staff) 
-                                                                                     60 
-       Workforce FTEs per 10,000 population (Scientific, therapeutic &amp; technical staff) 
-                                                                                      0 
-                       Workforce FTEs per 10,000 population (Support to clinical staff) 
-                                                                                      0 
-           Workforce FTEs per 10,000 population (Support to doctors, nurses &amp; midwives) 
-                                                                                      0 
-                      Workforce FTEs per 10,000 population (Support to ambulance staff) 
-                                                                                    160 
-                           Workforce FTEs per 10,000 population (Support to ST&amp;T staff) 
-                                                                                      0 
-                      Workforce FTEs per 10,000 population (NHS infrastructure support) 
-                                                                                      0 
-                               Workforce FTEs per 10,000 population (Central functions) 
-                                                                                      0 
-                       Workforce FTEs per 10,000 population (Hotel, property &amp; estates) 
-                                                                                      0 
-                                 Workforce FTEs per 10,000 population (Senior managers) 
-                                                                                      0 
-                                        Workforce FTEs per 10,000 population (Managers) 
-                                                                                      0 
-Workforce FTEs per 10,000 population (Other staff or those with unknown classification) 
-                                                                                      0 
-                                         Bed availability - overnight - General &amp; Acute 
-                                                                                      0 
-                                   Bed availability - overnight - Learning Disabilities 
-                                                                                     82 
-                                               Bed availability - overnight - Maternity 
-                                                                                      0 
-                                          Bed availability - overnight - Mental Illness 
-                                                                                      8 
-                                             Proportion of population in age band (0-9) 
-                                                                                      0 
-                                           Proportion of population in age band (10-19) 
-                                                                                      0 
-                                           Proportion of population in age band (20-29) 
-                                                                                      0 
-                                           Proportion of population in age band (30-39) 
-                                                                                      0 
-                                           Proportion of population in age band (40-49) 
-                                                                                      0 
-                                           Proportion of population in age band (50-59) 
-                                                                                      0 
-                                           Proportion of population in age band (60-69) 
-                                                                                      0 
-                                           Proportion of population in age band (70-79) 
-                                                                                      0 
-                                           Proportion of population in age band (80-89) 
-                                                                                      0 
-                                             Proportion of population in age band (90+) 
-                                                                                      0 
-                                    Year 6 prevalence of overweight (including obesity) 
-                                                                                     42 
-                                                                % active smokers (GPPS) 
-                                                                                      0 
-                                                                % former smokers (GPPS) 
-                                                                                      0 
-                                                 ESR absence (others organisation type) 
-                                                                                    308 
-                                                  ESR absence (acute organisation type) 
-                                                                                      0 
-                                          ESR absence (mental health organisation type) 
-                                                                                      8 
-                                              ESR absence (ambulance organisation type) 
-                                                                                      0 
-                               ESR absence (community provider trust organisation type) 
-                                                                                    102 </code></pre>
+<pre><code># A tibble: 52 × 2
+   name                                                                    value
+   &lt;chr&gt;                                                                   &lt;dbl&gt;
+ 1 org                                                                         0
+ 2 year                                                                        0
+ 3 Proportion of completed pathways greater than 18 weeks from referral (…     0
+ 4 Bed availability - day - General &amp; Acute                                    0
+ 5 Workforce FTEs per 10,000 population (Professionally qualified clinica…     0
+ 6 Workforce FTEs per 10,000 population (HCHS Doctors)                         0
+ 7 Workforce FTEs per 10,000 population (Consultant)                           0
+ 8 Workforce FTEs per 10,000 population (Associate Specialist)                 0
+ 9 Workforce FTEs per 10,000 population (Specialty Doctor)                     0
+10 Workforce FTEs per 10,000 population (Staff Grade)                         28
+# ℹ 42 more rows</code></pre>
 </div>
 </div>
 <p>Add lag variables.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>dc_data <span class="ot">&lt;-</span> dc_data <span class="sc">|&gt;</span> </span>
-<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">across</span>(</span>
-<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>      <span class="fu">matches</span>(<span class="st">"^ESR|^Workforce|^Bed|age band|Year 6|GPPS"</span>),</span>
-<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>      <span class="at">.names =</span> <span class="st">"lag1_{.col}"</span>,</span>
-<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>      <span class="at">.fns =</span> lag</span>
-<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>    ),</span>
-<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">.by =</span> org</span>
-<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span> </span>
-<span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(year, org)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>dc_data <span class="ot">&lt;-</span> dc_data <span class="sc">|&gt;</span> </span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">across</span>(</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>      <span class="fu">matches</span>(<span class="st">"^ESR|^Workforce|^Bed|age band|Year 6|GPPS"</span>),</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>      <span class="at">.names =</span> <span class="st">"lag1_{.col}"</span>,</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>      <span class="at">.fns =</span> lag</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    ),</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">.by =</span> org</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span> </span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(year, org)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="tidymodels" class="level2">
@@ -555,27 +366,27 @@ Workforce FTEs per 10,000 population (Other staff or those with unknown classifi
 <li>Impute missing data (median)</li>
 </ul>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">321</span>)</span>
-<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a><span class="co"># split dataset into train, validation and test</span></span>
-<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>splits <span class="ot">&lt;-</span> rsample<span class="sc">::</span><span class="fu">initial_validation_time_split</span>(</span>
-<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> dc_data<span class="co">#,</span></span>
-<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>  <span class="co"># lag = 1</span></span>
-<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a>data_train <span class="ot">&lt;-</span> rsample<span class="sc">::</span><span class="fu">training</span>(splits)</span>
-<span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a>data_validation <span class="ot">&lt;-</span> rsample<span class="sc">::</span><span class="fu">validation</span>(splits)</span>
-<span id="cb26-11"><a href="#cb26-11" aria-hidden="true" tabindex="-1"></a>data_test <span class="ot">&lt;-</span> rsample<span class="sc">::</span><span class="fu">testing</span>(splits)</span>
-<span id="cb26-12"><a href="#cb26-12" aria-hidden="true" tabindex="-1"></a>data_train_validation <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(</span>
-<span id="cb26-13"><a href="#cb26-13" aria-hidden="true" tabindex="-1"></a>  data_train,</span>
-<span id="cb26-14"><a href="#cb26-14" aria-hidden="true" tabindex="-1"></a>  data_validation</span>
-<span id="cb26-15"><a href="#cb26-15" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb26-16"><a href="#cb26-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-17"><a href="#cb26-17" aria-hidden="true" tabindex="-1"></a><span class="co"># check when train, validation and test data start and finish</span></span>
-<span id="cb26-18"><a href="#cb26-18" aria-hidden="true" tabindex="-1"></a><span class="fu">lapply</span>(</span>
-<span id="cb26-19"><a href="#cb26-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">list</span>(data_train, data_validation, data_test),</span>
-<span id="cb26-20"><a href="#cb26-20" aria-hidden="true" tabindex="-1"></a>  <span class="cf">function</span>(x) <span class="fu">range</span>(x<span class="sc">$</span>year)</span>
-<span id="cb26-21"><a href="#cb26-21" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">321</span>)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="co"># split dataset into train, validation and test</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>splits <span class="ot">&lt;-</span> rsample<span class="sc">::</span><span class="fu">initial_validation_time_split</span>(</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> dc_data<span class="co">#,</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>  <span class="co"># lag = 1</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>data_train <span class="ot">&lt;-</span> rsample<span class="sc">::</span><span class="fu">training</span>(splits)</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>data_validation <span class="ot">&lt;-</span> rsample<span class="sc">::</span><span class="fu">validation</span>(splits)</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>data_test <span class="ot">&lt;-</span> rsample<span class="sc">::</span><span class="fu">testing</span>(splits)</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>data_train_validation <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>  data_train,</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>  data_validation</span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a><span class="co"># check when train, validation and test data start and finish</span></span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a><span class="fu">lapply</span>(</span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">list</span>(data_train, data_validation, data_test),</span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>  <span class="cf">function</span>(x) <span class="fu">range</span>(x<span class="sc">$</span>year)</span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>[[1]]
 [1] 2013 2017
@@ -586,36 +397,34 @@ Workforce FTEs per 10,000 population (Other staff or those with unknown classifi
 [[3]]
 [1] 2019 2020</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>data_validation_set <span class="ot">&lt;-</span> <span class="fu">validation_set</span>(splits)</span>
-<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a><span class="co"># how many cores on the machine so we can parallelise</span></span>
-<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>cores <span class="ot">&lt;-</span> parallel<span class="sc">::</span><span class="fu">detectCores</span>()</span>
-<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a><span class="co"># set model</span></span>
-<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a>rf_mod <span class="ot">&lt;-</span> </span>
-<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rand_forest</span>(</span>
-<span id="cb28-9"><a href="#cb28-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">mtry =</span> <span class="fu">tune</span>(), </span>
-<span id="cb28-10"><a href="#cb28-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">min_n =</span> <span class="fu">tune</span>(), </span>
-<span id="cb28-11"><a href="#cb28-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">trees =</span> <span class="dv">1000</span></span>
-<span id="cb28-12"><a href="#cb28-12" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> </span>
-<span id="cb28-13"><a href="#cb28-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_engine</span>(<span class="st">"ranger"</span>, <span class="at">num.threads =</span> cores) <span class="sc">%&gt;%</span> </span>
-<span id="cb28-14"><a href="#cb28-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_mode</span>(<span class="st">"regression"</span>)</span>
-<span id="cb28-15"><a href="#cb28-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb28-16"><a href="#cb28-16" aria-hidden="true" tabindex="-1"></a><span class="co"># create recipes</span></span>
-<span id="cb28-17"><a href="#cb28-17" aria-hidden="true" tabindex="-1"></a><span class="co"># interaction variables (year and variables?)</span></span>
-<span id="cb28-18"><a href="#cb28-18" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb28-19"><a href="#cb28-19" aria-hidden="true" tabindex="-1"></a><span class="co"># lag variables (how to do this within groups)</span></span>
-<span id="cb28-20"><a href="#cb28-20" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb28-21"><a href="#cb28-21" aria-hidden="true" tabindex="-1"></a><span class="co"># impute missings?</span></span>
-<span id="cb28-22"><a href="#cb28-22" aria-hidden="true" tabindex="-1"></a><span class="co"># variables with missing data</span></span>
-<span id="cb28-23"><a href="#cb28-23" aria-hidden="true" tabindex="-1"></a>missing_data <span class="ot">&lt;-</span> <span class="fu">names</span>(dc_data)[<span class="fu">colSums</span>(<span class="fu">is.na</span>(dc_data)) <span class="sc">&gt;</span> <span class="dv">0</span>]</span>
-<span id="cb28-24"><a href="#cb28-24" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb28-25"><a href="#cb28-25" aria-hidden="true" tabindex="-1"></a>rf_recipe <span class="ot">&lt;-</span></span>
-<span id="cb28-26"><a href="#cb28-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">recipe</span>(<span class="st">`</span><span class="at">Proportion of completed pathways greater than 18 weeks from referral (admitted)</span><span class="st">`</span> <span class="sc">~</span> ., </span>
-<span id="cb28-27"><a href="#cb28-27" aria-hidden="true" tabindex="-1"></a>         <span class="at">data =</span> data_train_validation) <span class="sc">%&gt;%</span></span>
-<span id="cb28-28"><a href="#cb28-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_impute_median</span>(<span class="fu">all_of</span>(missing_data))<span class="co"># %&gt;%</span></span>
-<span id="cb28-29"><a href="#cb28-29" aria-hidden="true" tabindex="-1"></a>  <span class="co"># step_lag(matches("^ESR|^Workforce|^Bed|age band|Year 6|GPPS"),</span></span>
-<span id="cb28-30"><a href="#cb28-30" aria-hidden="true" tabindex="-1"></a>  <span class="co">#          lag = 1:2)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>data_validation_set <span class="ot">&lt;-</span> <span class="fu">validation_set</span>(splits)</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="co"># how many cores on the machine so we can parallelise</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>cores <span class="ot">&lt;-</span> parallel<span class="sc">::</span><span class="fu">detectCores</span>()</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="co"># set model</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>rf_mod <span class="ot">&lt;-</span> </span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rand_forest</span>(</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">mtry =</span> <span class="fu">tune</span>(), </span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">min_n =</span> <span class="fu">tune</span>(), </span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">trees =</span> <span class="dv">1000</span></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span> </span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_engine</span>(<span class="st">"ranger"</span>, <span class="at">num.threads =</span> cores) <span class="sc">%&gt;%</span> </span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_mode</span>(<span class="st">"regression"</span>)</span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a><span class="co"># create recipes</span></span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a><span class="co"># interaction variables (year and variables?)</span></span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a><span class="co"># impute missings?</span></span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a><span class="co"># variables with missing data</span></span>
+<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a>missing_data <span class="ot">&lt;-</span> <span class="fu">names</span>(dc_data)[<span class="fu">colSums</span>(<span class="fu">is.na</span>(dc_data)) <span class="sc">&gt;</span> <span class="dv">0</span>]</span>
+<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-23"><a href="#cb10-23" aria-hidden="true" tabindex="-1"></a>rf_recipe <span class="ot">&lt;-</span></span>
+<span id="cb10-24"><a href="#cb10-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">recipe</span>(<span class="st">`</span><span class="at">Proportion of completed pathways greater than 18 weeks from referral (admitted)</span><span class="st">`</span> <span class="sc">~</span> ., </span>
+<span id="cb10-25"><a href="#cb10-25" aria-hidden="true" tabindex="-1"></a>         <span class="at">data =</span> data_train_validation) <span class="sc">%&gt;%</span></span>
+<span id="cb10-26"><a href="#cb10-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_impute_median</span>(<span class="fu">all_of</span>(missing_data))<span class="co"># %&gt;%</span></span>
+<span id="cb10-27"><a href="#cb10-27" aria-hidden="true" tabindex="-1"></a>  <span class="co"># step_lag(matches("^ESR|^Workforce|^Bed|age band|Year 6|GPPS"),</span></span>
+<span id="cb10-28"><a href="#cb10-28" aria-hidden="true" tabindex="-1"></a>  <span class="co">#          lag = 1:2)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Set up {tidymodels} workflow:</p>
 <ul>
@@ -623,20 +432,20 @@ Workforce FTEs per 10,000 population (Other staff or those with unknown classifi
 <li>Add recipe to workflow</li>
 </ul>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="co"># add recipe to workflow</span></span>
-<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>rf_workflow <span class="ot">&lt;-</span> </span>
-<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">workflow</span>() <span class="sc">|&gt;</span> </span>
-<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_model</span>(rf_mod) <span class="sc">%&gt;%</span> </span>
-<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_recipe</span>(rf_recipe)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># add recipe to workflow</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>rf_workflow <span class="ot">&lt;-</span> </span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">workflow</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_model</span>(rf_mod) <span class="sc">%&gt;%</span> </span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_recipe</span>(rf_recipe)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Tune the hyperparameters.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="co"># design the tuning of the hyperparameters</span></span>
-<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>rf_res <span class="ot">&lt;-</span> </span>
-<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>  rf_workflow <span class="sc">%&gt;%</span> </span>
-<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tune_grid</span>(data_validation_set,</span>
-<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>            <span class="at">grid =</span> <span class="dv">50</span>,</span>
-<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>            <span class="at">control =</span> <span class="fu">control_grid</span>(<span class="at">save_pred =</span> <span class="cn">TRUE</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># design the tuning of the hyperparameters</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>rf_res <span class="ot">&lt;-</span> </span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  rf_workflow <span class="sc">%&gt;%</span> </span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tune_grid</span>(data_validation_set,</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>            <span class="at">grid =</span> <span class="dv">50</span>,</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>            <span class="at">control =</span> <span class="fu">control_grid</span>(<span class="at">save_pred =</span> <span class="cn">TRUE</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stderr">
 <pre><code>i Creating pre-processing data to finalize unknown parameter: mtry</code></pre>
 </div>
@@ -644,12 +453,9 @@ Workforce FTEs per 10,000 population (Other staff or those with unknown classifi
 <pre><code>Warning in `[.tbl_df`(x, is.finite(x &lt;- as.numeric(x))): NAs introduced by
 coercion</code></pre>
 </div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: package 'ranger' was built under R version 4.3.2</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="co"># show the best parameters</span></span>
-<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>rf_res <span class="sc">%&gt;%</span> </span>
-<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">show_best</span>(<span class="at">metric =</span> <span class="st">"rmse"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co"># show the best parameters</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>rf_res <span class="sc">%&gt;%</span> </span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">show_best</span>(<span class="at">metric =</span> <span class="st">"rmse"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 5 × 8
    mtry min_n .metric .estimator   mean     n std_err .config              
@@ -660,37 +466,37 @@ coercion</code></pre>
 4    68     6 rmse    standard   0.0476     1      NA Preprocessor1_Model23
 5    81    10 rmse    standard   0.0479     1      NA Preprocessor1_Model27</code></pre>
 </div>
-<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="fu">autoplot</span>(rf_res)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">autoplot</span>(rf_res)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <p><img src="random_forest_files/figure-html/tune-hyperparameters-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="co"># select the best parameters</span></span>
-<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>rf_best <span class="ot">&lt;-</span> </span>
-<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a>  rf_res <span class="sc">%&gt;%</span> </span>
-<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select_best</span>(<span class="at">metric =</span> <span class="st">"rmse"</span>)</span>
-<span id="cb37-5"><a href="#cb37-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb37-6"><a href="#cb37-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb37-7"><a href="#cb37-7" aria-hidden="true" tabindex="-1"></a><span class="co"># the last model</span></span>
-<span id="cb37-8"><a href="#cb37-8" aria-hidden="true" tabindex="-1"></a>last_rf_mod <span class="ot">&lt;-</span> </span>
-<span id="cb37-9"><a href="#cb37-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rand_forest</span>(<span class="at">mtry =</span> rf_best<span class="sc">$</span>mtry, <span class="at">min_n =</span> rf_best<span class="sc">$</span>min_n, <span class="at">trees =</span> <span class="dv">1000</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb37-10"><a href="#cb37-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_engine</span>(<span class="st">"ranger"</span>, <span class="at">num.threads =</span> cores, <span class="at">importance =</span> <span class="st">"impurity"</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb37-11"><a href="#cb37-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_mode</span>(<span class="st">"regression"</span>)</span>
-<span id="cb37-12"><a href="#cb37-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb37-13"><a href="#cb37-13" aria-hidden="true" tabindex="-1"></a><span class="co"># the last workflow</span></span>
-<span id="cb37-14"><a href="#cb37-14" aria-hidden="true" tabindex="-1"></a>last_rf_workflow <span class="ot">&lt;-</span> </span>
-<span id="cb37-15"><a href="#cb37-15" aria-hidden="true" tabindex="-1"></a>  rf_workflow <span class="sc">%&gt;%</span> </span>
-<span id="cb37-16"><a href="#cb37-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">update_model</span>(last_rf_mod)</span>
-<span id="cb37-17"><a href="#cb37-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb37-18"><a href="#cb37-18" aria-hidden="true" tabindex="-1"></a><span class="co"># the last fit</span></span>
-<span id="cb37-19"><a href="#cb37-19" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">345</span>)</span>
-<span id="cb37-20"><a href="#cb37-20" aria-hidden="true" tabindex="-1"></a>last_rf_fit <span class="ot">&lt;-</span> </span>
-<span id="cb37-21"><a href="#cb37-21" aria-hidden="true" tabindex="-1"></a>  last_rf_workflow <span class="sc">%&gt;%</span> </span>
-<span id="cb37-22"><a href="#cb37-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">last_fit</span>(splits)</span>
-<span id="cb37-23"><a href="#cb37-23" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb37-24"><a href="#cb37-24" aria-hidden="true" tabindex="-1"></a>last_rf_fit <span class="sc">%&gt;%</span> </span>
-<span id="cb37-25"><a href="#cb37-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">collect_metrics</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># select the best parameters</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>rf_best <span class="ot">&lt;-</span> </span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>  rf_res <span class="sc">%&gt;%</span> </span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select_best</span>(<span class="at">metric =</span> <span class="st">"rmse"</span>)</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a><span class="co"># the last model</span></span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>last_rf_mod <span class="ot">&lt;-</span> </span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rand_forest</span>(<span class="at">mtry =</span> rf_best<span class="sc">$</span>mtry, <span class="at">min_n =</span> rf_best<span class="sc">$</span>min_n, <span class="at">trees =</span> <span class="dv">1000</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_engine</span>(<span class="st">"ranger"</span>, <span class="at">num.threads =</span> cores, <span class="at">importance =</span> <span class="st">"impurity"</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_mode</span>(<span class="st">"regression"</span>)</span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a><span class="co"># the last workflow</span></span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>last_rf_workflow <span class="ot">&lt;-</span> </span>
+<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a>  rf_workflow <span class="sc">%&gt;%</span> </span>
+<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">update_model</span>(last_rf_mod)</span>
+<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-18"><a href="#cb18-18" aria-hidden="true" tabindex="-1"></a><span class="co"># the last fit</span></span>
+<span id="cb18-19"><a href="#cb18-19" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">345</span>)</span>
+<span id="cb18-20"><a href="#cb18-20" aria-hidden="true" tabindex="-1"></a>last_rf_fit <span class="ot">&lt;-</span> </span>
+<span id="cb18-21"><a href="#cb18-21" aria-hidden="true" tabindex="-1"></a>  last_rf_workflow <span class="sc">%&gt;%</span> </span>
+<span id="cb18-22"><a href="#cb18-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">last_fit</span>(splits)</span>
+<span id="cb18-23"><a href="#cb18-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-24"><a href="#cb18-24" aria-hidden="true" tabindex="-1"></a>last_rf_fit <span class="sc">%&gt;%</span> </span>
+<span id="cb18-25"><a href="#cb18-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">collect_metrics</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 2 × 4
   .metric .estimator .estimate .config             
@@ -703,9 +509,9 @@ coercion</code></pre>
 <section id="variable-importance" class="level2">
 <h2 class="anchored" data-anchor-id="variable-importance">Variable importance</h2>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>last_rf_fit <span class="sc">%&gt;%</span> </span>
-<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">extract_fit_parsnip</span>() <span class="sc">%&gt;%</span> </span>
-<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>  vip<span class="sc">::</span><span class="fu">vip</span>(<span class="at">num_features =</span> <span class="dv">20</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>last_rf_fit <span class="sc">%&gt;%</span> </span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">extract_fit_parsnip</span>() <span class="sc">%&gt;%</span> </span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>  vip<span class="sc">::</span><span class="fu">vip</span>(<span class="at">num_features =</span> <span class="dv">20</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <p><img src="random_forest_files/figure-html/variable-importance-1.png" class="img-fluid" width="672"></p>
 </div>

@@ -4,9 +4,12 @@
 .Ruserdata
 .png
 .html
+.css
+.json
+.docx
 
-data/
-data-raw/
+/data/
+/data-raw/
 /.quarto/
-docs/
+/docs/
 

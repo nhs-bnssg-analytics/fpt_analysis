@@ -64,13 +64,17 @@ dc_data <- dc_data |>
   dplyr::filter(
     # retain all rows where target variable is not na
     # retain all rows where we have population age group information
-    if_all(c(target_variable, "Proportion of population in age band (80-89)"), ~ !is.na(.))
+    if_all(
+      all_of(
+        c(target_variable, "Proportion of population in age band (80-89)")), ~ !is.na(.))
   )
 
-names(dc_data)
-
+# rows that contain nas
 rowSums(is.na(dc_data))
-colSums(is.na(dc_data))
+
+# columns that contain nas
+colSums(is.na(dc_data)) |> 
+  tibble::enframe()
 ```
 
 Add lag variables.
