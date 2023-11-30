@@ -1020,8 +1020,8 @@ reformat_bed_availability_data <- function(filepath, bed_type) {
           sep = " - "
         ),
         availability_metric = case_when(
-          availability_metric == "Available" ~ "numerator",
-          availability_metric == "Occupied" ~ "denominator",
+          availability_metric == "Available" ~ "denominator",
+          availability_metric == "Occupied" ~ "numerator",
           .default = "value"
         ),
         frequency = "quarterly"

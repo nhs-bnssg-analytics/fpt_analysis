@@ -512,6 +512,9 @@ quarterly_health_pop_denominators <- health_pop_denominators |>
   )
 
 workforce_metrics <- annual_workforce_fte |> 
+  complete(
+    year, month, org, Staff.Group
+  ) |> 
   inner_join(
     quarterly_health_pop_denominators,
     by = join_by(
@@ -521,6 +524,7 @@ workforce_metrics <- annual_workforce_fte |>
     )
   ) |> 
   mutate(
+    numerator = replace_na(numerator, 0),
     metric = paste0(
       "Workforce FTEs per 10,000 population (",
       Staff.Group,
@@ -712,19 +716,24 @@ org_icb_lkp <- monthly_sickness_absence |>
     )
   ) |> 
   pull(org) |> 
-  attach_icb_to_org()
+  attach_icb_to_org() |> 
+  mutate(
+    divisor = n(),
+    .by = health_org_code
+  )
 
 monthly_sickness_absence <- monthly_sickness_absence |> 
   inner_join(
     org_icb_lkp,
     by = join_by(
       org == health_org_code
-    )
+    ),
+    relationship = "many-to-many"
   ) |> 
   summarise(
     across(
       c(numerator, denominator),
-      ~ sum(.x, na.rm = TRUE)
+      ~ sum(.x / divisor, na.rm = TRUE)
     ),
     .by = c(
       year, month, metric, icb_code, frequency

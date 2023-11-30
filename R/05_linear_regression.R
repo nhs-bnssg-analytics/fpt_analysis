@@ -25,7 +25,37 @@ dc_data <- dc_data |>
   )
 
 
+# create lag variables ----------------------------------------------------
+
+dc_data <- dc_data |>
+  group_by(org) |> 
+  group_split() |> 
+  purrr::map_df(
+    ~ mutate(
+      .x,
+      across(
+        !c("year", "org", target_variable),
+        .fn = list(lag = lag),
+        .names = "{.fn}_1_{.col}"
+      ),
+    )
+  ) |> 
+  arrange(
+    year, org
+  ) |>
+  select(
+    all_of(
+      c("year", "org", target_variable)
+    ),
+    starts_with("lag")
+  ) |>
+  filter(
+    year != min(year)
+  )
+  
+
 # splitting data ----------------------------------------------------------
+
 
 set.seed(321)
 
@@ -61,17 +91,21 @@ linear_model <- parsnip::linear_reg(
 # set recipe --------------------------------------------------------------
 missing_data <- names(dc_data)[colSums(is.na(dc_data)) > 0]
 
-linear_recipe <- recipe(data_train) |> 
+linear_recipe <- data_train |> 
+  select(
+    !c("year", "org")
+    ) |> 
+  recipe() |> 
   update_role(
     all_of(target_variable),
     new_role = "outcome"
   ) |> 
+  # update_role(
+  #   matches("^ESR|^Workforce|^Bed|age band|Year 6|GPPS"),
+  #   new_role = "predictor"
+  # ) |> 
   update_role(
-    org, year,
-    new_role = "id variable"
-  ) |> 
-  update_role(
-    matches("^ESR|^Workforce|^Bed|age band|Year 6|GPPS"),
+    matches("^lag"),
     new_role = "predictor"
   ) |> 
   step_center(all_predictors()) |> 
@@ -94,8 +128,6 @@ linear_workflow <- workflow() |>
 
 linear_fit <- linear_workflow |> 
   fit(data = data_train)
-
-
 
 # check linear assumptions ------------------------------------------------
 
@@ -144,6 +176,6 @@ list(
 
 # variable importance -----------------------------------------------------
 
-linear_fit|> 
+linear_fit |> 
   extract_fit_parsnip() |> 
   vip::vip(num_features = 10)

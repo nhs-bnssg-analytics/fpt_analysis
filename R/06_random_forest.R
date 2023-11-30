@@ -17,15 +17,39 @@ dc_data <- dc_data |>
     if_all(
       all_of(
         c(target_variable, "Proportion of population in age band (80-89)")), ~ !is.na(.))
+  ) |> 
+  arrange(
+    year, org
   )
 
-names(dc_data)
+# create lag variables ----------------------------------------------------
 
-rowSums(is.na(dc_data))
-colSums(is.na(dc_data)) |> 
-  tibble::enframe()
-
-
+dc_data <- dc_data |>
+  group_by(org) |> 
+  group_split() |> 
+  purrr::map_df(
+    ~ mutate(
+      .x,
+      across(
+        !c("year", "org", target_variable),
+        .fn = list(lag = lag),
+        .names = "{.fn}_1_{.col}"
+      ),
+    )
+  ) |> 
+  arrange(
+    year, org
+  ) |>
+  select(
+    all_of(
+      c("year", "org", target_variable)
+    ),
+    matches("^ESR|^Workforce|^Bed|age band|Year 6|GPPS"),
+    starts_with("lag")
+  ) #|>
+  # filter(
+  #   year != min(year)
+  # )
 
 # RF stage ----------------------------------------------------------------
 
@@ -72,25 +96,28 @@ rf_mod <-
 # variables with missing data
 missing_data <- names(dc_data)[colSums(is.na(dc_data)) > 0]
 
-rf_recipe <- recipe(data_train) |> 
+rf_recipe <- data_train |> 
+  select(
+    !c("year", "org")
+  ) |> 
+  recipe() |> 
   update_role(
     all_of(target_variable),
     new_role = "outcome"
   ) |> 
   update_role(
-    org, year,
-    new_role = "id variable"
-  ) |> 
-  update_role(
     matches("^ESR|^Workforce|^Bed|age band|Year 6|GPPS"),
+    new_role = "predictor"
+  ) |>
+  update_role(
+    matches("^lag"),
     new_role = "predictor"
   ) |> 
   step_impute_knn(all_of(missing_data)) |> 
-  step_corr(all_predictors(),
-            threshold = 0.6)
-# %>%
-# step_lag(matches("^ESR|^Workforce|^Bed|age band|Year 6|GPPS"),
-#          lag = 1:2)
+  # step_corr(all_predictors(),
+  #           threshold = 0.9) |> 
+  # estimate the means and standard deviations
+  prep(training = data_train, retain = TRUE)
 
 
 # add recipe to workflow
@@ -107,12 +134,15 @@ extract_parameter_set_dials(rf_mod)
 rf_res <- 
   rf_workflow %>% 
   tune_grid(data_validation_set,
-            grid = 50,
+            grid = expand.grid(
+              mtry = seq(40, 90, by = 2),
+              min_n = 5:15
+            ),
             control = control_grid(save_pred = TRUE))
 
 # show the best parameters
 rf_res %>% 
-  show_best(metric = "rsq")
+  show_best(metric = "rmse")
 
 
 autoplot(rf_res)
@@ -120,7 +150,7 @@ autoplot(rf_res)
 # select the best parameters
 rf_best <- 
   rf_res %>% 
-  select_best(metric = "rsq")
+  select_best(metric = "rmse")
 
 
 # the last model
