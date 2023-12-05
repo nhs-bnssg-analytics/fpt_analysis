@@ -3,31 +3,22 @@ title: "Random Forest"
 order: 3
 ---
 
-## Setup
-
-Load in the libraries and useful functions.
-
 ```{r}
-#| label: libraries
+#| label: setup
 #| message: false
+
 source(here::here("R/00_libraries.R"))
 source(here::here("R/01_utils.R"))
-
-```
-
-Load in the pre-prepared data.
-
-```{r}
-#| label: data
 source(here::here("R/03_collating_data.R"))
+source(here::here("R/04_modelling_utils.R"))
 ```
 
-## Preprocessing
 
-Create dataframe with target and predictor variables.
+## Select fields
 
 ```{r}
-#| label: pre-processing
+#| label: field-selection
+#| 
 target_variable <- "Proportion of completed pathways greater than 18 weeks from referral (admitted)"
 
 dc_data <- dc_data |> 
@@ -41,182 +32,207 @@ dc_data <- dc_data |>
     if_all(
       all_of(
         c(target_variable, "Proportion of population in age band (80-89)")), ~ !is.na(.))
+  ) |> 
+  arrange(
+    year, org
   )
-
-# rows that contain nas
-rowSums(is.na(dc_data))
-
-# columns that contain nas
-colSums(is.na(dc_data)) |> 
-  tibble::enframe()
 ```
 
-Add lag variables.
+## Modelling descriptions and results
+
+### Time series splitting
+
+#### Random forest model with no lagged data
+
+* No lagged data
+* selection pattern: `matches("^ESR|^Workforce|^Bed|age band|Year 6|GPPS")`
+* data are ordered by time before splitting into train (2013-2018), val (2019) and test (2020)
+* impute missing with knn for all predictors
 
 ```{r}
-#| label: lag-variables
+#| label: rf-no-lag-ts
 
-dc_data <- dc_data |> 
-  mutate(
-    across(
-      matches("^ESR|^Workforce|^Bed|age band|Year 6|GPPS"),
-      .names = "lag1_{.col}",
-      .fns = lag
-    ),
-    .by = org
-  ) |> 
-  arrange(year, org)
-```
-
-
-## {tidymodels}
-
-* Split the data
-* Select the modelling method (random forest from the ranger package)
-* Impute missing data (median)
-
-```{r}
-#| label: splitting-data
-set.seed(321)
-
-# split dataset into train, validation and test
-splits <- rsample::initial_validation_time_split(
-  data = dc_data#,
-  # lag = 1
+rf <-modelling_performance(
+  data = dc_data,
+  target_variable = target_variable,
+  lagged_years = 0, 
+  time_series_split = TRUE, 
+  model_type = "random_forest", 
+  seed = 321 
 )
 
-data_train <- rsample::training(splits)
-data_validation <- rsample::validation(splits)
-data_test <- rsample::testing(splits)
-data_train_validation <- bind_rows(
-  data_train,
-  data_validation
+rf$evaluation_metrics
+
+```
+
+#### Random forest model current and lag
+
+* Current year and lagged data (including lagged target variable)
+* selection pattern: `matches("^ESR|^Workforce|^Bed|age band|Year 6|GPPS")`
+* data are ordered by time before splitting into train (2013-2018), val (2019) and test (2020)
+* impute missing with knn for all predictors
+
+```{r}
+#| label: rf-lag-and-current-ts
+
+rf <-modelling_performance(
+  data = dc_data,
+  target_variable = target_variable,
+  lagged_years = 1, 
+  keep_current = TRUE,
+  remove_lag_target = FALSE,
+  time_series_split = TRUE, 
+  model_type = "random_forest", 
+  seed = 321 
 )
 
-# check when train, validation and test data start and finish
-lapply(
-  list(data_train, data_validation, data_test),
-  function(x) range(x$year)
+rf$evaluation_metrics
+
+```
+
+#### Random forest model using only lagged data
+
+* Only lagged data (including lagged target variable)
+* selection pattern: `matches("^ESR|^Workforce|^Bed|age band|Year 6|GPPS")`
+* data are ordered by time before splitting into train (2014-2018), val (2019) and test (2020)
+* impute missing with knn for all predictors
+
+```{r}
+#| label: rf-lag-ts
+
+rf <-modelling_performance(
+  data = dc_data,
+  target_variable = target_variable,
+  lagged_years = 1, 
+  keep_current = FALSE,
+  remove_lag_target = FALSE,
+  time_series_split = TRUE, 
+  model_type = "random_forest", 
+  seed = 321 
 )
 
-data_validation_set <- validation_set(splits)
-
-# how many cores on the machine so we can parallelise
-cores <- parallel::detectCores()
-
-# set model
-rf_mod <- 
-  rand_forest(
-    mtry = tune(), 
-    min_n = tune(), 
-    trees = 1000
-  ) %>% 
-  set_engine("ranger", num.threads = cores) %>% 
-  set_mode("regression")
-
-# create recipes
-# interaction variables (year and variables?)
-
-# impute missings?
-# variables with missing data
-missing_data <- names(dc_data)[colSums(is.na(dc_data)) > 0]
-
-rf_recipe <- recipe(data_train) |> 
-  update_role(
-    all_of(target_variable),
-    new_role = "outcome"
-  ) |> 
-  update_role(
-    org, year,
-    new_role = "id variable"
-  ) |> 
-  update_role(
-    matches("^ESR|^Workforce|^Bed|age band|Year 6|GPPS"),
-    new_role = "predictor"
-  ) |> 
-  step_impute_median(all_of(missing_data))# %>%
-  # step_lag(matches("^ESR|^Workforce|^Bed|age band|Year 6|GPPS"),
-  #          lag = 1:2)
+rf$evaluation_metrics
 
 ```
 
-Set up {tidymodels} workflow:
+#### Random forest model using only lagged data (without lagged target variable)
 
-* Add model to workflow
-* Add recipe to workflow
-
+* Only lagged data (not including lagged target variable)
+* selection pattern: `matches("^ESR|^Workforce|^Bed|age band|Year 6|GPPS")`
+* data are ordered by time before splitting into train (2014-2018), val (2019) and test (2020)
+* impute missing with knn for all predictors
 
 ```{r}
-#| label: workflow
+#| label: rf-lag-only-no-target-ts
 
+rf <-modelling_performance(
+  data = dc_data,
+  target_variable = target_variable,
+  lagged_years = 1,
+  keep_current = FALSE,
+  remove_lag_target = TRUE, 
+  time_series_split = TRUE, 
+  model_type = "random_forest", 
+  seed = 321 
+)
 
-# add recipe to workflow
-rf_workflow <- 
-  workflow() |> 
-  add_model(rf_mod) %>% 
-  add_recipe(rf_recipe)
+rf$evaluation_metrics
 
 ```
 
-Tune the hyperparameters.
+
+### Non-time series splitting
+
+#### Random forest model with no lagged data
+
+* No lagged data
+* selection pattern: `matches("^ESR|^Workforce|^Bed|age band|Year 6|GPPS")`
+* impute missing with knn for all predictors
 
 ```{r}
-#| label: tune-hyperparameters
+#| label: rf-no-lag
 
+rf <-modelling_performance(
+  data = dc_data,
+  target_variable = target_variable,
+  lagged_years = 0, 
+  time_series_split = FALSE, 
+  model_type = "random_forest", 
+  seed = 321 
+)
 
-# design the tuning of the hyperparameters
-rf_res <- 
-  rf_workflow %>% 
-  tune_grid(data_validation_set,
-            grid = 50,
-            control = control_grid(save_pred = TRUE))
+rf$evaluation_metrics
 
-# show the best parameters
-rf_res %>% 
-  show_best(metric = "rmse")
-
-
-autoplot(rf_res)
 ```
 
+#### Random forest model current and lag
+
+* Current year and lagged data (including lagged target variable)
+* selection pattern: `matches("^ESR|^Workforce|^Bed|age band|Year 6|GPPS")`
+* impute missing with knn for all predictors
 
 ```{r}
-#| label: predict-test-data
-# select the best parameters
-rf_best <- 
-  rf_res %>% 
-  select_best(metric = "rmse")
+#| label: rf-lag-and-current
 
+rf <-modelling_performance(
+  data = dc_data,
+  target_variable = target_variable,
+  lagged_years = 1, 
+  keep_current = TRUE,
+  remove_lag_target = FALSE,
+  time_series_split = FALSE, 
+  model_type = "random_forest", 
+  seed = 321 
+)
 
-# the last model
-last_rf_mod <- 
-  rand_forest(mtry = rf_best$mtry, min_n = rf_best$min_n, trees = 1000) %>% 
-  set_engine("ranger", num.threads = cores, importance = "impurity") %>% 
-  set_mode("regression")
+rf$evaluation_metrics
 
-# the last workflow
-last_rf_workflow <- 
-  rf_workflow %>% 
-  update_model(last_rf_mod)
-
-# the last fit
-set.seed(345)
-last_rf_fit <- 
-  last_rf_workflow %>% 
-  last_fit(splits)
-
-last_rf_fit %>% 
-  collect_metrics()
 ```
 
+#### Random forest model using only lagged data
 
-## Variable importance
+* Only lagged data (including lagged target variable)
+* selection pattern: `matches("^ESR|^Workforce|^Bed|age band|Year 6|GPPS")`
+* impute missing with knn for all predictors
 
 ```{r}
-#| label: variable-importance
-last_rf_fit %>% 
-  extract_fit_parsnip() %>% 
-  vip::vip(num_features = 20)
+#| label: rf-lag
+
+rf <-modelling_performance(
+  data = dc_data,
+  target_variable = target_variable,
+  lagged_years = 1, 
+  keep_current = FALSE,
+  remove_lag_target = FALSE,
+  time_series_split = FALSE, 
+  model_type = "random_forest", 
+  seed = 321 
+)
+
+rf$evaluation_metrics
 
 ```
 
+#### Random forest model using only lagged data (without lagged target variable)
+
+* Only lagged data (not including lagged target variable)
+* selection pattern: `matches("^ESR|^Workforce|^Bed|age band|Year 6|GPPS")`
+* impute missing with knn for all predictors
+
+```{r}
+#| label: rf-lag-only-no-target
+
+rf <-modelling_performance(
+  data = dc_data,
+  target_variable = target_variable,
+  lagged_years = 1,
+  keep_current = FALSE,
+  remove_lag_target = TRUE, 
+  time_series_split = FALSE, 
+  model_type = "random_forest", 
+  seed = 321 
+)
+
+rf$evaluation_metrics
+
+```

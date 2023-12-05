@@ -37,6 +37,7 @@ lm_no_lag <- modelling_performance(
 )
 
 lm_no_lag$evaluation_metrics
+lm_no_lag$assumptions_check
 lm_no_lag$prediction_plot
 lm_no_lag$variable_importance
 
@@ -46,6 +47,11 @@ rf_no_lag <- modelling_performance(
   lagged_years = 0,
   time_series_split = FALSE,
   model_type = "random_forest",
+  rf_tuning_grid = expand.grid(
+    mtry = 12:15,
+    min_n = 15,
+    trees = 20:30
+  ),
   seed = 321
 )
 
@@ -53,3 +59,4 @@ rf_no_lag$evaluation_metrics
 rf_no_lag$prediction_plot
 rf_no_lag$assumptions_check
 rf_no_lag$variable_importance
+rf_no_lag$rf_metrics

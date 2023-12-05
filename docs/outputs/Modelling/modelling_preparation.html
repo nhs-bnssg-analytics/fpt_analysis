@@ -241,8 +241,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#data-structure" id="toc-data-structure" class="nav-link active" data-scroll-target="#data-structure">Data structure</a></li>
   <li><a href="#splitting-dataset" id="toc-splitting-dataset" class="nav-link" data-scroll-target="#splitting-dataset">Splitting dataset</a></li>
   <li><a href="#missing-data" id="toc-missing-data" class="nav-link" data-scroll-target="#missing-data">Missing data</a></li>
+  <li><a href="#modelling" id="toc-modelling" class="nav-link" data-scroll-target="#modelling">Modelling</a></li>
   <li><a href="#other-questions" id="toc-other-questions" class="nav-link" data-scroll-target="#other-questions">Other questions</a></li>
-  <li><a href="#next-steps" id="toc-next-steps" class="nav-link" data-scroll-target="#next-steps">Next steps</a></li>
+  <li><a href="#next-steps" id="toc-next-steps" class="nav-link" data-scroll-target="#next-steps">Next steps</a>
+  <ul class="collapse">
+  <li><a href="#notes" id="toc-notes" class="nav-link" data-scroll-target="#notes">Notes</a></li>
+  </ul></li>
   <li><a href="#results" id="toc-results" class="nav-link" data-scroll-target="#results">Results</a>
   <ul class="collapse">
   <li><a href="#linear-model" id="toc-linear-model" class="nav-link" data-scroll-target="#linear-model">Linear model</a></li>
@@ -289,7 +293,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h2 class="anchored" data-anchor-id="splitting-dataset">Splitting dataset</h2>
 <p>Data need to be split before training model. Some considerations are:</p>
 <ul>
-<li>Should the data be ordered prior to splitting (eg, should models be trained on earlier years, and tested on later years) - on occasion there won’t be very long time series</li>
+<li>Should the data be ordered prior to splitting (eg, should models be trained on earlier years, and tested on later years) - on occasion there won’t be very long time series
+<ul>
+<li>try mixing the data up before splitting</li>
+</ul></li>
 <li>Train, validation and test set? Is there enough data to do this?</li>
 </ul>
 </section>
@@ -302,19 +309,45 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li>Some timeseries data for Trusts (eg beds available) stop being reported and it is difficult to understand why (eg RT5 stops being reported in Q1 2015 even though the trust still exists)</li>
 <li>Some “Independent Sector Healthcare providers” stop reporting Sickness data mid-timeseries</li>
 </ul></li>
+<li><p>Need to investigate different imputation methods for different features</p></li>
+</ul>
+</section>
+<section id="modelling" class="level2">
+<h2 class="anchored" data-anchor-id="modelling">Modelling</h2>
+<ul>
+<li>Try out different ML methods?</li>
+<li>Should demand and capacity variables be modelled separately (like <a href="https://charlottejames.github.io/ed-forecast/index.html">Charlotte’s ED modelling</a>)</li>
 </ul>
 </section>
 <section id="other-questions" class="level2">
 <h2 class="anchored" data-anchor-id="other-questions">Other questions</h2>
 <ul>
-<li>What to do with IMD? It is published by LSOA for a single year. Should the information for each ICS be applied for each year? How else to integrate deprivation into the analysis?</li>
+<li>What to do with IMD? It is published by LSOA for a single year. Should the information for each ICS be applied for each year? Should it relate to the population variables? How else to integrate deprivation into the analysis?</li>
 </ul>
 </section>
 <section id="next-steps" class="level2">
 <h2 class="anchored" data-anchor-id="next-steps">Next steps</h2>
 <ul>
+<li>try running other performance metrics through the modelling process to see if others come out better</li>
+<li>improve hyperparameter tuning for RF</li>
 <li>check whether missing data are missing or zero (values could be zero but come through as missing because the numerator is zero)</li>
+<li>Stepwise modelling for linear/logistic (step aic - more popular at the moment; step bic)</li>
+<li>How to keep the predictions between 0 and 1? Does it mean the model should be a logistic regression?</li>
+<li>collect more data</li>
+<li>feature engineering
+<ul>
+<li>combine total beds with population (or population in need, eg, population over 65)</li>
+</ul></li>
+<li>demonstrate proof of concept to stakeholders
+<ul>
+<li>identify other metrics that would be useful to predict</li>
+</ul></li>
+<li>demonstrate scenario modelling</li>
 </ul>
+<section id="notes" class="level3">
+<h3 class="anchored" data-anchor-id="notes">Notes</h3>
+<p>Parametric modelling should have more thought on the input features, whereas ML potentially can throw them all in and see what happens</p>
+</section>
 </section>
 <section id="results" class="level2">
 <h2 class="anchored" data-anchor-id="results">Results</h2>

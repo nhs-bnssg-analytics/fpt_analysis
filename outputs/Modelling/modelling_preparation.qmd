@@ -19,6 +19,7 @@ To enable testing different models, the data structure should consider the follo
 Data need to be split before training model. Some considerations are:
 
 * Should the data be ordered prior to splitting (eg, should models be trained on earlier years, and tested on later years) - on occasion there won't be very long time series
+  + try mixing the data up before splitting
 * Train, validation and test set? Is there enough data to do this?
 
 ## Missing data
@@ -29,105 +30,31 @@ Data need to be split before training model. Some considerations are:
   - Some timeseries data for Trusts (eg beds available) stop being reported and it is difficult to understand why (eg RT5 stops being reported in Q1 2015 even though the trust still exists)
   - Some "Independent Sector Healthcare providers" stop reporting Sickness data mid-timeseries
 
+* Need to investigate different imputation methods for different features
+
+## Modelling
+
+* Try out different ML methods?
+* Should demand and capacity variables be modelled separately (like [Charlotte's ED modelling](https://charlottejames.github.io/ed-forecast/index.html))
+
 ## Other questions
 
-* What to do with IMD? It is published by LSOA for a single year. Should the information for each ICS be applied for each year? How else to integrate deprivation into the analysis?
+* What to do with IMD? It is published by LSOA for a single year. Should the information for each ICS be applied for each year? Should it relate to the population variables? How else to integrate deprivation into the analysis?
 
 ## Next steps
 
+* try running other performance metrics through the modelling process to see if others come out better
+* improve hyperparameter tuning for RF
 * check whether missing data are missing or zero (values could be zero but come through as missing because the numerator is zero)
+* Stepwise modelling for linear/logistic (step aic - more popular at the moment; step bic)
+* How to keep the predictions between 0 and 1? Does it mean the model should be a logistic regression?
+* collect more data
+* feature engineering
+  + combine total beds with population (or population in need, eg, population over 65)
+* demonstrate proof of concept to stakeholders
+  + identify other metrics that would be useful to predict
+* demonstrate scenario modelling
 
+### Notes
 
-
-
-
-## Results
-
-This section documents the results of modelling steps for reference and the project progresses
-
-### Linear model
-
-* No lagged data
-* selection pattern: `matches("^ESR|^Workforce|^Bed|age band|Year 6|GPPS")`
-* data are ordered by time before splitting into train (2013-2018), val (2019) and test (2020)
-* correlation threshold: 0.9
-* impute missing with knn for all predictors
-
-```{r}
-# A tibble: 3 × 4
-#   .metric .estimator  train validation
-#   <chr>   <chr>       <dbl>      <dbl>
-# 1 rmse    standard   0.0317     0.0432
-# 2 rsq     standard   0.830      0.283 
-# 3 mae     standard   0.0257     0.0353
-```
-
-### Linear model current and lag
-
-* Current year and lagged data (including lagged target variable)
-* selection pattern: `matches("^ESR|^Workforce|^Bed|age band|Year 6|GPPS")`
-* data are ordered by time before splitting into train (2013-2018), val (2019) and test (2020)
-* correlation threshold: 0.9
-* impute missing with knn for all predictors
-
-```{r}
-# A tibble: 3 × 4
-#   .metric .estimator  train validation
-#   <chr>   <chr>       <dbl>      <dbl>
-# 1 rmse    standard   0.0263     0.0363
-# 2 rsq     standard   0.883      0.452 
-# 3 mae     standard   0.0215     0.0281
-```
-
-### Linear model using only lagged data
-
-* Only lagged data (including lagged target variable)
-* selection pattern: `matches("^ESR|^Workforce|^Bed|age band|Year 6|GPPS")`
-* data are ordered by time before splitting into train (2014-2018), val (2019) and test (2020)
-* correlation threshold: 0.9
-* impute missing with knn for all predictors
-
-```{r}
-# A tibble: 3 × 4
-#   .metric .estimator  train validation
-#   <chr>   <chr>       <dbl>      <dbl>
-# 1 rmse    standard   0.0238     0.0368
-# 2 rsq     standard   0.883      0.498 
-# 3 mae     standard   0.0191     0.0254
-```
-
-### Linear model using only lagged data (without lagged target variable)
-
-* Only lagged data (not including lagged target variable)
-* selection pattern: `matches("^ESR|^Workforce|^Bed|age band|Year 6|GPPS")`
-* data are ordered by time before splitting into train (2014-2018), val (2019) and test (2020)
-* correlation threshold: 0.9
-* impute missing with knn for all predictors
-
-```{r}
-# A tibble: 3 × 4
-#   .metric .estimator  train validation
-#   <chr>   <chr>       <dbl>      <dbl>
-# 1 rmse    standard   0.0322     0.0449
-# 2 rsq     standard   0.787      0.236 
-# 3 mae     standard   0.0258     0.0368
-```
-
-
-
-
-### Random forest current and lag
-
-* Current year and lagged data (including lagged target variable)
-* selection pattern: `matches("^ESR|^Workforce|^Bed|age band|Year 6|GPPS")`
-* data are ordered by time before splitting into train (2013-2018), val (2019) and test (2020)
-* impute missing with knn for all predictors
-
-```{r}
-# A tibble: 3 × 5
-#   .metric .estimator  train validation   test
-#   <chr>   <chr>       <dbl>      <dbl>  <dbl>
-# 1 rmse    standard   0.0166     0.0574 0.132 
-# 2 rsq     standard   0.976      0.258  0.0839
-# 3 mae     standard   0.0134     0.0493 0.125 
-```
+Parametric modelling should have more thought on the input features, whereas ML potentially can throw them all in and see what happens

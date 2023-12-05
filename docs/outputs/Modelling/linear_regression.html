@@ -239,12 +239,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
    
   <ul>
   <li><a href="#select-fields" id="toc-select-fields" class="nav-link active" data-scroll-target="#select-fields">Select fields</a></li>
-  <li><a href="#splitting-data" id="toc-splitting-data" class="nav-link" data-scroll-target="#splitting-data">Splitting data</a></li>
-  <li><a href="#create-workflow" id="toc-create-workflow" class="nav-link" data-scroll-target="#create-workflow">Create workflow</a></li>
-  <li><a href="#model-checks" id="toc-model-checks" class="nav-link" data-scroll-target="#model-checks">Model checks</a></li>
-  <li><a href="#evaluation-metrics-on-validation-data" id="toc-evaluation-metrics-on-validation-data" class="nav-link" data-scroll-target="#evaluation-metrics-on-validation-data">Evaluation metrics on validation data</a>
+  <li><a href="#modelling-descriptions-and-results" id="toc-modelling-descriptions-and-results" class="nav-link" data-scroll-target="#modelling-descriptions-and-results">Modelling descriptions and results</a>
   <ul class="collapse">
-  <li><a href="#variable-importance" id="toc-variable-importance" class="nav-link" data-scroll-target="#variable-importance">Variable importance</a></li>
+  <li><a href="#time-series-splitting" id="toc-time-series-splitting" class="nav-link" data-scroll-target="#time-series-splitting">Time series splitting</a></li>
+  <li><a href="#non-time-series-splitting" id="toc-non-time-series-splitting" class="nav-link" data-scroll-target="#non-time-series-splitting">Non-time series splitting</a></li>
   </ul></li>
   </ul>
 </nav>
@@ -297,194 +295,271 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
-<section id="splitting-data" class="level2">
-<h2 class="anchored" data-anchor-id="splitting-data">Splitting data</h2>
+<section id="modelling-descriptions-and-results" class="level2">
+<h2 class="anchored" data-anchor-id="modelling-descriptions-and-results">Modelling descriptions and results</h2>
+<section id="time-series-splitting" class="level3">
+<h3 class="anchored" data-anchor-id="time-series-splitting">Time series splitting</h3>
+<section id="linear-model-with-no-lagged-data" class="level4">
+<h4 class="anchored" data-anchor-id="linear-model-with-no-lagged-data">Linear model with no lagged data</h4>
+<ul>
+<li>No lagged data</li>
+<li>selection pattern: <code>matches("^ESR|^Workforce|^Bed|age band|Year 6|GPPS")</code></li>
+<li>data are ordered by time before splitting into train (2013-2018), val (2019) and test (2020)</li>
+<li>correlation threshold: 0.7</li>
+<li>impute missing with knn for all predictors</li>
+</ul>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">321</span>)</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>proportions <span class="ot">&lt;-</span> <span class="fu">train_validation_proportions</span>(dc_data)</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="co"># split dataset into train, validation and test</span></span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>splits <span class="ot">&lt;-</span> rsample<span class="sc">::</span><span class="fu">initial_validation_time_split</span>(</span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> dc_data,</span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">prop =</span> proportions</span>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>lm <span class="ot">&lt;-</span> <span class="fu">modelling_performance</span>(</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> dc_data,</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">target_variable =</span> target_variable,</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">lagged_years =</span> <span class="dv">0</span>, </span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">time_series_split =</span> <span class="cn">TRUE</span>, </span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">model_type =</span> <span class="st">"linear"</span>, </span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">linear_correlation_threshold =</span> <span class="fl">0.7</span>,</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">seed =</span> <span class="dv">321</span> </span>
 <span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>)</span>
 <span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>data_train <span class="ot">&lt;-</span> rsample<span class="sc">::</span><span class="fu">training</span>(splits)</span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>data_validation <span class="ot">&lt;-</span> rsample<span class="sc">::</span><span class="fu">validation</span>(splits)</span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>data_test <span class="ot">&lt;-</span> rsample<span class="sc">::</span><span class="fu">testing</span>(splits)</span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="co"># check when train, validation and test data start and finish</span></span>
-<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="fu">lapply</span>(</span>
-<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">list</span>(data_train, data_validation, data_test),</span>
-<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>  <span class="cf">function</span>(x) <span class="fu">range</span>(x<span class="sc">$</span>year)</span>
-<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>lm<span class="sc">$</span>evaluation_metrics</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>[[1]]
-[1] 2013 2018
-
-[[2]]
-[1] 2019 2019
-
-[[3]]
-[1] 2020 2020</code></pre>
-</div>
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># create train and validation set for tuning hyperparameters</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>data_validation_set <span class="ot">&lt;-</span> <span class="fu">validation_set</span>(splits)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-</section>
-<section id="create-workflow" class="level2">
-<h2 class="anchored" data-anchor-id="create-workflow">Create workflow</h2>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># set model ---------------------------------------------------------------</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>linear_model <span class="ot">&lt;-</span> parsnip<span class="sc">::</span><span class="fu">linear_reg</span>(</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">mode =</span> <span class="st">"regression"</span>,</span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">engine =</span> <span class="st">"lm"</span></span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="co"># set recipe --------------------------------------------------------------</span></span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>missing_data <span class="ot">&lt;-</span> <span class="fu">names</span>(dc_data)[<span class="fu">colSums</span>(<span class="fu">is.na</span>(dc_data)) <span class="sc">&gt;</span> <span class="dv">0</span>]</span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>linear_recipe <span class="ot">&lt;-</span> <span class="fu">recipe</span>(data_train) <span class="sc">|&gt;</span> </span>
-<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">update_role</span>(</span>
-<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>    <span class="fu">all_of</span>(target_variable),</span>
-<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">new_role =</span> <span class="st">"outcome"</span></span>
-<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span> </span>
-<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">update_role</span>(</span>
-<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>    org, year,</span>
-<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">new_role =</span> <span class="st">"id variable"</span></span>
-<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span> </span>
-<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">update_role</span>(</span>
-<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>    <span class="fu">matches</span>(<span class="st">"^ESR|^Workforce|^Bed|age band|Year 6|GPPS"</span>),</span>
-<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>    <span class="at">new_role =</span> <span class="st">"predictor"</span></span>
-<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span> </span>
-<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_center</span>(<span class="fu">all_predictors</span>()) <span class="sc">|&gt;</span> </span>
-<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_scale</span>(<span class="fu">all_predictors</span>()) <span class="sc">|&gt;</span> </span>
-<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_impute_knn</span>(<span class="fu">all_of</span>(missing_data)) <span class="sc">|&gt;</span> </span>
-<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_corr</span>(<span class="fu">all_predictors</span>(),</span>
-<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a>            <span class="at">threshold =</span> <span class="fl">0.9</span>) <span class="sc">|&gt;</span> </span>
-<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a>  <span class="co"># estimate the means and standard deviations</span></span>
-<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a>  <span class="fu">prep</span>(<span class="at">training =</span> data_train, <span class="at">retain =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb6-31"><a href="#cb6-31" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-32"><a href="#cb6-32" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-33"><a href="#cb6-33" aria-hidden="true" tabindex="-1"></a><span class="co"># create workflow ---------------------------------------------------------</span></span>
-<span id="cb6-34"><a href="#cb6-34" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-35"><a href="#cb6-35" aria-hidden="true" tabindex="-1"></a>linear_workflow <span class="ot">&lt;-</span> <span class="fu">workflow</span>() <span class="sc">|&gt;</span> </span>
-<span id="cb6-36"><a href="#cb6-36" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_model</span>(linear_model) <span class="sc">|&gt;</span> </span>
-<span id="cb6-37"><a href="#cb6-37" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_recipe</span>(linear_recipe)</span>
-<span id="cb6-38"><a href="#cb6-38" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-39"><a href="#cb6-39" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-40"><a href="#cb6-40" aria-hidden="true" tabindex="-1"></a><span class="co"># fit model ---------------------------------------------------------------</span></span>
-<span id="cb6-41"><a href="#cb6-41" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-42"><a href="#cb6-42" aria-hidden="true" tabindex="-1"></a>linear_fit <span class="ot">&lt;-</span> linear_workflow <span class="sc">|&gt;</span> </span>
-<span id="cb6-43"><a href="#cb6-43" aria-hidden="true" tabindex="-1"></a>  <span class="fu">fit</span>(<span class="at">data =</span> data_train)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-</section>
-<section id="model-checks" class="level2">
-<h2 class="anchored" data-anchor-id="model-checks">Model checks</h2>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># check linear assumptions ------------------------------------------------</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>linear_fit<span class="sc">$</span>fit<span class="sc">$</span>fit <span class="sc">|&gt;</span> </span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  performance<span class="sc">::</span><span class="fu">check_model</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Model matrix is rank deficient. VIFs may not be sensible.</code></pre>
-</div>
-<div class="cell-output-display">
-<p><img src="linear_regression_files/figure-html/linearity-checks-1.png" class="img-fluid" width="864"></p>
-</div>
-</div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># plot predictions vs observed --------------------------------------------</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="fu">list</span>(</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">train =</span> data_train,</span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">validation =</span> data_validation</span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span> </span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">bind_rows</span>(</span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">.id =</span> <span class="st">"data_type"</span></span>
-<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span> </span>
-<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_prediction_to_data</span>(</span>
-<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>    linear_fit</span>
-<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span> </span>
-<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(</span>
-<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>    <span class="fu">aes</span>(<span class="at">x =</span> .data[[target_variable]], </span>
-<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>        <span class="at">y =</span> .pred)) <span class="sc">+</span> </span>
-<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Create a diagonal line:</span></span>
-<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_abline</span>(<span class="at">lty =</span> <span class="dv">2</span>) <span class="sc">+</span> </span>
-<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(</span>
-<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">alpha =</span> <span class="fl">0.5</span>,</span>
-<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>    <span class="fu">aes</span>(</span>
-<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>      <span class="at">colour =</span> data_type</span>
-<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>      )</span>
-<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a>    ) <span class="sc">+</span> </span>
-<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
-<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> stringr<span class="sc">::</span><span class="fu">str_wrap</span>(</span>
-<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a>      <span class="fu">paste</span>(<span class="st">"Predicted"</span>, <span class="fu">tolower</span>(target_variable)),</span>
-<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a>      <span class="dv">60</span>),</span>
-<span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> stringr<span class="sc">::</span><span class="fu">str_wrap</span>(target_variable, <span class="dv">60</span>)</span>
-<span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb9-29"><a href="#cb9-29" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Scale and size the x- and y-axis uniformly:</span></span>
-<span id="cb9-30"><a href="#cb9-30" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_obs_pred</span>() <span class="sc">+</span></span>
-<span id="cb9-31"><a href="#cb9-31" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning in predict.lm(object = object$fit, newdata = new_data, type =
-"response", : prediction from rank-deficient fit; consider predict(.,
-rankdeficient="NA")</code></pre>
-</div>
-<div class="cell-output-display">
-<p><img src="linear_regression_files/figure-html/predictions-observed-1.png" class="img-fluid" width="672"></p>
+<pre><code># A tibble: 3 × 5
+  .metric .estimator  train validation   test
+  &lt;chr&gt;   &lt;chr&gt;       &lt;dbl&gt;      &lt;dbl&gt;  &lt;dbl&gt;
+1 rmse    standard   0.0376     0.0531 0.0923
+2 rsq     standard   0.761      0.0714 0.0302
+3 mae     standard   0.0302     0.0398 0.0784</code></pre>
 </div>
 </div>
 </section>
-<section id="evaluation-metrics-on-validation-data" class="level1">
-<h1>Evaluation metrics on validation data</h1>
+<section id="linear-model-current-and-lag" class="level4">
+<h4 class="anchored" data-anchor-id="linear-model-current-and-lag">Linear model current and lag</h4>
+<ul>
+<li>Current year and lagged data (including lagged target variable)</li>
+<li>selection pattern: <code>matches("^ESR|^Workforce|^Bed|age band|Year 6|GPPS")</code></li>
+<li>data are ordered by time before splitting into train (2013-2018), val (2019) and test (2020)</li>
+<li>correlation threshold: 0.7</li>
+<li>impute missing with knn for all predictors</li>
+</ul>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">list</span>(</span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">train =</span> data_train,</span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">validation =</span> data_validation</span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span> </span>
-<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  purrr<span class="sc">::</span><span class="fu">map_dfr</span>(</span>
-<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>    <span class="sc">~</span> <span class="fu">linear_model_metrics</span>(</span>
-<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>      <span class="at">data =</span> .x,</span>
-<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>      <span class="at">model_fit =</span> linear_fit</span>
-<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>    ),</span>
-<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">.id =</span> <span class="st">"data"</span></span>
-<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span> </span>
-<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>  tidyr<span class="sc">::</span><span class="fu">pivot_wider</span>(</span>
-<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">names_from =</span> data,</span>
-<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">values_from =</span> .estimate</span>
-<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning in predict.lm(object = object$fit, newdata = new_data, type =
-"response", : prediction from rank-deficient fit; consider predict(.,
-rankdeficient="NA")
-
-Warning in predict.lm(object = object$fit, newdata = new_data, type =
-"response", : prediction from rank-deficient fit; consider predict(.,
-rankdeficient="NA")</code></pre>
-</div>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>lm <span class="ot">&lt;-</span> <span class="fu">modelling_performance</span>(</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> dc_data,</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">target_variable =</span> target_variable,</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">lagged_years =</span> <span class="dv">1</span>, </span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">keep_current =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">remove_lag_target =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">time_series_split =</span> <span class="cn">TRUE</span>, </span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">model_type =</span> <span class="st">"linear"</span>, </span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">linear_correlation_threshold =</span> <span class="fl">0.7</span>,</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">seed =</span> <span class="dv">321</span> </span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>lm<span class="sc">$</span>evaluation_metrics</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 3 × 4
-  .metric .estimator  train validation
-  &lt;chr&gt;   &lt;chr&gt;       &lt;dbl&gt;      &lt;dbl&gt;
-1 rmse    standard   0.0320     0.0446
-2 rsq     standard   0.827      0.262 
-3 mae     standard   0.0260     0.0371</code></pre>
+<pre><code># A tibble: 3 × 5
+  .metric .estimator  train validation   test
+  &lt;chr&gt;   &lt;chr&gt;       &lt;dbl&gt;      &lt;dbl&gt;  &lt;dbl&gt;
+1 rmse    standard   0.0319     0.0517 0.0615
+2 rsq     standard   0.828      0.357  0.231 
+3 mae     standard   0.0256     0.0431 0.0523</code></pre>
 </div>
 </div>
-<section id="variable-importance" class="level2">
-<h2 class="anchored" data-anchor-id="variable-importance">Variable importance</h2>
+</section>
+<section id="linear-model-using-only-lagged-data" class="level4">
+<h4 class="anchored" data-anchor-id="linear-model-using-only-lagged-data">Linear model using only lagged data</h4>
+<ul>
+<li>Only lagged data (including lagged target variable)</li>
+<li>selection pattern: <code>matches("^ESR|^Workforce|^Bed|age band|Year 6|GPPS")</code></li>
+<li>data are ordered by time before splitting into train (2014-2018), val (2019) and test (2020)</li>
+<li>correlation threshold: 0.7</li>
+<li>impute missing with knn for all predictors</li>
+</ul>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>linear_fit<span class="sc">|&gt;</span> </span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">extract_fit_parsnip</span>() <span class="sc">|&gt;</span> </span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  vip<span class="sc">::</span><span class="fu">vip</span>(<span class="at">num_features =</span> <span class="dv">10</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output-display">
-<p><img src="linear_regression_files/figure-html/vip-1.png" class="img-fluid" width="864"></p>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>lm <span class="ot">&lt;-</span> <span class="fu">modelling_performance</span>(</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> dc_data,</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">target_variable =</span> target_variable,</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">lagged_years =</span> <span class="dv">1</span>, </span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">keep_current =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">remove_lag_target =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">time_series_split =</span> <span class="cn">TRUE</span>, </span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">model_type =</span> <span class="st">"linear"</span>, </span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">linear_correlation_threshold =</span> <span class="fl">0.7</span>,</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">seed =</span> <span class="dv">321</span> </span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>lm<span class="sc">$</span>evaluation_metrics</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 3 × 5
+  .metric .estimator  train validation   test
+  &lt;chr&gt;   &lt;chr&gt;       &lt;dbl&gt;      &lt;dbl&gt;  &lt;dbl&gt;
+1 rmse    standard   0.0249     0.0368 0.0564
+2 rsq     standard   0.873      0.526  0.404 
+3 mae     standard   0.0203     0.0270 0.0470</code></pre>
+</div>
+</div>
+</section>
+<section id="linear-model-using-only-lagged-data-without-lagged-target-variable" class="level4">
+<h4 class="anchored" data-anchor-id="linear-model-using-only-lagged-data-without-lagged-target-variable">Linear model using only lagged data (without lagged target variable)</h4>
+<ul>
+<li>Only lagged data (not including lagged target variable)</li>
+<li>selection pattern: <code>matches("^ESR|^Workforce|^Bed|age band|Year 6|GPPS")</code></li>
+<li>data are ordered by time before splitting into train (2014-2018), val (2019) and test (2020)</li>
+<li>correlation threshold: 0.7</li>
+<li>impute missing with knn for all predictors</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>lm <span class="ot">&lt;-</span> <span class="fu">modelling_performance</span>(</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> dc_data,</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">target_variable =</span> target_variable,</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">lagged_years =</span> <span class="dv">1</span>,</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">keep_current =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">remove_lag_target =</span> <span class="cn">TRUE</span>, </span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">time_series_split =</span> <span class="cn">TRUE</span>, </span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">model_type =</span> <span class="st">"linear"</span>, </span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">linear_correlation_threshold =</span> <span class="fl">0.7</span>,</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">seed =</span> <span class="dv">321</span> </span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>lm<span class="sc">$</span>evaluation_metrics</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 3 × 5
+  .metric .estimator  train validation   test
+  &lt;chr&gt;   &lt;chr&gt;       &lt;dbl&gt;      &lt;dbl&gt;  &lt;dbl&gt;
+1 rmse    standard   0.0358     0.0537 0.0619
+2 rsq     standard   0.737      0.174  0.0149
+3 mae     standard   0.0292     0.0426 0.0514</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="non-time-series-splitting" class="level3">
+<h3 class="anchored" data-anchor-id="non-time-series-splitting">Non-time series splitting</h3>
+<section id="linear-model-with-no-lagged-data-1" class="level4">
+<h4 class="anchored" data-anchor-id="linear-model-with-no-lagged-data-1">Linear model with no lagged data</h4>
+<ul>
+<li>No lagged data</li>
+<li>selection pattern: <code>matches("^ESR|^Workforce|^Bed|age band|Year 6|GPPS")</code></li>
+<li>correlation threshold: 0.7</li>
+<li>impute missing with knn for all predictors</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>lm <span class="ot">&lt;-</span> <span class="fu">modelling_performance</span>(</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> dc_data,</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">target_variable =</span> target_variable,</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">lagged_years =</span> <span class="dv">0</span>, </span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">time_series_split =</span> <span class="cn">FALSE</span>, </span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">model_type =</span> <span class="st">"linear"</span>, </span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">linear_correlation_threshold =</span> <span class="fl">0.7</span>,</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">seed =</span> <span class="dv">321</span> </span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>lm<span class="sc">$</span>evaluation_metrics</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 3 × 5
+  .metric .estimator  train validation   test
+  &lt;chr&gt;   &lt;chr&gt;       &lt;dbl&gt;      &lt;dbl&gt;  &lt;dbl&gt;
+1 rmse    standard   0.0420     0.0468 0.0412
+2 rsq     standard   0.803      0.815  0.828 
+3 mae     standard   0.0332     0.0382 0.0345</code></pre>
+</div>
+</div>
+</section>
+<section id="linear-model-current-and-lag-1" class="level4">
+<h4 class="anchored" data-anchor-id="linear-model-current-and-lag-1">Linear model current and lag</h4>
+<ul>
+<li>Current year and lagged data (including lagged target variable)</li>
+<li>selection pattern: <code>matches("^ESR|^Workforce|^Bed|age band|Year 6|GPPS")</code></li>
+<li>correlation threshold: 0.7</li>
+<li>impute missing with knn for all predictors</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>lm <span class="ot">&lt;-</span> <span class="fu">modelling_performance</span>(</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> dc_data,</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">target_variable =</span> target_variable,</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">lagged_years =</span> <span class="dv">1</span>, </span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">keep_current =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">remove_lag_target =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">time_series_split =</span> <span class="cn">FALSE</span>, </span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">model_type =</span> <span class="st">"linear"</span>, </span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">linear_correlation_threshold =</span> <span class="fl">0.7</span>,</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">seed =</span> <span class="dv">321</span> </span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>lm<span class="sc">$</span>evaluation_metrics</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 3 × 5
+  .metric .estimator  train validation   test
+  &lt;chr&gt;   &lt;chr&gt;       &lt;dbl&gt;      &lt;dbl&gt;  &lt;dbl&gt;
+1 rmse    standard   0.0368     0.0379 0.0364
+2 rsq     standard   0.857      0.835  0.835 
+3 mae     standard   0.0294     0.0295 0.0312</code></pre>
+</div>
+</div>
+</section>
+<section id="linear-model-using-only-lagged-data-1" class="level4">
+<h4 class="anchored" data-anchor-id="linear-model-using-only-lagged-data-1">Linear model using only lagged data</h4>
+<ul>
+<li>Only lagged data (including lagged target variable)</li>
+<li>selection pattern: <code>matches("^ESR|^Workforce|^Bed|age band|Year 6|GPPS")</code></li>
+<li>correlation threshold: 0.7</li>
+<li>impute missing with knn for all predictors</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>lm <span class="ot">&lt;-</span> <span class="fu">modelling_performance</span>(</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> dc_data,</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">target_variable =</span> target_variable,</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">lagged_years =</span> <span class="dv">1</span>, </span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">keep_current =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">remove_lag_target =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">time_series_split =</span> <span class="cn">FALSE</span>, </span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">model_type =</span> <span class="st">"linear"</span>, </span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">linear_correlation_threshold =</span> <span class="fl">0.7</span>,</span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">seed =</span> <span class="dv">321</span> </span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>lm<span class="sc">$</span>evaluation_metrics</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 3 × 5
+  .metric .estimator  train validation   test
+  &lt;chr&gt;   &lt;chr&gt;       &lt;dbl&gt;      &lt;dbl&gt;  &lt;dbl&gt;
+1 rmse    standard   0.0368     0.0379 0.0364
+2 rsq     standard   0.857      0.835  0.835 
+3 mae     standard   0.0294     0.0295 0.0312</code></pre>
+</div>
+</div>
+</section>
+<section id="linear-model-using-only-lagged-data-without-lagged-target-variable-1" class="level4">
+<h4 class="anchored" data-anchor-id="linear-model-using-only-lagged-data-without-lagged-target-variable-1">Linear model using only lagged data (without lagged target variable)</h4>
+<ul>
+<li>Only lagged data (not including lagged target variable)</li>
+<li>selection pattern: <code>matches("^ESR|^Workforce|^Bed|age band|Year 6|GPPS")</code></li>
+<li>correlation threshold: 0.7</li>
+<li>impute missing with knn for all predictors</li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>lm <span class="ot">&lt;-</span> <span class="fu">modelling_performance</span>(</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> dc_data,</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">target_variable =</span> target_variable,</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">lagged_years =</span> <span class="dv">1</span>,</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">keep_current =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">remove_lag_target =</span> <span class="cn">TRUE</span>, </span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">time_series_split =</span> <span class="cn">FALSE</span>, </span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">model_type =</span> <span class="st">"linear"</span>, </span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">linear_correlation_threshold =</span> <span class="fl">0.7</span>,</span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">seed =</span> <span class="dv">321</span> </span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a>lm<span class="sc">$</span>evaluation_metrics</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 3 × 5
+  .metric .estimator  train validation   test
+  &lt;chr&gt;   &lt;chr&gt;       &lt;dbl&gt;      &lt;dbl&gt;  &lt;dbl&gt;
+1 rmse    standard   0.0409     0.0429 0.0407
+2 rsq     standard   0.823      0.798  0.807 
+3 mae     standard   0.0326     0.0351 0.0340</code></pre>
 </div>
 </div>
 
 
+</section>
 </section>
 </section>
 
