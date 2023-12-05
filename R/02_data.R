@@ -110,7 +110,7 @@ write.csv(
 )
 
 # deprivation
-quintile_descriptions <- category_types() |> 
+quintile_descriptions <- fingertipsR::category_types() |> 
   filter(CategoryTypeId == 6) |> 
   select(
     "Id", 
@@ -127,18 +127,27 @@ lsoa_icb_lkp <- check_and_download(
     "ICB22CDH"
   )
 
-pops_url <- "https://www.ons.gov.uk/file?uri=/peoplepopulationandcommunity/populationandmigration/populationestimates/datasets/lowersuperoutputareamidyearpopulationestimates/mid2019sape22dt2/sape22dt2mid2019lsoasyoaestimatesunformatted.zip"
-lsoa2019_pop <- check_and_download(
-  filepath = paste0("data-raw/Lookups/", basename(pops_url)),
-  url = pops_url
+pops_files <- list.files("data-raw/Population/",
+                         full.names = TRUE) |> 
+  set_names(
+    nm = function(x) str_extract(x, "[0-9]{4}")
+  )
+
+lsoa_pops <- map(
+  pops_files,
+  open_pops_file
 ) |> 
-  open_pops_file() |> 
-  pluck(
-    "data"
+  purrr::map_df(
+    ~ pluck(.x, "data"),
+    .id = "year"
   ) |> 
   select(
+    year,
     "LSOA11CD", 
     population = "All Ages"
+  ) |> 
+  filter(
+    grepl("^E", LSOA11CD)
   )
 
 deprivation <- check_and_download(
@@ -166,21 +175,23 @@ deprivation <- check_and_download(
     )
   ) |> 
   left_join(
-    lsoa2019_pop,
+    lsoa_pops,
     by = join_by(
       LSOA11CD
-    )
+    ),
+    relationship = "many-to-many"
   ) |> 
   summarise(
     population = sum(population),
     .by = c(
+      year,
       ICB22CDH, 
       quintile_name
     )
   ) |> 
   mutate(
     denominator = sum(population),
-    .by = ICB22CDH
+    .by = c(year, ICB22CDH)
   ) |> 
   rename(
     numerator = "population",
@@ -193,8 +204,7 @@ deprivation <- check_and_download(
       "Proportion of resident population in national deprivation quintile (",
       quintile_name,
       ") - IMD 2019"
-    ),
-    year = 2019
+    )
   ) |> 
   select(!c("quintile_name"))
 
@@ -203,6 +213,7 @@ write.csv(
   "data/deprivation.csv",
   row.names = FALSE
 )
+
 # Capacity data sources ---------------------------------------------------
 
 ## Hospital beds
@@ -363,6 +374,56 @@ bind_rows(
     row.names = FALSE
   )
 
+
+# Total beds per 60+ population
+
+population_60_plus <- read.csv(
+  "data/population.csv"
+) |> 
+  filter(
+    grepl(paste(seq(60, 90, by = 10), collapse = "|"),
+          metric)
+  ) |> 
+  summarise(
+    denominator = sum(numerator),
+    .by = c(
+      year, org
+    )
+  )
+
+beds_per_60plus <- c(
+  "data/overnight-beds.csv",
+  "data/day-beds.csv"
+) |> 
+  purrr::map_dfr(
+    read.csv
+  ) |> 
+  filter(frequency == "annual financial") |> 
+  select(
+    "year", "org", "frequency",
+    numerator = "denominator",
+    metric
+  ) |> 
+  inner_join(
+    population_60_plus,
+    by = join_by(
+      year, org
+    )
+  ) |> 
+  mutate(
+    metric = gsub(
+      "Bed availability",
+      "Total beds per 1,000 60+ yrs",
+      metric
+    ),
+    value = 1e3 * numerator / denominator
+  )
+
+write.csv(
+  beds_per_60plus,
+  "data/beds-per-1000-60plus.csv",
+  row.names = FALSE
+)
 
 
 # NHS workforce per population
