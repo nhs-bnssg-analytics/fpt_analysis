@@ -398,7 +398,10 @@ beds_per_60plus <- c(
   purrr::map_dfr(
     read.csv
   ) |> 
-  filter(frequency == "annual financial") |> 
+  filter(
+    frequency == "annual financial",
+    grepl("General", metric)
+  ) |> 
   select(
     "year", "org", "frequency",
     numerator = "denominator",
