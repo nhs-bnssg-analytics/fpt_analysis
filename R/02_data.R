@@ -16,29 +16,33 @@ zip_files <- obtain_links(url) |>
   (\(x) x[!grepl("sape19|sape18", x)])() |> 
   (\(x) x[!grepl("^rft", basename(x))])()
 
-
-
 files <- purrr::map_chr(
   paste0(
     "https://www.ons.gov.uk/",
     zip_files
   ),
-  ~ download_url_to_directory(
+  ~ check_and_download(
     url = .x,
-    new_directory = "Population",
-    filename = basename(.x)
+    filepath = paste0("data-raw/Population/", basename(.x))
   )
 )
 
-
-
-older_population <- purrr::map_dfr(
+population_by_age_band <- purrr::map_dfr(
   files,
   calculate_icb_populations
 )
 
+if (max(population_by_age_band$year) < 2021) {
+  population_by_age_band_21_22 <- estimate_21_22_populations()
+  
+  population_by_age_band <- bind_rows(
+    population_by_age_band,
+    population_by_age_band_21_22
+  )
+}
+
 write.csv(
-  older_population,
+  population_by_age_band,
   "data/population.csv",
   row.names = FALSE
 )
@@ -149,6 +153,20 @@ lsoa_pops <- map(
   filter(
     grepl("^E", LSOA11CD)
   )
+
+lsoa2122pops <- lsoa_populations_21_22() |> 
+  summarise(
+    population = sum(population),
+    .by = c(
+      year, LSOA11CD
+    )
+  )
+
+lsoa_pops <- bind_rows(
+  lsoa_pops,
+  lsoa2122pops
+)
+
 
 deprivation <- check_and_download(
   filepath = "data-raw/Deprivation/deprivation.xlsx",

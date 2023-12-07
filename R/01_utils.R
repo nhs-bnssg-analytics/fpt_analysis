@@ -950,6 +950,73 @@ calculate_icb_populations <- function(raw_pops_file) {
   return(all_persons)
 }
 
+estimate_21_22_populations <- function() {
+  # start with LSOA2020 population estimates by 10 year age bands
+  # apply lsoa to LAD21 lookup to calculate the proportion of each LAD21 within each LSOA
+  
+  
+  
+  # LSOA to ICS lookup
+  filepath <- check_and_download(
+    filepath = "data-raw/Lookups/lsoa_icb.xlsx",
+    url = "https://www.arcgis.com/sharing/rest/content/items/1ac8547e9a8945478f0b5ea7ffe1a6b1/data"
+  )
+  
+  lsoa_icb <- readxl::read_excel(
+    filepath,
+    sheet = "LSOA11_LOC22_ICB22_LAD22"
+  ) |> 
+    select(LSOA11CD, ICB22CDH)
+  
+  # apply those proportions to 2021 and 2022 estimates published here: 
+  # https://www.ons.gov.uk/peoplepopulationandcommunity/populationandmigration/populationestimates/datasets/estimatesofthepopulationforenglandandwales
+  
+  ics_21_22 <- lsoa_populations_21_22() |> 
+    # apply LSOA to ICS lookup
+    left_join(
+      lsoa_icb,
+      by = join_by(
+        LSOA11CD
+      )
+    ) |> 
+    # aggregate to ICS
+    summarise(
+      numerator = sum(population),
+      .by = c(
+        year, ICB22CDH, age_band
+      )
+    ) |> 
+    mutate(
+      metric = case_when(
+        age_band != "90" ~ paste(age_band, age_band + 9, sep = "-"),
+        .default = "90+"
+      ),
+      metric = paste0(
+        "Proportion of population in age band (",
+        metric,
+        ")"
+      )
+    ) |> 
+    mutate(
+      denominator = sum(numerator),
+      .by = ICB22CDH
+    ) |> 
+    mutate(
+      value = numerator / denominator,
+      frequency = "annual calendar"
+    ) |> 
+    select(
+      !c("age_band")
+    ) |> 
+    rename(
+      org = "ICB22CDH"
+    )
+  
+  
+  return(ics_21_22)
+  
+}
+
 lsoa_populations <- function(raw_pops_file) {
   lsoa_populations <- open_pops_file(raw_pops_file) |> 
     pluck("data") |> 
@@ -960,6 +1027,97 @@ lsoa_populations <- function(raw_pops_file) {
   
   return(lsoa_populations)
 }
+
+lsoa_populations_21_22 <- function() {
+  lsoa2020 <- check_and_download(
+    filepath = "data-raw/Population/sape23dt2mid2020lsoasyoaestimatesunformatted.xlsx",
+    url = "https://www.ons.gov.uk/file?uri=/peoplepopulationandcommunity/populationandmigration/populationestimates/datasets/lowersuperoutputareamidyearpopulationestimates/mid2020sape23dt2/sape23dt2mid2020lsoasyoaestimatesunformatted.xlsx"
+  ) |> 
+    open_pops_file() |> 
+    pluck("data") |> 
+    filter(
+      grepl("^E", LSOA11CD)
+    ) |> 
+    select(
+      LSOA11CD,
+      LAD21CD = "LA Code (2021 boundaries)",
+      as.character(0:89),
+      "90+"
+    ) |> 
+    pivot_longer(
+      cols = !c("LSOA11CD", "LAD21CD"),
+      names_to = "age",
+      values_to = "population"
+    ) |> 
+    mutate(
+      age = gsub("\\+", "", age),
+      age_band = floor(as.numeric(age) / 10) * 10
+    ) |> 
+    summarise(
+      population = sum(population),
+      .by = c(
+        LSOA11CD,
+        LAD21CD,
+        age_band
+      )
+    ) |> 
+    mutate(
+      proportion = population / sum(population),
+      .by = c(LAD21CD, age_band)
+    ) |> 
+    mutate(
+      LAD21CD = str_trim(LAD21CD)
+    ) |> 
+    select(!c("population"))
+  
+  lsoa_age_band_pops <- check_and_download(
+    filepath = "data-raw/Population Local Authority/myebtablesenglandwales20112022v2.xlsx",
+    url = "https://www.ons.gov.uk/file?uri=/peoplepopulationandcommunity/populationandmigration/populationestimates/datasets/estimatesofthepopulationforenglandandwales/mid2011tomid2022detailedtimeseries/myebtablesenglandwales20112022v2.xlsx"
+  ) |> 
+    readxl::read_excel(
+      sheet = "MYEB1 (2021 Geography)",
+      skip = 1
+    ) |> 
+    filter(
+      grepl("^E", ladcode21)
+    ) |> 
+    mutate(
+      age_band = floor(as.numeric(age) / 10) * 10
+    ) |> 
+    select(
+      LAD21CD = "ladcode21",
+      "age_band",
+      "population_2021",
+      "population_2022"
+    ) |> 
+    summarise(
+      across(
+        c(population_2021, population_2022),
+        sum
+      ),
+      .by = c(LAD21CD, age_band)
+    ) |> 
+    pivot_longer(
+      cols = starts_with("population"),
+      names_to = "year",
+      values_to = "population"
+    ) |> 
+    left_join(
+      lsoa2020,
+      by = join_by(
+        LAD21CD, age_band
+      ),
+      relationship = "many-to-many"
+    ) |> 
+    mutate(
+      population = population * proportion,
+      year = gsub("population_", "", year)
+    ) |> 
+    select(!c("proportion"))
+  
+  return(lsoa_age_band_pops)
+}
+
 # data processing ---------------------------------------------------------
 
 reformat_bed_availability_data <- function(filepath, bed_type) {
