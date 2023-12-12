@@ -107,10 +107,27 @@ risk_factors <- fingertipsR::indicators() |>
     latest_codes_used = TRUE
   )
 
-write.csv(
-  risk_factors,
-  "data/risk-factors-fingertips.csv",
-  row.names = FALSE
+# if there is data already recorded in the data folder for risk factors, keep the old records that have been deleted
+if (file.exists("data/risk-factors-fingertips.csv")) {
+  removed_data <- read.csv("data/risk-factors-fingertips.csv") |> 
+    anti_join(
+      risk_factors,
+      by = join_by(
+        org, metric, year, frequency
+      )
+    )
+  
+  risk_factors <- risk_factors |> 
+    bind_rows(
+      removed_data
+    )
+}
+
+
+risk_factors |> 
+  write.csv(
+    "data/risk-factors-fingertips.csv",
+    row.names = FALSE
 )
 
 # deprivation
