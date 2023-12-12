@@ -28,7 +28,8 @@ train_validation_proportions <- function(data) {
   return(proportions)
 }
 
-add_prediction_to_data <- function(data, model_fit) {
+add_prediction_to_data <- function(data, model_fit, target_variable = NULL, 
+                                   predict_proportions = TRUE) {
   data <- data |> 
     bind_cols(
       predict(
@@ -36,16 +37,29 @@ add_prediction_to_data <- function(data, model_fit) {
         new_data = data
         )
       )
+  if (!is.null(target_variable)) {
+    if (!predict_proportions) {
+      data <- data |> 
+        mutate(
+          .pred = .pred * (numerator + remainder)
+        )
+    }
+  }
+  
   return(data)
 }
 
-model_metrics <- function(data, model_fit) {
+model_metrics <- function(data, model_fit, target_variable, predict_proportions) {
   evaluation_metrics <- metric_set(
     yardstick::rmse,
     yardstick::rsq,
     yardstick::mae)
   
-  metrics <- add_prediction_to_data(data, model_fit) |> 
+  metrics <- add_prediction_to_data(
+    data = data, 
+    model_fit = model_fit, 
+    target_variable = target_variable,
+    predict_proportions = predict_proportions) |> 
     evaluation_metrics(
       truth = all_of(target_variable),
       estimate = .pred
@@ -96,6 +110,108 @@ plot_observed_expected <- function(data, target_variable) {
 }
 
 
+# load data ---------------------------------------------------------------
+
+load_data <- function(target_variable, value_type = "value", incl_numerator_remainder = FALSE) {
+  metrics <- read.csv(
+    here::here("data/configuration-table.csv"),
+    encoding = "latin1"
+  ) |> 
+    filter(!(status %in% c("incorrect geography", "remove"))) |> 
+    select(metric, denominator_description)
+  
+  dc_data <- list.files(here::here("data"), full.names = TRUE) |> 
+    (\(x) x[!grepl("configuration-table|modelling_data", x)])() |> 
+    purrr::map_dfr(
+      read.csv
+    )
+  
+  # ensure full year of data for target variable
+  target_data <- dc_data |> 
+    filter(
+      metric == target_variable
+    )
+  
+  # check whether monthly data area recorded
+  if (sum(!is.na(target_data[["month"]])) > 0) {
+    full_years <- target_data |> 
+      filter(!is.na(month)) |> 
+      distinct(
+        year, month
+      ) |> 
+      count(year) |> 
+      filter(n == 12) |> 
+      pull(year)
+    
+    dc_data <- dc_data |> 
+      filter(year %in% full_years)
+  } else if (sum(!is.na(target_data[["quarter"]])) > 0) {
+    full_years <- target_data |> 
+      filter(!is.na(quarter)) |> 
+      distinct(
+        year, quarter
+      ) |> 
+      count(year) |> 
+      filter(n == 4) |> 
+      pull(year)
+    
+    dc_data <- dc_data |> 
+      filter(year %in% full_years)
+  }
+  
+  dc_data <- dc_data |> 
+    inner_join(
+      metrics,
+      by = join_by(metric)
+    ) |> 
+    filter(
+      grepl("annual", frequency),
+      grepl("^Q", org)
+    )
+  
+  if (incl_numerator_remainder == TRUE) {
+    numerator_remainder <- dc_data |> 
+      filter(
+        metric == target_variable
+      ) |> 
+      mutate(
+        remainder = denominator - numerator
+      ) |> 
+      select(!c("value", "metric", "denominator")) |> 
+      pivot_longer(
+        cols = c("numerator", "remainder"),
+        names_to = "metric",
+        values_to = value_type
+      )
+    
+    dc_data <- dc_data |> 
+      bind_rows(
+        numerator_remainder
+      )
+  }
+  
+  dc_data <- dc_data |> 
+    select(
+      all_of(
+        c(
+          "metric",
+          "year", 
+          "org", 
+          value_type
+        )
+      )
+    ) |> 
+    rename(
+      value = value_type
+    ) |> 
+    pivot_wider(
+      names_from = metric,
+      values_from = value
+    )
+  
+  return(dc_data)
+}
+
 # modelling ---------------------------------------------------------------
 
 #' @param data tibble containing data for modelling. Each record is a year
@@ -112,23 +228,35 @@ plot_observed_expected <- function(data, target_variable) {
 #'   include the lagged target variable or not
 #' @param time_series_split logical; order the data by year prior to splitting,
 #'   so training data is before validation data, which is before test data
+#' @param training_years integer; number of years to use for training the model.
+#'   If NULL, all available years will be used. If contains an integer, it must
+#'   be greater than 1
+#' @param shuffle_training_records logical; should the training/validation set
+#'   be ordered or shuffled for imte_series_split = TRUE
 #' @param model_type character string; the modelling method to use
 #' @param rf_tuning_grid data.frame with numeric columns for mtry, min_n and
 #'   trees. Can also take the value "auto"
 #' @param linear_correlation_threshold numeric between 0 and 1; threshold to
 #'   remove correlated variables for linear model
+#' @param predict_proportions logical; should proportions be the predicted value
+#'   (TRUE) or a count (FALSE)
 #' @param seed numeric; seed number
+#' @details
+#' This webpage was useful https://www.tidyverse.org/blog/2022/05/case-weights/
+#' 
 modelling_performance <- function(data, target_variable, lagged_years = 0, 
                                   keep_current = TRUE, remove_lag_target = TRUE,
-                                  time_series_split = TRUE, 
+                                  time_series_split = TRUE, training_years = NULL,
+                                  shuffle_training_records = FALSE,
                                   model_type = "linear", 
                                   rf_tuning_grid = "auto",
                                   linear_correlation_threshold = 0.9,
+                                  predict_proportions = TRUE,
                                   seed = 321) {
   
   model_type <- match.arg(
     model_type,
-    c("linear", "random_forest")
+    c("linear", "random_forest", "logistic_regression")
   )
   
   if (model_type == "random_forest") {
@@ -139,6 +267,10 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
     } else if (rf_tuning_grid != "auto") {
       stop("rf_tuning_grid is incorrect")
     }
+  }
+  
+  if (!is.null(training_years)) {
+    if (training_years < 2) stop("training years must be NULL or greater than 1")
   }
   
   set.seed(seed)
@@ -157,6 +289,8 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
     
     if (remove_lag_target) {
       not_lag_variables <- c("year", "org", target_variable)
+      if (model_type == "logistic_regression") 
+        not_lag_variables <- c(not_lag_variables, "numerator", "remainder")
     }
     else {
       not_lag_variables <- c("year", "org")
@@ -186,11 +320,13 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
         )
       
       if (!keep_current) {
+        keep_variables <- c("year", "org", target_variable)
+        if(model_type == "logistic_regression")
+          keep_variables <- c(keep_variables, "numerator", "remainder")
+        
         data <- data |>
           select(
-            all_of(
-              c("year", "org", target_variable)
-            ),
+            all_of(keep_variables),
             starts_with("lag")
           ) |>
           filter(
@@ -200,6 +336,14 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
     }
   }
   
+  # limit the years used for training purposes
+  if (!is.null(training_years)) {
+    
+    data <- data |> 
+      filter(
+        year >= (max(year) - training_years)
+      )
+  }
   
   # splitting
   
@@ -207,6 +351,17 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
   
   # split dataset into train, validation and test
   if (time_series_split) {
+    if (shuffle_training_records) {
+      final_year <- data |> 
+        filter(year == max(year))
+      
+      data <- data |> 
+        filter(year != max(year)) |> 
+        slice_sample(prop = 1) |> 
+        bind_rows(final_year)
+        
+    }
+    
     splits <- rsample::initial_validation_time_split(
       data = data,
       prop = proportions
@@ -250,39 +405,80 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
     ) |> 
       set_engine("ranger", num.threads = cores) |> 
       set_mode("regression")
+  } else if (model_type == "logistic_regression") {
+    model_setup <- parsnip::linear_reg() |> 
+      set_engine(
+        "glm", 
+        family = stats::quasibinomial(link = "logit")
+      ) |> 
+      set_mode("regression")
   }
   
+  # identify variables in train and val that are mostly missing so they are removed
+  mostly_missing_vars <- bind_rows(
+    data_train,
+    data_validation
+  ) |> 
+    lapply(
+      function(x) sum(is.na(x)) / length(x)
+    ) |> 
+    (\(x) x[x > 0.4])() |> 
+    names(x = _)
   
+  # identify fields to impute
+  missing_data <- names(data)[colSums(is.na(data)) > 0] |> 
+    (\(x) x[!(x %in% mostly_missing_vars)])()
+  
+  # identify predictor variables
+  predictor_variables <- names(data)[!(names(data) %in% c("year", "org", target_variable))] |> 
+    # remove variables that are mostly missing
+    (\(x) x[!(x %in% mostly_missing_vars)])()
   
   # set recipe
-  missing_data <- names(data)[colSums(is.na(data)) > 0]
-  
-  predictor_variables <- names(data)[!(names(data) %in% c("year", "org", target_variable))]
-  
   model_recipe <- data_train |> 
-    select(
-      !c("year", "org")
-    ) |> 
     recipe() |> 
-    update_role(
-      all_of(target_variable),
-      new_role = "outcome"
-    ) |> 
+    step_rm(
+      all_of(c("year", "org", mostly_missing_vars))
+    )
+  
+  if (model_type == "logistic_regression") {
+    predictor_variables <- predictor_variables[!predictor_variables %in% c("numerator", "remainder")]
+    
+    model_recipe <- model_recipe |> 
+      update_role(
+        numerator, remainder,
+        new_role = "outcome"
+      ) |> 
+      step_rm(
+        all_of(target_variable)
+      )
+  } else if (model_type %in% c("linear", "random_forest")) {
+    model_recipe <- model_recipe |> 
+      update_role(
+        all_of(target_variable),
+        new_role = "outcome"
+      ) |> 
+      step_rm(
+        any_of(
+          c("numerator", "remainder")
+        )
+      )
+  }
+  model_recipe <- model_recipe |> 
     update_role(
       all_of(predictor_variables),
       new_role = "predictor"
     )
   
-  if (model_type == "linear") {
+  if (model_type %in% c("linear")) {
     model_recipe <- model_recipe |> 
-      step_center(all_predictors()) |> 
-      step_scale(all_predictors())
+      step_normalize(all_predictors())
   }
   
   model_recipe <- model_recipe |> 
     step_impute_knn(all_of(missing_data))
   
-  if (model_type == "linear") {
+  if (model_type %in% c("linear", "logistic_regression")) {
     model_recipe <- model_recipe |> 
       step_corr(all_predictors(),
                 threshold = linear_correlation_threshold)
@@ -299,12 +495,21 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
     add_model(model_setup) |> 
     add_recipe(model_recipe)
   
-  if (model_type == "linear") {
+  if (model_type %in% c("linear", "logistic_regression")) {
     # fit model
     
-    model_fit <- modelling_workflow |> 
-      fit(data = data_train)
-    
+    model_fit <- list(
+      train = data_train,
+      validation = data_validation
+    ) |> 
+      bind_rows(
+        .id = "data_type"
+      ) |> 
+      fit(
+        data = _,
+        object = modelling_workflow
+      )
+    browser()
     # check linear assumptions
     assumptions_check <- model_fit$fit$fit |> 
       performance::check_model()
@@ -322,7 +527,7 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
           by = 4
         ),
         min_n = seq(
-          from = round(nrow(data_train) / 10, 0) - 10,
+          from = round(nrow(data_train) / 10, 0),
           to = round(nrow(data_train) / 10, 0) + 10,
           by = 4
         ),
@@ -332,12 +537,11 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
           by = 10
         )
       )
-    }
-    
+    } 
     
     rf_residuals <- modelling_workflow |> 
       tune_grid(data_validation_set,
-                grid = tuning_grid[1,],
+                grid = tuning_grid,
                 control = control_grid(save_pred = TRUE))
     
     tuning_parameters <- autoplot(rf_residuals)
@@ -360,7 +564,8 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
     
     # the last fit
     model_fit <- list(
-      train = data_train
+      train = data_train,
+      validation = data_validation
     ) |> 
       bind_rows(
         .id = "data_type"
@@ -373,9 +578,7 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
     rf_metrics <- modelling_workflow |> 
       last_fit(splits) |> 
       collect_metrics(summarize = FALSE)
-  }
-  
-  
+  } 
   
   # plot predictions vs observed
   prediction_plot <- list(
@@ -393,7 +596,9 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
       )
     ) |> 
     add_prediction_to_data(
-      model_fit
+      model_fit,
+      target_variable,
+      predict_proportions
     ) |> 
     plot_observed_expected(
       target_variable
@@ -410,7 +615,9 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
     purrr::map_dfr(
       ~ model_metrics(
         data = .x,
-        model_fit = model_fit
+        model_fit = model_fit,
+        target_variable = target_variable,
+        predict_proportions = predict_proportions
       ),
       .id = "data"
     ) |> 
@@ -425,13 +632,25 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
     extract_fit_parsnip() |> 
     vip::vip(num_features = 10)
   
-  if (model_type == "linear") {
+  inputs <- tibble(
+    `Model type` = model_type,
+    `Split type` = ifelse(time_series_split == TRUE, "Time-series", "Random"),
+    `Shuffled training years` = ifelse(time_series_split == TRUE, shuffle_training_records, NA),
+    `Training years` = (max(data_validation$year) - min(data_train$year)) + 1,
+    `Lagged years` = lagged_years,
+    `Current year included` = ifelse(lagged_years > 0, keep_current, NA),
+    `Lagged target variable` = ifelse(lagged_years > 0, !remove_lag_target, NA)
+  )
+  
+  
+  if (model_type %in% c("linear", "logistic_regression")) {
     output <- list(
       dataset_yrs = dataset_yrs,
       assumptions_check = assumptions_check,
       prediction_plot = prediction_plot,
       evaluation_metrics = evaluation_metrics,
-      variable_importance = variable_importance
+      variable_importance = variable_importance,
+      inputs = inputs
     )
   } else if (model_type == "random_forest") {
     output <- list(
@@ -440,7 +659,8 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
       prediction_plot = prediction_plot,
       evaluation_metrics = evaluation_metrics,
       rf_metrics = rf_metrics,
-      variable_importance = variable_importance
+      variable_importance = variable_importance,
+      inputs = inputs
     )
   }
   
