@@ -1,4 +1,4 @@
-library("R/00_libraries.R")
+source("R/00_libraries.R")
 
 df <- read.csv("data/referral-to-treatment.csv") |> 
   filter(
