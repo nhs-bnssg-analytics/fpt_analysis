@@ -381,6 +381,9 @@ tidy_cancer_wait_times <- function(filepath) {
         month = lubridate::month(month_year),
         year = lubridate::year(month_year)
       ) |>
+      filter(
+        !grepl("COMMISSIONING HUB|LHB|UNKNOWN", org_name)
+      ) |> 
       select(
         "year",
         "month",
@@ -650,7 +653,8 @@ tidy_rtt <- function(filepath) {
     ) |> 
     filter(
       type != "not required",
-      treatment_function == "Total"
+      treatment_function == "Total",
+      !grepl("NHS ENGLAND|COMMISSIONING REGION|COMMISSIONING HUB", org_name)
     ) |> 
     mutate(
       chr = gsub("-", "0", chr),
@@ -999,7 +1003,7 @@ estimate_21_22_populations <- function() {
     ) |> 
     mutate(
       denominator = sum(numerator),
-      .by = ICB22CDH
+      .by = c(year, ICB22CDH)
     ) |> 
     mutate(
       value = numerator / denominator,
