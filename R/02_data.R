@@ -495,7 +495,7 @@ annual_workforce_fte <- unzip_file(
     Date = as.Date(Date),
     month = lubridate::month(Date),
     year = lubridate::year(Date),
-    months_from_july = abs(7 - month)
+    months_from_july = abs(7 - month) # some years dont have july data
   ) |> 
   filter(
     months_from_july == min(months_from_july),

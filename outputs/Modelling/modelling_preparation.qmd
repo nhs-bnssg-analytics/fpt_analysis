@@ -3,16 +3,25 @@ title: "Data preparation for modelling"
 order: 1
 ---
 
+## Introduction
+
+The aim of the modelling process is to predict "next year's" target variable from information that has occurred in previous years. 
+In the modelling process, the "target variable" is the variable, or performance metric, that the modelling process is attempting to predict. Each performance metric will have a different model that creates the best predictions, but the process to identify the best model will be the same.
+
+The models are all evaluated using the R^2^ metric (coefficient of determination), which is the proportion of the variance of the target variable that is explained by the predictor variable. 
+
+## Data definitons
+
+Each metric (performance, demand and capacity) has been collated with a numerator, a denominator and a calculated value, which is either a proportion or a rate. 
+
+By its nature, a proportion is always between 0 and 1. All other values can only take a positive number. 
+
+For modelling, the data used could be either the "value" (e.g., the calculated proportion or rate) or the numerator. The performance of the modelling process could be dependent on the modelling technique used.
+
 ## Data structure
 
-The project aims to allow us to predict the value of a performance metric in future years (1, 2, 5 years, say) for each of the ICSs. Performance metrics could be impacted by demand and capacity metrics for the same years, or potentially years building up to that year.
-
-To enable testing different models, the data structure should consider the following for each ICS and each year:
-
-* a value for each target variable (performance metrics) - required
-* a value for each predictor variable (demand and capacity metrics) - optional
-* a lagged value (1 to x years lag) for target and predictor variable - optional
-* inclusion of ICB code and year in for prediction variables?
+For modelling, the data are structured as a record for each Integrated Care System (ICS) for each year.
+The fields will contain the target variable (the metric that the model is trying to predict) alongside lagged values of the predictor variables. The number of years to lag the predictor variables needs to be determined and could potentially be model specific.
 
 ## Splitting dataset
 

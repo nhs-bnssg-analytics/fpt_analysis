@@ -9,36 +9,41 @@ target_variable <- "Proportion of completed pathways greater than 18 weeks from 
 
 
 # random forest -----------------------------------------------------------
-
 dc_data <- load_data(
   target_variable,
   value_type = "numerator"
 ) |> 
   select(
-    all_of(c("org", "year", target_variable)),
+    any_of(c("org", "year", target_variable)),
     any_of(c("numerator", "remainder")),
-    matches("^ESR|^Workforce|^Bed|age band|Year 6|GPPS|QOF")
+    matches("^ESR|^Workforce|^Bed|bed days|age band|Year 6|obese|GPPS|QOF")
   ) |> 
   dplyr::filter(
     # retain all rows where target variable is not na
     # retain all rows where we have population age group information
     if_all(
-      all_of(
-        c(target_variable, "Proportion of population in age band (80-89)")), ~ !is.na(.))
+      any_of(
+        c(target_variable, 
+          "numerator",
+          "Proportion of population in age band (80-89)")), ~ !is.na(.))
   ) |> 
   arrange(
     year, org
   )
 
+new_names <- names(dc_data) |> 
+  (\(x) ifelse(x %in% c("year", "org"), x, map_chr(.x = x, .f = metric_to_numerator)))()
+
+names(dc_data) <- new_names
 
 rf_training_years <- set_names(
-  2:9,
-  nm = paste0("training_years_", 2:9)
+  2:5,
+  nm = paste0("training_years_", 2:5)
   ) |> 
   map(
     ~ modelling_performance(
       data = dc_data,
-      target_variable = target_variable,
+      target_variable = metric_to_numerator(target_variable),
       lagged_years = 1, 
       training_years = .x,
       keep_current = FALSE,
@@ -97,7 +102,7 @@ random_forest <- rf_training_years |>
   labs(
     title = "Rsq for random forest for different numbers of training years",
     subtitle = "Only last years data used (without target variable), shuffled training data",
-    caption = target_variable,
+    caption = metric_to_numerator(target_variable),
     x = "Number of years in training data",
     y = bquote(~R^2)
   )

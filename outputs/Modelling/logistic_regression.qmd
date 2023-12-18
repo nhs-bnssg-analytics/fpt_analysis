@@ -1,6 +1,6 @@
 ---
-title: "Linear regression"
-order: 2
+title: "Logistic regression"
+order: 4
 ---
 
 ```{r}
@@ -13,11 +13,9 @@ source(here::here("R/04_modelling_utils.R"))
 ```
 
 
-## Linear model considerations
+## Logistic model considerations
 
 The metrics that have been collected are either proportions (numerator and denominator are from the same sample), rates, or the raw numerators and denominators. 
-
-Therefore, linear models are not appropriate for this exercise. They are useful here to give an indication of relationships between variables.
 
 ## Methods
 
@@ -34,17 +32,19 @@ Once pre-processing is complete, the model is trained on the years prior to the 
 
 Finally, the models are evaluated using the R^2^ value when applying that trained model to the year that is being predicted (is this right???).
 
+## Modelling proportions
+
 ### Setting up the data
 
 ```{r}
-#| label: field-selection
- 
+#| label: field-selection-proportions
+
 target_variable <- "Proportion of completed pathways greater than 18 weeks from referral (admitted)"
 
 dc_data <- load_data(
   target_variable, 
-  incl_numerator_remainder = FALSE,
-  value_type = "numerator") |> 
+  incl_numerator_remainder = TRUE,
+  value_type = "value") |> 
   select(
     all_of(c("org", "year", target_variable)),
     any_of(c("numerator", "remainder")),
@@ -60,14 +60,12 @@ dc_data <- load_data(
   arrange(
     year, org
   )
-
 ```
 
-
-## Modelling
+### Configuration
 
 ```{r}
-#| label: configure-inputs
+#| label: configure-inputs-proportions
 
 # correlation thresholds between 0.3 and 0.9
 # 2 to 6 years of training data
@@ -79,12 +77,13 @@ inputs <- expand.grid(
 
 ```
 
+### Modelling
 
 ```{r}
-#| label: modelling
+#| label: modelling-proportions
 #| warning: false
 
-linear <- map2(
+logistic <- map2(
   .x = inputs$corr,
   .y = inputs$yrs,
   ~ modelling_performance(
@@ -95,7 +94,7 @@ linear <- map2(
     shuffle_training_records = TRUE,
     keep_current = FALSE,
     time_series_split = TRUE, 
-    model_type = "linear", 
+    model_type = "logistic_regression", 
     linear_correlation_threshold = .x,
     seed = 321 ,
     training_years = .y,
@@ -106,17 +105,15 @@ linear <- map2(
 
 ```
 
-
-
-## Results summary
+### Results summary
 
 ```{r}
-#| label: plot-results
+#| label: plot-results-proportions
 #| out-width: 10in
 #| fig-width: 9
 #| fig-height: 7
 
-linear |> 
+logistic |> 
   map_df(
     ~ pluck(.x, "evaluation_metrics")
   ) |> 
@@ -130,7 +127,9 @@ linear |>
     values_to = "rsq"
   ) |> 
   mutate(
-    yrs = paste(yrs, "years")
+    yrs = paste(
+      yrs, "years"
+    )
   ) |> 
   ggplot(
     aes(
@@ -148,6 +147,7 @@ linear |>
   facet_wrap(
     facets = vars(yrs)
   ) +
+  ylim(0,1) +
   scale_colour_manual(
     name = "Type",
     values = c(
@@ -163,9 +163,8 @@ linear |>
     breaks = c("train", "validation", "test"),
     drop = TRUE
   ) +
-  ylim(0,1) +
   labs(
-    title = "Rsq for linear regression for different values of correlation threshold and number of training years",
+    title = "Rsq for logistic regression for different values of correlation threshold and number of training years",
     subtitle = "Only last years data used (without target variable), shuffled training data",
     caption = target_variable,
     x = "Correlation threshold",
@@ -177,10 +176,193 @@ linear |>
 ### Summary table
 
 ```{r}
-#| label: summary-table
+#| label: summary-table-proportions
 #| echo: false
 
-linear |> 
+logistic |> 
+  map_df(
+    ~ pluck(.x, "evaluation_metrics")
+  ) |> 
+  filter(
+    .metric == "rsq"
+  ) |>
+  bind_cols(inputs) |> 
+  mutate(
+    across(
+      c(train, test, validation),
+      ~ round(.x, 3)
+    ),
+    corr = round(corr, 2)
+  ) |> 
+  select(
+    c(
+      `Correlation threshold` = "corr", 
+      `Training years` = "yrs",
+      Metric = ".metric", 
+      `Training data` = "train", 
+      `Validation data` = "validation", 
+      `Test data` = "test"
+    )
+  ) |> 
+  DT::datatable(
+    filter = "top",
+    rownames = FALSE
+  ) |> 
+  DT::formatStyle(
+    columns = c(1:6), 
+    fontSize = '75%')
+  
+
+```
+
+## Modelling numerators
+
+### Setting up the data
+
+```{r}
+#| label: field-selection-numerators
+
+target_variable <- "Proportion of completed pathways greater than 18 weeks from referral (admitted)"
+
+dc_data <- load_data(
+  target_variable, 
+  incl_numerator_remainder = TRUE,
+  value_type = "numerator") |> 
+  select(
+    all_of(c("org", "year", target_variable)),
+    any_of(c("numerator", "remainder")),
+    matches("^ESR|^Workforce|^Bed|age band|Year 6|GPPS|QOF")
+  ) |> 
+  dplyr::filter(
+    # retain all rows where target variable is not na
+    # retain all rows where we have population age group information
+    if_all(
+      all_of(
+        c(target_variable, "Proportion of population in age band (80-89)")), ~ !is.na(.))
+  ) |> 
+  arrange(
+    year, org
+  )
+```
+
+### Configuration
+
+```{r}
+#| label: configure-inputs-numerators
+
+# correlation thresholds between 0.3 and 0.9
+# 2 to 6 years of training data
+
+inputs <- expand.grid(
+  corr = seq(from = 0.3, to = 0.9, by = 0.05),
+  yrs = 2:6
+)
+
+```
+
+### Modelling
+
+```{r}
+#| label: modelling-numerators
+#| warning: false
+
+logistic <- map2(
+  .x = inputs$corr,
+  .y = inputs$yrs,
+  ~ modelling_performance(
+    data = dc_data,
+    target_variable = target_variable,
+    lagged_years = 1, 
+    remove_lag_target = TRUE,
+    shuffle_training_records = TRUE,
+    keep_current = FALSE,
+    time_series_split = TRUE, 
+    model_type = "logistic_regression", 
+    linear_correlation_threshold = .x,
+    seed = 321 ,
+    training_years = .y,
+    predict_proportions = FALSE
+  )
+)
+
+
+```
+
+### Results summary
+
+```{r}
+#| label: plot-results-numerators
+#| out-width: 10in
+#| fig-width: 9
+#| fig-height: 7
+
+logistic |> 
+  map_df(
+    ~ pluck(.x, "evaluation_metrics")
+  ) |> 
+  filter(
+    .metric == "rsq"
+  ) |> 
+  bind_cols(inputs) |> 
+  pivot_longer(
+    cols = c(train, validation, test),
+    names_to = "data_type",
+    values_to = "rsq"
+  ) |> 
+  mutate(
+    yrs = paste(
+      yrs, "years"
+    )
+  ) |> 
+  ggplot(
+    aes(
+      x = corr,
+      y = rsq
+    )
+  ) +
+  geom_line(
+    aes(
+      group = data_type,
+      colour = data_type
+    )
+  ) +
+  theme_minimal() +
+  facet_wrap(
+    facets = vars(yrs)
+  ) +
+  ylim(0,1) +
+  scale_colour_manual(
+    name = "Type",
+    values = c(
+      test = "#33a02c",
+      validation = "#ff7f00",
+      train = "#1f78b4"
+    ),
+    labels = c(
+      test = "Test",
+      validation = "Validation",
+      train = "Train"
+    ),
+    breaks = c("train", "validation", "test"),
+    drop = TRUE
+  ) +
+  labs(
+    title = "Rsq for logistic regression for different values of correlation threshold and number of training years",
+    subtitle = "Only last years data used (without target variable), shuffled training data",
+    caption = target_variable,
+    x = "Correlation threshold",
+    y = bquote(~R^2)
+  )
+
+```
+
+### Summary table
+
+```{r}
+#| label: summary-table-numerators
+#| echo: false
+
+logistic |> 
   map_df(
     ~ pluck(.x, "evaluation_metrics")
   ) |> 

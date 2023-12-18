@@ -109,6 +109,17 @@ plot_observed_expected <- function(data, target_variable) {
  return(p)
 }
 
+metric_to_numerator <- function(metric_name) {
+  numerator_description <- read.csv("data/configuration-table.csv") |> 
+    filter(
+      metric == metric_name
+    ) |> 
+    pull(numerator_description)
+  
+  if (length(numerator_description) == 0) numerator_description <- NA_character_
+  
+  return(numerator_description)
+}
 
 # load data ---------------------------------------------------------------
 
@@ -117,7 +128,9 @@ load_data <- function(target_variable, value_type = "value", incl_numerator_rema
     here::here("data/configuration-table.csv"),
     encoding = "latin1"
   ) |> 
-    filter(!(status %in% c("incorrect geography", "remove"))) |> 
+    filter(
+      !(grepl("incorrect geography|remove", status))
+    ) |> 
     select(metric, denominator_description)
   
   dc_data <- list.files(here::here("data"), full.names = TRUE) |> 
@@ -202,8 +215,10 @@ load_data <- function(target_variable, value_type = "value", incl_numerator_rema
       )
     ) |> 
     rename(
-      value = value_type
-    ) |> 
+      value = all_of(value_type)
+    )
+  
+  dc_data <- dc_data |> 
     pivot_wider(
       names_from = metric,
       values_from = value
@@ -409,12 +424,13 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
     model_setup <- parsnip::linear_reg() |> 
       set_engine(
         "glm", 
-        family = stats::quasibinomial(link = "logit")
+        family = stats::quasibinomial(link = "logit") # could try binomial
       ) |> 
       set_mode("regression")
   }
   
-  # identify variables in train and val that are mostly missing so they are removed
+  # identify variables in train and val that are over 40% missing, so they are
+  # subsequently removed
   mostly_missing_vars <- bind_rows(
     data_train,
     data_validation
@@ -509,7 +525,7 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
         data = _,
         object = modelling_workflow
       )
-    browser()
+    
     # check linear assumptions
     assumptions_check <- model_fit$fit$fit |> 
       performance::check_model()

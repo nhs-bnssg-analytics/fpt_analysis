@@ -1,47 +1,20 @@
 source("R/00_libraries.R")
 library(magrittr)
 
-c(
-  "data/risk-factors-fingertips.csv",
-  "data/referral-to-treatment.csv"
-) |> 
-  map_df(
-    read.csv
-  ) |> 
-  filter(
-    metric %in% c(
-      "Learning disability: QOF prevalence (all ages)",
-      "Proportion of completed pathways greater than 18 weeks from referral (admitted)"
-    ),
-    frequency == "annual financial"
-  ) |> 
-  mutate(
-    year = as.integer(year)
-  ) |> 
-  ggplot(
-    aes(
-      x = year,
-      y = value
-    )
-  ) +
-  geom_line(
-    aes(
-      group = metric,
-      colour = metric
-    )
-  ) +
-  theme_minimal() +
-  facet_wrap(
-    facets = vars(org),
-    scales = "free_y"
-  )
-
 metrics <- c(
   "Learning disability: QOF prevalence (all ages)",
   "Proportion of completed pathways greater than 18 weeks from referral (admitted)"
 )
 
-c(
+metric_to_numerator <- function(metric_name) {
+  read.csv("data/configuration-table.csv") |> 
+    filter(
+      metric == metric_name
+    ) |> 
+    pull(numerator_description)
+}
+
+df <- c(
   "data/risk-factors-fingertips.csv",
   "data/referral-to-treatment.csv"
 ) |> 
@@ -50,7 +23,8 @@ c(
   ) |> 
   filter(
     metric %in% metrics,
-    frequency == "annual financial"
+    frequency == "annual financial",
+    year != 2023
   ) |> 
   mutate(
     year = as.integer(year)
@@ -67,7 +41,34 @@ c(
       metric == "Learning disability: QOF prevalence (all ages)" ~ lag(numerator),
       .default = numerator)
     )
+  )
+
+df |> 
+  mutate(
+    metric = map_chr(metric, metric_to_numerator)
   ) |> 
+  ggplot(
+    aes(
+      x = year,
+      y = numerator
+    )
+  ) +
+  geom_line(
+    aes(
+      group = metric,
+      colour = metric
+    )
+  ) +
+  theme_minimal() +
+  facet_wrap(
+    facets = vars(org),
+    scales = "free_y"
+  ) +
+  theme(
+    legend.position = "bottom"
+  )
+
+df |> 
   filter(
     year > (max(year) - 4)
   ) |> 
@@ -102,36 +103,14 @@ c(
       colour = factor(year)
     )
   ) +
-  theme_minimal()
+  theme_minimal() +
+  labs(
+    x = metric_to_numerator("Learning disability: QOF prevalence (all ages)"),
+    y = metric_to_numerator("Proportion of completed pathways greater than 18 weeks from referral (admitted)")
+  )
 
 
-c(
-  "data/risk-factors-fingertips.csv",
-  "data/referral-to-treatment.csv"
-) |> 
-  map_df(
-    read.csv
-  ) |> 
-  filter(
-    metric %in% metrics,
-    frequency == "annual financial"
-  ) |> 
-  mutate(
-    year = as.integer(year)
-  ) |> 
-  arrange(
-    metric, org, year
-  ) |> 
-  group_by(
-    metric, org
-  ) |> 
-  group_split() |> 
-  map_df(
-    .f = ~ mutate(.x, numerator = case_when(
-      metric == "Learning disability: QOF prevalence (all ages)" ~ lag(numerator),
-      .default = numerator)
-    )
-  ) |> 
+df |> 
   filter(
     year > (max(year) - 4)
   ) |> 
