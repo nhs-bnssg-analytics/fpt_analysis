@@ -123,7 +123,8 @@ metric_to_numerator <- function(metric_name) {
 
 # load data ---------------------------------------------------------------
 
-load_data <- function(target_variable, value_type = "value", incl_numerator_remainder = FALSE) {
+load_data <- function(target_variable, value_type = "value", incl_numerator_remainder = FALSE,
+                      broad_age_bands = TRUE) {
   metrics <- read.csv(
     here::here("data/configuration-table.csv"),
     encoding = "latin1"
@@ -181,6 +182,46 @@ load_data <- function(target_variable, value_type = "value", incl_numerator_rema
       grepl("annual", frequency),
       grepl("^Q", org)
     )
+  
+  if (broad_age_bands == TRUE) {
+    age_band_data <- dc_data |> 
+      filter(
+        grepl("age band", metric)
+      ) |> 
+      mutate(
+        metric = str_replace_all(
+          metric,
+          c("0-9" = "0-29",
+            "10-19" = "0-29",
+            "20-29" = "0-29",
+            "30-39" = "30-59",
+            "40-49" = "30-59",
+            "50-59" = "30-59",
+            "60-69" = "60+",
+            "70-79" = "60+",
+            "80-89" = "60+",
+            "90\\+" = "60+")
+        )
+      ) |> 
+      summarise(
+        numerator = sum(numerator),
+        denominator = mean(denominator),
+        .by = c(
+          year, org, frequency, metric,
+        )
+      ) |> 
+      mutate(
+        value = numerator / denominator
+      )
+    
+    dc_data <- dc_data |> 
+      filter(
+        !grepl("age band", metric)
+      ) |> 
+      bind_rows(
+        age_band_data
+      )
+  }
   
   if (incl_numerator_remainder == TRUE) {
     numerator_remainder <- dc_data |> 

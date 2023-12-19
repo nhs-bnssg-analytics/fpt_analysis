@@ -22,10 +22,11 @@ dc_data <- load_data(
     # retain all rows where target variable is not na
     # retain all rows where we have population age group information
     if_all(
-      any_of(
-        c(target_variable, 
-          "numerator",
-          "Proportion of population in age band (80-89)")), ~ !is.na(.))
+      c(
+        all_of(c(target_variable)), 
+        contains("age band")
+      ), ~ !is.na(.)
+    )
   ) |> 
   arrange(
     year, org
@@ -121,7 +122,6 @@ ggsave(
 # logistic regression -----------------------------------------------------
 
 # modelling proportions
-
 dc_data <- load_data(
   target_variable, 
   incl_numerator_remainder = TRUE,
@@ -135,8 +135,11 @@ dc_data <- load_data(
     # retain all rows where target variable is not na
     # retain all rows where we have population age group information
     if_all(
-      all_of(
-        c(target_variable, "Proportion of population in age band (80-89)")), ~ !is.na(.))
+      c(
+        all_of(c(target_variable)), 
+        contains("age band")
+      ), ~ !is.na(.)
+    )
   ) |> 
   arrange(
     year, org
@@ -248,25 +251,32 @@ dc_data <- load_data(
     # retain all rows where target variable is not na
     # retain all rows where we have population age group information
     if_all(
-      all_of(
-        c(target_variable, "Proportion of population in age band (80-89)")), ~ !is.na(.))
+      c(
+        all_of(c(target_variable)), 
+        contains("age band")
+      ), ~ !is.na(.)
+    )
   ) |> 
   arrange(
     year, org
   )
 
+new_names <- names(dc_data) |> 
+  (\(x) ifelse(x %in% c("year", "org", "numerator", "remainder"), x, map_chr(.x = x, .f = metric_to_numerator)))()
+
+names(dc_data) <- new_names
+
 inputs <- expand.grid(
   corr = seq(from = 0.3, to = 0.9, by = 0.05),
   yrs = 2:6
-) |> 
-  slice(37, 24)
+)
 
 logistic <- map2(
   .x = inputs$corr,
   .y = inputs$yrs,
   ~ modelling_performance(
     data = dc_data,
-    target_variable = target_variable,
+    target_variable = metric_to_numerator(target_variable),
     lagged_years = 1, 
     remove_lag_target = TRUE,
     shuffle_training_records = TRUE,
@@ -289,7 +299,7 @@ logistic_results <- logistic |>
   ) |> 
   bind_cols(inputs) |> 
   pivot_longer(
-    cols = c(train, validation, test),
+    cols = c(train, test),
     names_to = "data_type",
     values_to = "rsq"
   ) |> 
@@ -314,7 +324,7 @@ logistic_results <- logistic |>
   facet_wrap(
     facets = vars(yrs)
   ) +
-  ylim(0,1) +
+  # ylim(0,1) +
   scale_colour_manual(
     name = "Type",
     values = c(
@@ -333,7 +343,7 @@ logistic_results <- logistic |>
   labs(
     title = "Rsq for logistic regression for different values of correlation threshold and number of training years",
     subtitle = "Only last years data used (without target variable), shuffled training data",
-    caption = target_variable,
+    caption = metric_to_numerator(target_variable),
     x = "Correlation threshold",
     y = bquote(~R^2)
   )
@@ -362,8 +372,11 @@ dc_data <- load_data(
     # retain all rows where target variable is not na
     # retain all rows where we have population age group information
     if_all(
-      all_of(
-        c(target_variable, "Proportion of population in age band (80-89)")), ~ !is.na(.))
+      c(
+        all_of(c(target_variable)), 
+        contains("age band")
+      ), ~ !is.na(.)
+    )
   ) |> 
   arrange(
     year, org
@@ -402,7 +415,7 @@ linear_results <- linear |>
   ) |> 
   bind_cols(inputs) |> 
   pivot_longer(
-    cols = c(train, validation, test),
+    cols = c(train, test),
     names_to = "data_type",
     values_to = "rsq"
   ) |> 
