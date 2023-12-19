@@ -78,6 +78,9 @@ metric_id,metric,domain,numerator_description,denominator_description,raw_area_t
 ,Proportion of population in age band (70-79),Demand,Resident population in age band (70-79),Total resident population,ICB,
 ,Proportion of population in age band (80-89),Demand,Resident population in age band (80-89),Total resident population,ICB,
 ,Proportion of population in age band (90+),Demand,Resident population in age band (90+),Total resident population,ICB,
+,Proportion of population in age band (0-29),Demand,Resident population in age band (0-29),Total resident population,ICB,
+,Proportion of population in age band (30-59),Demand,Resident population in age band (30-59),Total resident population,ICB,
+,Proportion of population in age band (60+),Demand,Resident population in age band (60+),Total resident population,ICB,
 ,Estimated prevalence of common mental disorders: % of population aged 16 & over,Demand,,,,remove (data quality)
 ,Estimated prevalence of common mental disorders: % of population aged 65 & over,Demand,,,,remove (data quality)
 ,Proportion of resident population in national deprivation quintile (Least deprived quintile) - IMD 2019,Demand,Resident population in deprivation quintile (Least deprived quintile),Resident population in area,ICB,
