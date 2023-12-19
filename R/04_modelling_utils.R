@@ -518,8 +518,9 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
       train = data_train,
       validation = data_validation
     ) |> 
-      bind_rows(
-        .id = "data_type"
+      bind_rows() |> 
+      mutate(
+        data_type = "data_train"
       ) |> 
       fit(
         data = _,
@@ -622,21 +623,32 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
   
   
   # evaluation metrics on validation data
-  
-  evaluation_metrics <- list(
-    train = data_train,
-    validation = data_validation,
-    test = data_test
-  ) |> 
-    purrr::map_dfr(
-      ~ model_metrics(
-        data = .x,
-        model_fit = model_fit,
-        target_variable = target_variable,
-        predict_proportions = predict_proportions
+  if (model_type %in% c("linear", "logistic_regression")) {
+    evaluation_metrics <- list(
+      train = bind_rows(
+        data_train,
+        data_validation
       ),
-      .id = "data"
-    ) |> 
+      test = data_test
+    )
+  } else if (model_type == "random_forest") {
+    evaluation_metrics <- list(
+      train = data_train,
+      validation = data_validation,
+      test = data_test
+    )
+  }
+  
+  evaluation_metrics <- purrr::map_dfr(
+    evaluation_metrics,
+    ~ model_metrics(
+      data = .x,
+      model_fit = model_fit,
+      target_variable = target_variable,
+      predict_proportions = predict_proportions
+    ),
+    .id = "data"
+  ) |>
     tidyr::pivot_wider(
       names_from = data,
       values_from = .estimate
