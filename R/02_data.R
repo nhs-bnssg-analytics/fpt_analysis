@@ -513,102 +513,7 @@ annual_workforce_fte <- unzip_file(
   )
 
 # collecting the denominator (populations by health areas)
-url <- "https://digital.nhs.uk/data-and-information/publications/statistical/patients-registered-at-a-gp-practice"
-
-links <- obtain_links_and_text(url) |> 
-  (\(x) x[grepl("[a-z]{,9}-[0-9]{4}", basename(x))])() |> 
-  (\(x) rlang::set_names(paste0("https://digital.nhs.uk", x),
-                         nm = names(x)))() |> 
-  (\(x) x[grepl("january|april|july|october", basename(x), ignore.case = TRUE)])() |> 
-  purrr::lmap(
-    ~ list(
-      obtain_links_and_text(
-        .x
-      )
-    )
-  ) |> 
-  unlist() |> 
-  (\(x) rlang::set_names(x, nm = sub("^.*?([A-Z])", "\\1", names(x))))() |> 
-  (\(x) rlang::set_names(x, nm = gsub("[\n].*$", "", names(x))))() |>
-  (\(x) x[grepl("zip$|csv$", x)])() |> 
-  (\(x) x[!grepl("lsoa|males|tall", basename(x))])() |> 
-  (\(x) x[grepl("ICB|CCG", names(x))])() |> 
-  # (\(x) x[grepl("all|ccg", x)])() |> 
-  tibble::enframe() |> 
-  mutate(
-    mnth = stringr::str_extract(
-      name,
-      pattern = paste(c(month.name, month.abb), collapse = "|")
-    ),
-    mnth = substr(mnth, 1, 3),
-    year = stringr::str_extract(
-      name,
-      pattern = "[0-9]{4}"
-    )
-  ) |> 
-  mutate(
-    n = n(),
-    .by = c(mnth, year)
-  ) |> 
-  mutate(
-    include = case_when(
-      n == 1 ~ TRUE,
-      .default = grepl("Single", name)
-    )
-  ) |> 
-  filter(
-    include == TRUE
-  ) |> 
-  mutate(
-    name = paste(
-      mnth,
-      year,
-      sep = "-"
-    )
-  ) |> 
-  select(c("name", "value")) |> 
-  tibble::deframe()
-
-files <- purrr::lmap(
-  links,
-  ~ as.list(
-    check_and_download(
-      filepath = paste0(
-        "data-raw/Health populations/", 
-        names(.x),
-        " ",
-        basename(.x)),
-      url = .x
-    )
-  )
-)
-
-health_pop_denominators <- purrr::map_df(
-  files,
-  summarise_health_pop_files
-) |> 
-  filter(health_org_code != "UNKNOWN")
-
-
-org_lkp <- unique(health_pop_denominators$health_org_code) |> 
-  attach_icb_to_org()
-
-quarterly_health_pop_denominators <- health_pop_denominators |> 
-  left_join(
-    org_lkp,
-    by = join_by(
-      health_org_code
-    )
-  ) |> 
-  summarise(
-    denominator = sum(denominator),
-    .by = c(
-      icb_code, year, month
-    )
-  ) |> 
-  rename(
-    org = "icb_code"
-  )
+quarterly_health_pop_denominators <- quarterly_ics_populations()
 
 workforce_metrics <- annual_workforce_fte |> 
   complete(
@@ -695,6 +600,7 @@ bind_rows(
 )
 
 # sickness absence
+# collecting numerators
 # April 2009 to March 2022 file
 url <- "https://files.digital.nhs.uk/A6/67E0C1/ESR_ABSENCE_CSV_NHSE.csv"
 
@@ -711,23 +617,34 @@ monthly_sickness_absence <- read.csv(url) |>
       ),
       tolower(month.abb)
     ),
-    metric = paste0(
-      "ESR absence (",
-      tolower(Org.Type),
-      " organisation type)"
-      ),
+    Org.Type = tolower(Org.Type),
     frequency = "monthly"
   ) |> 
   select(
     "year",
     "month",
-    "metric",
     org = "Org.Code",
     org_name = "Org.Name",
-    numerator = "FTE.Days.Sick",
-    denominator = "FTE.Days.Available",
-    value = "SA.Rate....",
+    `FTE days sick` = "FTE.Days.Sick",
+    `FTE days available` = "FTE.Days.Available",
+    Org.Type,
     "frequency"
+  ) |> 
+  pivot_longer(
+    cols = starts_with("FTE"),
+    names_to = "metric",
+    values_to = "numerator"
+  ) |> 
+  mutate(
+    metric = paste0(
+      metric,
+      " per 10,000 population (",
+      Org.Type,
+      ")"
+    )
+  ) |> 
+  select(
+    !c("Org.Type")
   )
 
 # monthly files April 2022 onwards
@@ -766,29 +683,42 @@ monthly_sickness_monthly_files <- purrr::map_dfr(
         DATE, nchar(DATE) - 6, nchar(DATE) - 5
       )
     ),
-    metric = paste0(
-      "ESR absence (",
-      tolower(ORG_TYPE),
-      " organisation type)"
-    ),
+    ORG_TYPE = tolower(ORG_TYPE),
     frequency = "monthly"
   ) |> 
   select(
     "year",
     "month",
-    "metric",
     org = "ORG_CODE",
     org_name = "ORG_NAME",
-    numerator = "FTE_DAYS_LOST",
-    denominator = "FTE_DAYS_AVAILABLE",
-    value = "SICKNESS_ABSENCE_RATE_PERCENT",
+    "ORG_TYPE",
+    `FTE days sick` = "FTE_DAYS_LOST",
+    `FTE days available` = "FTE_DAYS_AVAILABLE",
     "frequency"
+  ) |> 
+  pivot_longer(
+    cols = starts_with("FTE"),
+    names_to = "metric",
+    values_to = "numerator"
+  ) |> 
+  mutate(
+    metric = paste0(
+      metric,
+      " per 10,000 population (",
+      ORG_TYPE,
+      ")"
+    )
+  ) |> 
+  select(
+    !c("ORG_TYPE")
   )
 
 monthly_sickness_absence <- bind_rows(
     monthly_sickness_absence, 
     monthly_sickness_monthly_files
   )
+
+
 
 org_icb_lkp <- monthly_sickness_absence |> 
   distinct(org) |> 
@@ -821,7 +751,22 @@ org_icb_lkp <- monthly_sickness_absence |>
     .by = health_org_code
   )
 
-monthly_sickness_absence <- monthly_sickness_absence |> 
+# denominators
+quarterly_health_pop_denominators <- quarterly_ics_populations() |> 
+  rename(
+    quarter = "month"
+  ) |> 
+  mutate(
+    quarter = case_when(
+      quarter == 1 ~ 4L,
+      quarter == 4 ~ 1L,
+      quarter == 7 ~ 2L,
+      quarter == 10 ~ 3L,
+      .default = NA_real_
+    )
+  )
+
+quarterly_sickness_absence <- monthly_sickness_absence |> 
   inner_join(
     org_icb_lkp,
     by = join_by(
@@ -829,33 +774,46 @@ monthly_sickness_absence <- monthly_sickness_absence |>
     ),
     relationship = "many-to-many"
   ) |> 
+  mutate(
+    quarter = case_when(
+      month %in% 1:3 ~ 4L,
+      month %in% 4:6 ~ 1L,
+      month %in% 7:9 ~ 2L,
+      month %in% 10:12 ~ 3L,
+      .default = NA_real_
+    )
+  ) |> 
   summarise(
     across(
-      c(numerator, denominator),
+      c(numerator),
       ~ sum(.x / divisor, na.rm = TRUE)
     ),
     .by = c(
-      year, month, metric, icb_code, frequency
+      year, quarter, metric, icb_code
+    )
+  ) |> 
+  inner_join(
+    quarterly_health_pop_denominators,
+    by = join_by(
+      icb_code == org,
+      year,
+      quarter
     )
   ) |> 
   mutate(
-    value = numerator / denominator
+    value = (numerator / denominator) * 1e4,
+    frequency = "quarterly"
   ) |> 
   rename(
-    org = icb_code
+    org = "icb_code"
   )
 
-quarterly_sickness_absence <- monthly_to_quarterly_mean(
-  monthly_sickness_absence
-)
-
-annual_sickness_absence <- monthly_to_annual_mean(
-  monthly_sickness_absence,
+annual_sickness_absence <- quarterly_to_annual_mean(
+  quarterly_sickness_absence,
   year_type = "financial"
 )
 
 bind_rows(
-  monthly_sickness_absence,
   quarterly_sickness_absence,
   annual_sickness_absence
 ) |> 
