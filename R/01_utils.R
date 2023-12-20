@@ -2424,3 +2424,157 @@ get_lsoa21_pops_with_lsoa11_codes <- function() {
   
   return(lsoa11_pops_year_2021)
 }
+
+
+quarterly_ics_populations <- function() {
+  summary_filepath <- "data-raw/Health populations/quarterly_population_summary.csv"
+  
+  # gp population file urls from NHS website
+  url <- "https://digital.nhs.uk/data-and-information/publications/statistical/patients-registered-at-a-gp-practice"
+  
+  links <- obtain_links_and_text(url) |> 
+    (\(x) x[grepl("[a-z]{,9}-[0-9]{4}", basename(x))])() |> 
+    (\(x) rlang::set_names(paste0("https://digital.nhs.uk", x),
+                           nm = names(x)))() |> 
+    (\(x) x[grepl("january|april|july|october", basename(x), ignore.case = TRUE)])() |> 
+    purrr::lmap(
+      ~ list(
+        obtain_links_and_text(
+          .x
+        )
+      )
+    ) |> 
+    unlist() |> 
+    (\(x) rlang::set_names(x, nm = sub("^.*?([A-Z])", "\\1", names(x))))() |> 
+    (\(x) rlang::set_names(x, nm = gsub("[\n].*$", "", names(x))))() |>
+    (\(x) x[grepl("zip$|csv$", x)])() |> 
+    (\(x) x[!grepl("lsoa|males|tall", basename(x))])() |> 
+    (\(x) x[grepl("ICB|CCG", names(x))])() |> 
+    # (\(x) x[grepl("all|ccg", x)])() |> 
+    tibble::enframe() |> 
+    mutate(
+      mnth = stringr::str_extract(
+        name,
+        pattern = paste(c(month.name, month.abb), collapse = "|")
+      ),
+      mnth = substr(mnth, 1, 3),
+      year = stringr::str_extract(
+        name,
+        pattern = "[0-9]{4}"
+      )
+    ) |> 
+    mutate(
+      n = n(),
+      .by = c(mnth, year)
+    ) |> 
+    mutate(
+      include = case_when(
+        n == 1 ~ TRUE,
+        .default = grepl("Single", name)
+      )
+    ) |> 
+    filter(
+      include == TRUE
+    ) |> 
+    mutate(
+      name = paste(
+        mnth,
+        year,
+        sep = "-"
+      )
+    ) |> 
+    select(c("name", "value")) |> 
+    tibble::deframe()
+  
+  obtain_and_download_ics_populations <- function(links) {
+    files <- purrr::lmap(
+      links,
+      ~ as.list(
+        check_and_download(
+          filepath = paste0(
+            "data-raw/Health populations/", 
+            names(.x),
+            " ",
+            basename(.x)),
+          url = .x
+        )
+      )
+    )
+    
+    health_pop_denominators <- purrr::map_df(
+      files,
+      summarise_health_pop_files
+    ) |> 
+      filter(health_org_code != "UNKNOWN")
+    
+    
+    org_lkp <- unique(health_pop_denominators$health_org_code) |> 
+      attach_icb_to_org()
+    
+    quarterly_health_pop_denominators <- health_pop_denominators |> 
+      left_join(
+        org_lkp,
+        by = join_by(
+          health_org_code
+        )
+      ) |> 
+      summarise(
+        denominator = sum(denominator),
+        .by = c(
+          icb_code, year, month
+        )
+      ) |> 
+      rename(
+        org = "icb_code"
+      )
+    
+    return(quarterly_health_pop_denominators)
+  }
+  
+  if (file.exists(summary_filepath)) {
+    # obtain the latest expected month from the NHSE website
+    latest_available_month_year <- names(links[1])
+    latest_recorded_month_year <- health_pop_denominators |> #read.csv(summary_filepath) |> 
+      distinct(
+        month,
+        year
+      ) |> 
+      filter(
+        year == max(year)
+      ) |> 
+      filter(
+        month == max(month)
+      ) |> 
+      mutate(
+        latest = paste(
+          month.abb[month],
+          year,
+          sep = "-"
+        )
+      ) |> 
+      pull(latest)
+    
+    if (identical(latest_available_month_year, latest_recorded_month_year)) {
+      quarterly_health_pop_denominators <- read.csv(summary_filepath)
+    } else {
+      quarterly_health_pop_denominators <- obtain_and_download_ics_populations(links)
+      
+      write.csv(
+        quarterly_health_pop_denominators,
+        summary_filepath,
+        row.names = FALSE
+      )
+    }
+  } else {
+    quarterly_health_pop_denominators <- obtain_and_download_ics_populations(links)
+    
+    write.csv(
+      quarterly_health_pop_denominators,
+      summary_filepath,
+      row.names = FALSE
+    )
+  }
+  
+  return(quarterly_health_pop_denominators)
+  
+}
