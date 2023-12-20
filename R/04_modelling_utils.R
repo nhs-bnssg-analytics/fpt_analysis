@@ -4,12 +4,14 @@
 #' @value a numeric vector of length 2 representing the proportions of the total
 #'   dataset that should be split into training and validation
 train_validation_proportions <- function(data) {
+  
   proportions <- data |> 
-    count(year, sort = TRUE) |> 
+    count(year) |> 
+    arrange(year) |> 
     mutate(
       split_type = case_when(
-        year == max(year) ~ "test",
-        year == max(year) - 1 ~ "validation",
+        row_number() == n() ~ "test",
+        row_number() == (n() - 1) ~ "validation",
         .default = "train"
       )
     ) |> 
@@ -287,6 +289,10 @@ load_data <- function(target_variable, value_type = "value", incl_numerator_rema
 #' @param training_years integer; number of years to use for training the model.
 #'   If NULL, all available years will be used. If contains an integer, it must
 #'   be greater than 1
+#' @param remove_years numeric; which years should be removed. The training
+#'   years will modified if the years fall within the training years time frame
+#'   (eg, if the training years were covering 2020 and 2021, and we remove 2020,
+#'   the training years will update to incorporate 2019 as well)
 #' @param shuffle_training_records logical; should the training/validation set
 #'   be ordered or shuffled for imte_series_split = TRUE
 #' @param model_type character string; the modelling method to use
@@ -297,12 +303,13 @@ load_data <- function(target_variable, value_type = "value", incl_numerator_rema
 #' @param predict_proportions logical; should proportions be the predicted value
 #'   (TRUE) or a count (FALSE)
 #' @param seed numeric; seed number
-#' @details
-#' This webpage was useful https://www.tidyverse.org/blog/2022/05/case-weights/
+#' @details This webpage was useful
+#' https://www.tidyverse.org/blog/2022/05/case-weights/
 #' 
 modelling_performance <- function(data, target_variable, lagged_years = 0, 
                                   keep_current = TRUE, remove_lag_target = TRUE,
                                   time_series_split = TRUE, training_years = NULL,
+                                  remove_years = NULL,
                                   shuffle_training_records = FALSE,
                                   model_type = "linear", 
                                   rf_tuning_grid = "auto",
@@ -389,6 +396,24 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
             year != min(year)
           )
       } 
+    }
+  }
+  
+  if (!is.null(remove_years)) {
+    data <- data |> 
+      filter(
+        !(year %in% remove_years)
+      )
+    
+    if (!is.null(training_years)) {
+      overlapping_years <- intersect(
+        remove_years, 
+        seq(
+          from = max(data[["year"]]) - training_years,
+          to = max(data[["year"]]) - 1
+        )
+      )
+      training_years <- training_years + length(overlapping_years)
     }
   }
   
