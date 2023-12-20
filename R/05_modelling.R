@@ -6,12 +6,13 @@ source("R/04_modelling_utils.R")
 # select fields -----------------------------------------------------------
 
 target_variable <- "Proportion of completed pathways greater than 18 weeks from referral (admitted)"
-
+model_value_type <- "value"
+predict_year <- 2022
 
 # random forest -----------------------------------------------------------
 dc_data <- load_data(
   target_variable,
-  value_type = "numerator"
+  value_type = model_value_type
 ) |> 
   select(
     any_of(c("org", "year", target_variable)),
@@ -30,23 +31,31 @@ dc_data <- load_data(
   ) |> 
   arrange(
     year, org
+  ) |> 
+  filter(
+    year <= predict_year
   )
 
-new_names <- names(dc_data) |> 
-  (\(x) ifelse(x %in% c("year", "org"), x, map_chr(.x = x, .f = metric_to_numerator)))()
-
-names(dc_data) <- new_names
+if (model_value_type == "numerator") {
+  new_names <- names(dc_data) |> 
+    (\(x) ifelse(x %in% c("year", "org"), x, map_chr(.x = x, .f = metric_to_numerator)))()
+  
+  names(dc_data) <- new_names
+  
+  target_variable <- metric_to_numerator(target_variable)
+}
 
 rf_training_years <- set_names(
-  2:5,
-  nm = paste0("training_years_", 2:5)
+  2:6,
+  nm = paste0("training_years_", 2:6)
   ) |> 
   map(
     ~ modelling_performance(
       data = dc_data,
-      target_variable = metric_to_numerator(target_variable),
-      lagged_years = 1, 
+      target_variable = target_variable,
+      lagged_years = 2, 
       training_years = .x,
+      # remove_years = 2020,
       keep_current = FALSE,
       remove_lag_target = TRUE,
       time_series_split = TRUE, 
@@ -102,8 +111,8 @@ random_forest <- rf_training_years |>
   ) +
   labs(
     title = "Rsq for random forest for different numbers of training years",
-    subtitle = "Only last years data used (without target variable), shuffled training data",
-    caption = metric_to_numerator(target_variable),
+    subtitle = "Only previous years data used (without target variable), shuffled training data, 2 lagged years",
+    caption = target_variable,
     x = "Number of years in training data",
     y = bquote(~R^2)
   )
@@ -111,7 +120,13 @@ random_forest <- rf_training_years |>
 
 ggsave(
   random_forest,
-  filename = "tests/model_testing/random_forest_rtt_admitted_numerators.png",
+  filename = paste0(
+    "tests/model_testing/random_forest_rtt_admitted_", 
+    model_value_type, 
+    "_predicting_", 
+    predict_year, 
+    ".png"
+  ),
   width = 8,
   height = 6,
   units = "in",
@@ -127,9 +142,9 @@ dc_data <- load_data(
   incl_numerator_remainder = TRUE,
   value_type = "value") |> 
   select(
-    all_of(c("org", "year", target_variable)),
+    any_of(c("org", "year", target_variable)),
     any_of(c("numerator", "remainder")),
-    matches("^ESR|^Workforce|^Bed|age band|Year 6|GPPS|QOF")
+    matches("^ESR|^Workforce|^Bed|bed days|age band|Year 6|obese|GPPS|QOF")
   ) |> 
   dplyr::filter(
     # retain all rows where target variable is not na
@@ -143,8 +158,10 @@ dc_data <- load_data(
   ) |> 
   arrange(
     year, org
+  ) |> 
+  filter(
+    year <= predict_year
   )
-
 inputs <- expand.grid(
   corr = seq(from = 0.3, to = 0.9, by = 0.05),
   yrs = 2:6
@@ -165,6 +182,7 @@ logistic <- map2(
     linear_correlation_threshold = .x,
     seed = 321 ,
     training_years = .y,
+    remove_years = 2020:2021,
     predict_proportions = TRUE
   )
 )
@@ -178,7 +196,7 @@ logistic_results <- logistic |>
   ) |> 
   bind_cols(inputs) |> 
   pivot_longer(
-    cols = c(train, validation, test),
+    cols = c(train, test),
     names_to = "data_type",
     values_to = "rsq"
   ) |> 
@@ -221,7 +239,7 @@ logistic_results <- logistic |>
   ) +
   labs(
     title = "Rsq for logistic regression for different values of correlation threshold and number of training years",
-    subtitle = "Only last years data used (without target variable), shuffled training data",
+    subtitle = "Only previous years data used (without target variable), shuffled training data",
     caption = target_variable,
     x = "Correlation threshold",
     y = bquote(~R^2)
@@ -229,7 +247,13 @@ logistic_results <- logistic |>
 
 ggsave(
   logistic_results,
-  filename = "tests/model_testing/logistic_regression_RTT_admitted.png",
+  filename = paste0(
+    "tests/model_testing/logistic_regression_rtt_admitted_", 
+    model_value_type, 
+    "_predicting_", 
+    predict_year, 
+    ".png"
+  ),
   width = 10,
   height = 8,
   units = "in",

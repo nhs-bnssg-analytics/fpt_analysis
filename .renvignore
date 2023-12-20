@@ -7,9 +7,12 @@
 .css
 .json
 .docx
+*.Rproj
 
 /data/
 /data-raw/
 /.quarto/
 /docs/
+/ad-hoc/
+/tests/
 
