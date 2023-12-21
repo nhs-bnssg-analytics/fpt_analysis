@@ -45,6 +45,8 @@ Data need to be split before training model. Some considerations are:
 
 * Try out different ML methods?
 * Should demand and capacity variables be modelled separately (like [Charlotte's ED modelling](https://charlottejames.github.io/ed-forecast/index.html))
+* Look at adjusted R2 value?
+* Are there other measures (from R2) that might be useful for this to capture the noise? (can we hold back some ICSs before training the model to determine whether predictions are useful for them?)
 
 ## Other questions
 
@@ -63,6 +65,18 @@ Data need to be split before training model. Some considerations are:
 * demonstrate proof of concept to stakeholders
   + identify other metrics that would be useful to predict
 * demonstrate scenario modelling
+
+### Improve data
+
+* Unfilled posts
+* Proportion of beds occupied by elective/non-elective
+* Are there more primary care statistics available? Primary care capacity? GP availability?
+* COVID prevalence? Flu admissions? (https://www.england.nhs.uk/statistics/statistical-work-areas/covid-19-hospital-activity/)
+* Theatre capacity?
+
+
+
+
 
 ### Notes
 
