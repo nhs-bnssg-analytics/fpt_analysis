@@ -559,13 +559,7 @@ rename_rtt_files <- function(filepath) {
   
   extension <- tools::file_ext(filepath)
   
-  if (grepl("Adjusted", filepath)) {
-    description <- "adjusted."
-  } else if (grepl("NonAdmitted", filepath)) {
-    description <- "nonadmitted."
-  } else if (grepl("Admitted", filepath)) {
-    description <- "admitted."
-  }
+  description <- "incomplete"
   
   filename <- paste0(
     dirname(filepath),
@@ -573,6 +567,7 @@ rename_rtt_files <- function(filepath) {
     monthyear,
     "_",
     description,
+    ".",
     extension
   )
   
@@ -584,13 +579,7 @@ rename_rtt_files <- function(filepath) {
 }
 
 tidy_rtt <- function(filepath) {
-  if (grepl("nonadmitted", filepath)) {
-    admission_type <- "not admitted"
-  } else if (grepl("adjusted", filepath)) {
-    admission_type <- "admitted - adjusted"
-  } else if (grepl("admitted", filepath)) {
-    admission_type <- "admitted"
-  }
+  admission_type <- "incomplete"
   
   # check sheet names
   sh_names <- readxl::excel_sheets(
@@ -616,11 +605,17 @@ tidy_rtt <- function(filepath) {
       row > 11
     )
   
+  rtt <- rtt |> 
+      behead(
+        direction = "up",
+        name = "headers"
+      )
+  
   if (use_sheet == "Commissioner") {
     rtt <- rtt |> 
       behead(
         direction = "left",
-        name = "region"
+        name = "parent_code"
       )
   }
   rtt <- rtt |> 
@@ -640,37 +635,50 @@ tidy_rtt <- function(filepath) {
       direction = "left",
       name = "treatment_function"
     ) |> 
-    behead(
-      direction = "up",
-      name = "measure"
-    ) |> 
     mutate(
-      type = case_when(
-        measure %in% paste0(">", 0:17,"-", 1:18) ~ "numerator",
-        measure == "Total number of completed pathways (with a known clock start)" ~ "denominator",
-        .default = "not required"
+      headers = case_when(
+        headers %in% paste0(">", 0:17, "-", 1:18) ~ "numerator",
+        headers == "Total number of incomplete pathways" ~ "denominator",
+        .default = NA_character_
       )
     ) |> 
     filter(
-      type != "not required",
-      treatment_function == "Total",
-      !grepl("NHS ENGLAND|COMMISSIONING REGION|COMMISSIONING HUB", org_name)
-    ) |> 
-    mutate(
-      chr = gsub("-", "0", chr),
-      count = as.numeric(chr)
+      headers %in% c(
+        "numerator",
+        "denominator"
+      ),
+      treatment_function == "Total"
     ) |> 
     summarise(
-      count = sum(count, na.rm = TRUE),
+      chr = sum(as.numeric(chr)),
       .by = c(
-        org,
-        org_name,
-        type
+        "org",
+        "org_name",
+        "headers"
       )
     ) |> 
+    # select(
+    #   "org",
+    #   "org_name",
+    #   "headers",
+    #   "chr"
+    # ) |> 
+    # mutate(
+    #   chr = gsub("-", "0", chr),
+    #   count = as.numeric(chr)
+    # ) |> 
+    # summarise(
+    #   count = sum(count, na.rm = TRUE),
+    #   .by = c(
+    #     org,
+    #     org_name,
+    #     type
+    #   )
+    # ) |> 
     tidyr::pivot_wider(
-      names_from = type,
-      values_from = count
+      names_from = headers,
+      values_from = chr
+      # values_fn = as.numeric
     ) |> 
     mutate(
       month = match(substr(
@@ -689,11 +697,14 @@ tidy_rtt <- function(filepath) {
       numerator = denominator - numerator,
       value = numerator / denominator,
       metric = paste0(
-        "Proportion of completed pathways greater than 18 weeks from referral (",
+        "Proportion of incomplete pathways greater than 18 weeks from referral (",
         admission_type,
         ")"
       ),
       frequency = "monthly"
+    ) |> 
+    filter(
+      !grepl("NHS ENGLAND|COMMISSIONING HUB|COMMISSIONING REGION", org_name)
     )
   
   return(rtt)
@@ -1834,7 +1845,7 @@ ccg_to_icb <- function() {
   return(ccg_to_icb)
 }
 
-# provides all available information from the Organsiational Data Services API
+# provides all available information from the Organsational Data Services API
 # based on provided health code
 ods_info <- function(health_org_code) {
   

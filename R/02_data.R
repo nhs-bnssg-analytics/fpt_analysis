@@ -1366,7 +1366,7 @@ xl_files <- purrr::map(
   unlist() |> 
   (function(x) x[grepl("xls$|xlsx$", x)])() |> 
   (function(x) x[grepl("Commissioner", x)])() |> 
-  (function(x) x[grepl("Admitted", x)])()
+  (function(x) x[grepl("Incomplete", x)])()
 
 files <- purrr::map_chr(
   xl_files,
@@ -1378,24 +1378,6 @@ files <- purrr::map_chr(
   purrr::map_chr(
     rename_rtt_files
   )
-
-# replace unadjusted files with adjusted ones where they exist
-for (file in files) {
-  if (grepl("adjusted", file)) {
-    unadjusted_file <- gsub("adjusted", "admitted", file)
-    if (file.exists(unadjusted_file)) {
-      file.remove(
-        unadjusted_file
-      )
-      
-      file.rename(
-        from = file,
-        to = unadjusted_file
-      )
-    }
-    
-  }
-}
 
 # obtain new list of files in the folder
 files <- list.files(
