@@ -32,13 +32,15 @@ train_validation_proportions <- function(data) {
 
 add_prediction_to_data <- function(data, model_fit, target_variable = NULL, 
                                    predict_proportions = TRUE) {
+  
   data <- data |> 
     bind_cols(
       predict(
         model_fit,
         new_data = data
-        )
       )
+    )
+  
   if (!is.null(target_variable)) {
     if (!predict_proportions) {
       data <- data |> 
@@ -80,7 +82,7 @@ plot_observed_expected <- function(data, target_variable) {
     geom_point(
       alpha = 0.5,
       aes(
-        colour = data_type
+        colour = id
       )
     ) + 
     labs(
@@ -95,16 +97,16 @@ plot_observed_expected <- function(data, target_variable) {
     scale_colour_manual(
       name = "Type",
       values = c(
-        test = "#33a02c",
+        `train/test split` = "#33a02c",
         validation = "#ff7f00",
         train = "#1f78b4"
       ),
       labels = c(
-        test = "Test",
+        `train/test split` = "Test",
         validation = "Validation",
         train = "Train"
       ),
-      breaks = c("train", "validation", "test"),
+      breaks = c("train", "validation", "train/test split"),
       drop = TRUE
     )
  
@@ -484,7 +486,10 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
       min_n = tune(), 
       trees = tune()
     ) |> 
-      set_engine("ranger", num.threads = cores) |> 
+      set_engine(
+        "randomForest", 
+        num.threads = cores
+      ) |> 
       set_mode("regression")
   } else if (model_type == "logistic_regression") {
     model_setup <- parsnip::linear_reg() |> 
@@ -567,7 +572,6 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
   }
   
   model_recipe <- model_recipe |> 
-    # estimate the means and standard deviations
     prep(training = data_train, retain = TRUE)
   
   
@@ -597,6 +601,53 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
     assumptions_check <- model_fit$fit$fit |> 
       performance::check_model()
     
+    # plot predictions vs observed
+    prediction_plot <- list(
+      train = data_train,
+      validation = data_validation,
+      `train/test split` = data_test
+    ) |> 
+      bind_rows(
+        .id = "id"
+      ) |> 
+      mutate(
+        id = factor(
+          id,
+          levels = c("train/test split", "validation", "train")
+        )
+      ) |> 
+      add_prediction_to_data(
+        model_fit = model_fit,
+        target_variable = target_variable,
+        predict_proportions = predict_proportions
+      ) |> 
+      plot_observed_expected(
+        target_variable
+      )
+    
+    
+    # evaluation metrics on validation data
+    evaluation_metrics <- list(
+      train = bind_rows(
+        data_train,
+        data_validation
+      ),
+      test = data_test
+    ) |> 
+      purrr::map_dfr(
+        ~ model_metrics(
+          data = .x,
+          model_fit = model_fit,
+          target_variable = target_variable,
+          predict_proportions = predict_proportions
+        ),
+        .id = "data"
+      ) |>
+      tidyr::pivot_wider(
+        names_from = data,
+        values_from = .estimate
+      )
+    
   } else if (model_type == "random_forest") {
     # design the tuning of the hyperparameters
     
@@ -618,7 +669,7 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
           from = ceiling((length(predictor_variables) / 5) / 10) * 10,
           to = (ceiling((length(predictor_variables) / 5) / 10) * 10) + 100,
           by = 10
-        )
+        ) * 10
       )
     } 
     
@@ -633,92 +684,86 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
     rf_best <- rf_residuals |> 
       select_best(metric = "rsq")
     
-    # the last model
-    last_rf_mod <- rand_forest(
-      mtry = rf_best$mtry, 
-      min_n = rf_best$min_n, 
-      trees = rf_best$trees) |> 
-      set_engine("ranger", num.threads = cores, importance = "impurity") |> 
-      set_mode("regression")
-    
     # the last workflow
-    modelling_workflow <- modelling_workflow |> 
-      update_model(last_rf_mod)
+    ### NEW
+    # modelling_workflow_final <- finalize_workflow(modelling_workflow, rf_best)
+    
+    modelling_workflow <- modelling_workflow |>
+      finalize_workflow(rf_best)
+    
+    evaluation_metrics <- metric_set(
+      yardstick::rmse,
+      yardstick::rsq,
+      yardstick::mae)
     
     # the last fit
-    model_fit <- list(
-      train = data_train,
-      validation = data_validation
-    ) |> 
-      bind_rows(
-        .id = "data_type"
+    ## NEW
+    model_fit <- last_fit(
+      modelling_workflow,
+      splits,
+      # add_validation_set = TRUE,
+      metrics = evaluation_metrics
+    )
+    
+    validation_metrics <- rf_residuals |> 
+      collect_metrics() |> 
+      inner_join(
+        rf_best,
+        by = join_by(mtry, trees, min_n, .config)
       ) |> 
-      fit(
-        data = _,
-        object = modelling_workflow
+      select(
+        ".metric",
+        .estimate = "mean"
+      ) |> 
+      mutate(
+        data = "validation"
       )
     
-    rf_metrics <- modelling_workflow |> 
-      last_fit(splits) |> 
-      collect_metrics(summarize = FALSE)
-  } 
-  
-  # plot predictions vs observed
-  prediction_plot <- list(
-    train = data_train,
-    validation = data_validation,
-    test = data_test
-  ) |> 
-    bind_rows(
-      .id = "data_type"
-    ) |> 
-    mutate(
-      data_type = factor(
-        data_type,
-        levels = c("test", "validation", "train")
+    test_metrics <- model_fit |> 
+      collect_metrics() |> 
+      select(
+        ".metric",
+        ".estimate"
+      ) |> 
+      mutate(
+        data = "test"
       )
+    
+    evaluation_metrics <- bind_rows(
+      validation_metrics,
+      test_metrics
+    ) |>
+      tidyr::pivot_wider(
+        names_from = data,
+        values_from = .estimate
+      )
+    
+    validation_predictions <- rf_residuals |> 
+      collect_predictions(parameters = rf_best) |> 
+      mutate(
+        data = "validation"
+      )
+    
+    test_predictions <- model_fit %>% 
+      collect_predictions() |> 
+      mutate(
+        data = "test"
+      )
+    # rf_metrics <- modelling_workflow |> 
+    #   last_fit(
+    #     splits,
+    #     add_validation_set = TRUE
+    #   ) |> 
+    #   collect_metrics(summarize = FALSE)
+    prediction_plot <- bind_rows(
+      validation_predictions,
+      test_predictions
     ) |> 
-    add_prediction_to_data(
-      model_fit,
-      target_variable,
-      predict_proportions
-    ) |> 
-    plot_observed_expected(
-      target_variable
-    )
-  
-  
-  # evaluation metrics on validation data
-  if (model_type %in% c("linear", "logistic_regression")) {
-    evaluation_metrics <- list(
-      train = bind_rows(
-        data_train,
-        data_validation
-      ),
-      test = data_test
-    )
-  } else if (model_type == "random_forest") {
-    evaluation_metrics <- list(
-      train = data_train,
-      validation = data_validation,
-      test = data_test
-    )
-  }
-  
-  evaluation_metrics <- purrr::map_dfr(
-    evaluation_metrics,
-    ~ model_metrics(
-      data = .x,
-      model_fit = model_fit,
-      target_variable = target_variable,
-      predict_proportions = predict_proportions
-    ),
-    .id = "data"
-  ) |>
-    tidyr::pivot_wider(
-      names_from = data,
-      values_from = .estimate
-    )
+      plot_observed_expected(
+        target_variable = target_variable
+      )
+    
+  } 
   
   # variable importance
   
@@ -736,27 +781,14 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
     `Lagged target variable` = ifelse(lagged_years > 0, !remove_lag_target, NA)
   )
   
-  
-  if (model_type %in% c("linear", "logistic_regression")) {
-    output <- list(
-      dataset_yrs = dataset_yrs,
-      assumptions_check = assumptions_check,
-      prediction_plot = prediction_plot,
-      evaluation_metrics = evaluation_metrics,
-      variable_importance = variable_importance,
-      inputs = inputs
-    )
-  } else if (model_type == "random_forest") {
-    output <- list(
-      dataset_yrs = dataset_yrs,
-      tuning_parameters = tuning_parameters,
-      prediction_plot = prediction_plot,
-      evaluation_metrics = evaluation_metrics,
-      rf_metrics = rf_metrics,
-      variable_importance = variable_importance,
-      inputs = inputs
-    )
-  }
+  output <- list(
+    dataset_yrs = dataset_yrs,
+    assumptions_check = assumptions_check,
+    prediction_plot = prediction_plot,
+    evaluation_metrics = evaluation_metrics,
+    variable_importance = variable_importance,
+    inputs = inputs
+  )
   
   return(output)
   
