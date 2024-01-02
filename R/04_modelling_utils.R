@@ -781,14 +781,25 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
     `Lagged target variable` = ifelse(lagged_years > 0, !remove_lag_target, NA)
   )
   
-  output <- list(
-    dataset_yrs = dataset_yrs,
-    assumptions_check = assumptions_check,
-    prediction_plot = prediction_plot,
-    evaluation_metrics = evaluation_metrics,
-    variable_importance = variable_importance,
-    inputs = inputs
-  )
+  if (model_type %in% c("linear", "logistic_regression")) {
+    output <- list(
+      dataset_yrs = dataset_yrs,
+      assumptions_check = assumptions_check,
+      prediction_plot = prediction_plot,
+      evaluation_metrics = evaluation_metrics,
+      variable_importance = variable_importance,
+      inputs = inputs
+    )
+  } else if (model_type == "random_forest") {
+    output <- list(
+      dataset_yrs = dataset_yrs,
+      tuning_parameters = tuning_parameters,
+      prediction_plot = prediction_plot,
+      evaluation_metrics = evaluation_metrics,
+      variable_importance = variable_importance,
+      inputs = inputs
+    )
+  }
   
   return(output)
   
