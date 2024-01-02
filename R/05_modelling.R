@@ -5,7 +5,7 @@ source("R/04_modelling_utils.R")
 
 # select fields -----------------------------------------------------------
 
-target_variable <- "Proportion of completed pathways greater than 18 weeks from referral (admitted)"
+target_variable <- "Proportion of incomplete pathways greater than 18 weeks from referral (incomplete)"
 model_value_type <- "value"
 predict_year <- 2022
 
@@ -17,7 +17,7 @@ dc_data <- load_data(
   select(
     any_of(c("org", "year", target_variable)),
     any_of(c("numerator", "remainder")),
-    matches("^ESR|^Workforce|^Bed|bed days|age band|Year 6|obese|GPPS|QOF")
+    matches("^FTE|^Workforce|^Bed|bed days|beds|age band|deprivation|Year 6|obese|GPPS|QOF")
   ) |> 
   dplyr::filter(
     # retain all rows where target variable is not na
@@ -55,7 +55,6 @@ rf_training_years <- set_names(
       target_variable = target_variable,
       lagged_years = 2, 
       training_years = .x,
-      # remove_years = 2020,
       keep_current = FALSE,
       remove_lag_target = TRUE,
       time_series_split = TRUE, 
@@ -74,7 +73,11 @@ random_forest <- rf_training_years |>
     .metric == "rsq"
   ) |> 
   pivot_longer(
-    cols = c(train, validation, test),
+    cols = c(
+      # train, 
+      validation, 
+      test
+    ),
     names_to = "data_type",
     values_to = "rsq"
   ) |> 
@@ -144,7 +147,7 @@ dc_data <- load_data(
   select(
     any_of(c("org", "year", target_variable)),
     any_of(c("numerator", "remainder")),
-    matches("^ESR|^Workforce|^Bed|bed days|age band|Year 6|obese|GPPS|QOF")
+    matches("^FTE|^Workforce|^Bed|bed days|beds|age band|deprivation|Year 6|obese|GPPS|QOF")
   ) |> 
   dplyr::filter(
     # retain all rows where target variable is not na
@@ -162,8 +165,9 @@ dc_data <- load_data(
   filter(
     year <= predict_year
   )
+
 inputs <- expand.grid(
-  corr = seq(from = 0.3, to = 0.9, by = 0.05),
+  corr = seq(from = 0.5, to = 0.9, by = 0.05),
   yrs = 2:6
 )
 
@@ -182,7 +186,6 @@ logistic <- map2(
     linear_correlation_threshold = .x,
     seed = 321 ,
     training_years = .y,
-    remove_years = 2020:2021,
     predict_proportions = TRUE
   )
 )
