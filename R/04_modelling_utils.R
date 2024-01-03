@@ -30,46 +30,44 @@ train_validation_proportions <- function(data) {
   return(proportions)
 }
 
-add_prediction_to_data <- function(data, model_fit, target_variable = NULL, 
-                                   predict_proportions = TRUE) {
+add_prediction_to_data <- function(data, final_fit) {
   
-  data <- data |> 
+  data <- final_fit |> 
+    workflowsets::extract_workflow() |> 
+    predict(data) |> 
     bind_cols(
-      predict(
-        model_fit,
-        new_data = data
-      )
+      data
     )
-  
-  if (!is.null(target_variable)) {
-    if (!predict_proportions) {
-      data <- data |> 
-        mutate(
-          .pred = .pred * (numerator + remainder)
-        )
-    }
-  }
   
   return(data)
 }
 
-model_metrics <- function(data, model_fit, target_variable, predict_proportions) {
-  evaluation_metrics <- metric_set(
-    yardstick::rmse,
-    yardstick::rsq,
-    yardstick::mae)
+calculate_train_metric <- function(final_fit, training_data, target_variable, metric) {
   
-  metrics <- add_prediction_to_data(
-    data = data, 
-    model_fit = model_fit, 
-    target_variable = target_variable,
-    predict_proportions = predict_proportions) |> 
-    evaluation_metrics(
-      truth = all_of(target_variable),
-      estimate = .pred
+  training_metric <- add_prediction_to_data(
+    data = training_data,
+    final_fit = final_fit
+  ) |> 
+    select(
+      observed = all_of(target_variable),
+      ".pred"
     )
   
-  return(metrics)
+  if (metric == "rsq") {
+    training_metric <- training_metric %$%
+      cor(
+        observed,
+        .pred
+      ) ^ 2
+  }
+  
+  training_metric <- tibble(
+    data = "train",
+    .metric = metric,
+    .estimate = training_metric
+  )
+  
+  return(training_metric)
 }
 
 plot_observed_expected <- function(data, target_variable) {
@@ -82,7 +80,7 @@ plot_observed_expected <- function(data, target_variable) {
     geom_point(
       alpha = 0.5,
       aes(
-        colour = id
+        colour = data
       )
     ) + 
     labs(
@@ -97,16 +95,16 @@ plot_observed_expected <- function(data, target_variable) {
     scale_colour_manual(
       name = "Type",
       values = c(
-        `train/test split` = "#33a02c",
+        test = "#33a02c",
         validation = "#ff7f00",
         train = "#1f78b4"
       ),
       labels = c(
-        `train/test split` = "Test",
+        test = "Test",
         validation = "Validation",
         train = "Train"
       ),
-      breaks = c("train", "validation", "train/test split"),
+      breaks = c("train", "validation", "test"),
       drop = TRUE
     )
  
@@ -298,13 +296,16 @@ load_data <- function(target_variable, value_type = "value", incl_numerator_rema
 #' @param shuffle_training_records logical; should the training/validation set
 #'   be ordered or shuffled for imte_series_split = TRUE
 #' @param model_type character string; the modelling method to use
-#' @param rf_tuning_grid data.frame with numeric columns for mtry, min_n and
-#'   trees. Can also take the value "auto"
+#' @param tuning_grid data.frame with numeric columns for mtry, min_n and trees
+#'   (if using random_forest) or a signle column named threshold (if performing
+#'   logistic_regression). Can also take the value "auto", which is the default.
+#' @param correlation_threshold numeric; between 0 and 1, determining the
+#'   threshold for removing correlated variables (logistic models only)
 #' @param predict_proportions logical; should proportions be the predicted value
 #'   (TRUE) or a count (FALSE)
 #' @param seed numeric; seed number
 #' @details This webpage was useful
-#' https://www.tidyverse.org/blog/2022/05/case-weights/
+#'   https://www.tidyverse.org/blog/2022/05/case-weights/
 #' 
 modelling_performance <- function(data, target_variable, lagged_years = 0, 
                                   keep_current = TRUE, remove_lag_target = TRUE,
@@ -312,7 +313,8 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
                                   remove_years = NULL,
                                   shuffle_training_records = FALSE,
                                   model_type = "logistic", 
-                                  rf_tuning_grid = "auto",
+                                  tuning_grid = "auto",
+                                  correlation_threshold = 0.9,
                                   predict_proportions = TRUE,
                                   seed = 321) {
   
@@ -322,14 +324,14 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
   )
   
   if (model_type == "random_forest") {
-    if (class(rf_tuning_grid) == "data.frame") {
-      if (!all(names(rf_tuning_grid) %in% c("mtry", "min_n", "trees"))) {
-        stop("rf_tuning_grid is incorrect")
+    if (class(tuning_grid) == "data.frame") {
+      if (!all(names(tuning_grid) %in% c("mtry", "min_n", "trees"))) {
+        stop("tuning_grid is incorrect")
       }
-    } else if (rf_tuning_grid != "auto") {
-      stop("rf_tuning_grid is incorrect")
+    } else if (tuning_grid != "auto") {
+      stop("tuning_grid is incorrect")
     }
-  }
+  } 
   
   if (!is.null(training_years)) {
     if (training_years < 2) stop("training years must be NULL or greater than 1")
@@ -504,20 +506,39 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
     (\(x) x[x > 0.4])() |> 
     names(x = _)
   
+  # identify variables that are (almost) entirely missing from any of the
+  # datasets
+  
+  entirely_missing_vars <- list(
+    data_train,
+    data_validation,
+    data_test
+  ) |> 
+    lapply(
+      function(x) names(x)[(colSums(is.na(x)) / nrow(x)) > 0.95]
+    ) |> 
+    unlist() |> 
+    unique()
+  
+  # add the entirely missing vars to the mostly missing vars
+  vars_to_remove <- unique(
+    c(mostly_missing_vars, entirely_missing_vars)
+  )
+  
   # identify fields to impute
   missing_data <- names(data)[colSums(is.na(data)) > 0] |> 
-    (\(x) x[!(x %in% mostly_missing_vars)])()
+    (\(x) x[!(x %in% vars_to_remove)])()
   
   # identify predictor variables
   predictor_variables <- names(data)[!(names(data) %in% c("year", "org", target_variable))] |> 
-    # remove variables that are mostly missing
-    (\(x) x[!(x %in% mostly_missing_vars)])()
+    # remove variables that are mostly/entirely missing
+    (\(x) x[!(x %in% vars_to_remove)])()
   
   # set recipe
   model_recipe <- data_train |> 
     recipe() |> 
     step_rm(
-      all_of(c("year", "org", mostly_missing_vars))
+      all_of(c("year", "org", vars_to_remove))
     )
   
   if (model_type == "logistic_regression") {
@@ -543,6 +564,7 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
         )
       )
   }
+  
   model_recipe <- model_recipe |> 
     update_role(
       all_of(predictor_variables),
@@ -550,96 +572,27 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
     )
   
   model_recipe <- model_recipe |> 
-    step_impute_knn(all_of(missing_data))
+    step_impute_median(all_of(missing_data))
   
   if (model_type %in% c("logistic_regression")) {
     model_recipe <- model_recipe |> 
       step_corr(all_predictors(),
-                threshold = tune())
+                threshold = correlation_threshold)
   }
   
   model_recipe <- model_recipe |> 
     prep(training = data_train, retain = TRUE)
   
-  
-  # create workflow
-  
+  # start workflow
   modelling_workflow <- workflow() |> 
     add_model(model_setup) |> 
     add_recipe(model_recipe)
   
-  if (model_type %in% c("logistic_regression")) {
-    # fit model
-    
-    model_fit <- list(
-      train = data_train,
-      validation = data_validation
-    ) |> 
-      bind_rows() |> 
-      mutate(
-        data_type = "data_train"
-      ) |> 
-      fit(
-        data = _,
-        object = modelling_workflow
-      )
-    
-    # check linear assumptions
-    assumptions_check <- model_fit$fit$fit |> 
-      performance::check_model()
-    
-    # plot predictions vs observed
-    prediction_plot <- list(
-      train = data_train,
-      validation = data_validation,
-      `train/test split` = data_test
-    ) |> 
-      bind_rows(
-        .id = "id"
-      ) |> 
-      mutate(
-        id = factor(
-          id,
-          levels = c("train/test split", "validation", "train")
-        )
-      ) |> 
-      add_prediction_to_data(
-        model_fit = model_fit,
-        target_variable = target_variable,
-        predict_proportions = predict_proportions
-      ) |> 
-      plot_observed_expected(
-        target_variable
-      )
-    
-    
-    # evaluation metrics on validation data
-    evaluation_metrics <- list(
-      train = bind_rows(
-        data_train,
-        data_validation
-      ),
-      test = data_test
-    ) |> 
-      purrr::map_dfr(
-        ~ model_metrics(
-          data = .x,
-          model_fit = model_fit,
-          target_variable = target_variable,
-          predict_proportions = predict_proportions
-        ),
-        .id = "data"
-      ) |>
-      tidyr::pivot_wider(
-        names_from = data,
-        values_from = .estimate
-      )
-    
-  } else if (model_type == "random_forest") {
+  if (model_type == "random_forest") {
     # design the tuning of the hyperparameters
     
-    if (class(rf_tuning_grid) == "data.frame") {
-      tuning_grid <- rf_tuning_grid
+    if (class(tuning_grid) == "data.frame") {
+      tuning_grid <- tuning_grid
     } else {
       tuning_grid <- expand.grid(
         mtry = seq(
@@ -660,23 +613,23 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
       )
     } 
     
-    rf_residuals <- modelling_workflow |> 
-      tune_grid(data_validation_set,
-                grid = tuning_grid,
-                control = control_grid(save_pred = TRUE))
+    residuals <- modelling_workflow |> 
+      tune_grid(
+        data_validation_set,
+        grid = tuning_grid,
+        control = control_grid(save_pred = TRUE)
+      )
     
-    tuning_parameters <- autoplot(rf_residuals)
+    tuning_parameters <- autoplot(residuals)
     
     # select the best parameters
-    rf_best <- rf_residuals |> 
+    best <- residuals |> 
       select_best(metric = "rsq")
     
     # the last workflow
-    ### NEW
-    # modelling_workflow_final <- finalize_workflow(modelling_workflow, rf_best)
+    modelling_workflow_final <- modelling_workflow |>
+      finalize_workflow(best)
     
-    modelling_workflow <- modelling_workflow |>
-      finalize_workflow(rf_best)
     
     evaluation_metrics <- metric_set(
       yardstick::rmse,
@@ -684,18 +637,17 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
       yardstick::mae)
     
     # the last fit
-    ## NEW
     model_fit <- last_fit(
-      modelling_workflow,
+      modelling_workflow_final,
       splits,
-      # add_validation_set = TRUE,
+      add_validation_set = TRUE,
       metrics = evaluation_metrics
     )
     
-    validation_metrics <- rf_residuals |> 
+    validation_metrics <- residuals |> 
       collect_metrics() |> 
       inner_join(
-        rf_best,
+        best,
         by = join_by(mtry, trees, min_n, .config)
       ) |> 
       select(
@@ -716,7 +668,15 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
         data = "test"
       )
     
+    train_metrics <- calculate_train_metric(
+      final_fit = model_fit,
+      training_data = data_train,
+      target_variable = target_variable,
+      metric = "rsq"
+    )
+    
     evaluation_metrics <- bind_rows(
+      train_metrics,
       validation_metrics,
       test_metrics
     ) |>
@@ -725,8 +685,8 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
         values_from = .estimate
       )
     
-    validation_predictions <- rf_residuals |> 
-      collect_predictions(parameters = rf_best) |> 
+    validation_predictions <- residuals |> 
+      collect_predictions(parameters = best) |> 
       mutate(
         data = "validation"
       )
@@ -737,18 +697,68 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
         data = "test"
       )
     
-    prediction_plot <- bind_rows(
-      validation_predictions,
-      test_predictions
+    train_predictions <- add_prediction_to_data(
+      data = data_train,
+      final_fit = model_fit
     ) |> 
-      plot_observed_expected(
-        target_variable = target_variable
+      mutate(
+        data = "train"
       )
     
-  } 
+    dataset_predictions <- bind_rows(
+      train_predictions,
+      validation_predictions,
+      test_predictions
+    )
+    
+  } else if (model_type == "logistic_regression") {
+    model_fit <- fit(
+      object = modelling_workflow,
+      data = data_train
+    )
+    
+    assumptions_check <- model_fit$fit$fit |> 
+      performance::check_model()
+    
+    dataset_predictions <- list(
+      train = data_train,
+      validation = data_validation,
+      test = data_test
+    ) |> 
+      lapply(
+        function(x) predict(model_fit, new_data = x) |> 
+          bind_cols(x)
+      ) |> 
+      bind_rows(
+        .id = "data"
+      )
+    
+    evaluation_metrics <- dataset_predictions |> 
+      select(
+        "data",
+        observed = all_of(target_variable),
+        ".pred"
+      ) |> 
+      summarise(
+        `.estimate` = cor(observed, .pred) ^ 2,
+        .by = data
+      ) |>
+      mutate(
+        .metric = "rsq"
+      ) |> 
+      tidyr::pivot_wider(
+        names_from = data,
+        values_from = .estimate
+      )
+      
+  }
+  
+  prediction_plot <- dataset_predictions |> 
+    plot_observed_expected(
+      target_variable = target_variable
+    )
   
   # variable importance
-  
   variable_importance <- model_fit |> 
     extract_fit_parsnip() |> 
     vip::vip(num_features = 10)
