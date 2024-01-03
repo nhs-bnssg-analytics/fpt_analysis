@@ -300,8 +300,6 @@ load_data <- function(target_variable, value_type = "value", incl_numerator_rema
 #' @param model_type character string; the modelling method to use
 #' @param rf_tuning_grid data.frame with numeric columns for mtry, min_n and
 #'   trees. Can also take the value "auto"
-#' @param linear_correlation_threshold numeric between 0 and 1; threshold to
-#'   remove correlated variables for linear model
 #' @param predict_proportions logical; should proportions be the predicted value
 #'   (TRUE) or a count (FALSE)
 #' @param seed numeric; seed number
@@ -313,15 +311,14 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
                                   time_series_split = TRUE, training_years = NULL,
                                   remove_years = NULL,
                                   shuffle_training_records = FALSE,
-                                  model_type = "linear", 
+                                  model_type = "logistic", 
                                   rf_tuning_grid = "auto",
-                                  linear_correlation_threshold = 0.9,
                                   predict_proportions = TRUE,
                                   seed = 321) {
   
   model_type <- match.arg(
     model_type,
-    c("linear", "random_forest", "logistic_regression")
+    c("random_forest", "logistic_regression")
   )
   
   if (model_type == "random_forest") {
@@ -471,12 +468,7 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
   
   # set model
   
-  if (model_type == "linear") {
-    model_setup <- parsnip::linear_reg(
-      mode = "regression",
-      engine = "lm"
-    )  
-  } else if (model_type == "random_forest") {
+  if (model_type == "random_forest") {
     # how many cores on the machine so we can parallelise
     cores <- parallel::detectCores()
     
@@ -539,7 +531,7 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
       step_rm(
         all_of(target_variable)
       )
-  } else if (model_type %in% c("linear", "random_forest")) {
+  } else if (model_type %in% c("random_forest")) {
     model_recipe <- model_recipe |> 
       update_role(
         all_of(target_variable),
@@ -557,18 +549,13 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
       new_role = "predictor"
     )
   
-  if (model_type %in% c("linear")) {
-    model_recipe <- model_recipe |> 
-      step_normalize(all_predictors())
-  }
-  
   model_recipe <- model_recipe |> 
     step_impute_knn(all_of(missing_data))
   
-  if (model_type %in% c("linear", "logistic_regression")) {
+  if (model_type %in% c("logistic_regression")) {
     model_recipe <- model_recipe |> 
       step_corr(all_predictors(),
-                threshold = linear_correlation_threshold)
+                threshold = tune())
   }
   
   model_recipe <- model_recipe |> 
@@ -581,7 +568,7 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
     add_model(model_setup) |> 
     add_recipe(model_recipe)
   
-  if (model_type %in% c("linear", "logistic_regression")) {
+  if (model_type %in% c("logistic_regression")) {
     # fit model
     
     model_fit <- list(
@@ -749,12 +736,7 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
       mutate(
         data = "test"
       )
-    # rf_metrics <- modelling_workflow |> 
-    #   last_fit(
-    #     splits,
-    #     add_validation_set = TRUE
-    #   ) |> 
-    #   collect_metrics(summarize = FALSE)
+    
     prediction_plot <- bind_rows(
       validation_predictions,
       test_predictions
@@ -781,7 +763,7 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
     `Lagged target variable` = ifelse(lagged_years > 0, !remove_lag_target, NA)
   )
   
-  if (model_type %in% c("linear", "logistic_regression")) {
+  if (model_type %in% c("logistic_regression")) {
     output <- list(
       dataset_yrs = dataset_yrs,
       assumptions_check = assumptions_check,
