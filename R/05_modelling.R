@@ -155,10 +155,12 @@ ggsave(
 dc_data <- load_data(
   target_variable, 
   incl_numerator_remainder = TRUE,
-  value_type = "value") |> 
+  value_type = "value",
+  include_weights = TRUE
+  ) |> 
   select(
     any_of(c("org", "year", target_variable)),
-    any_of(c("numerator", "remainder")),
+    any_of(c("numerator", "remainder", "health_population")),
     matches("^FTE|^Workforce|^Bed|bed days|beds|age band|deprivation|Year 6|obese|GPPS|QOF")
   ) |> 
   dplyr::filter(
@@ -239,6 +241,10 @@ logistic_results <- logistic |>
       x = correlation_threshold,
       y = rsq
     )
+  ) +
+  geom_hline(
+    yintercept = 0.5,
+    linetype = "dashed"
   ) +
   geom_line(
     aes(

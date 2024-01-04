@@ -126,7 +126,7 @@ metric_to_numerator <- function(metric_name) {
 # load data ---------------------------------------------------------------
 
 load_data <- function(target_variable, value_type = "value", incl_numerator_remainder = FALSE,
-                      broad_age_bands = TRUE) {
+                      broad_age_bands = TRUE, include_weights = FALSE) {
   metrics <- read.csv(
     here::here("data/configuration-table.csv"),
     encoding = "latin1"
@@ -267,6 +267,25 @@ load_data <- function(target_variable, value_type = "value", incl_numerator_rema
       values_from = value
     )
   
+  if (include_weights) {
+    annual_health_populations <- quarterly_ics_populations() |> 
+      summarise(
+        health_population = mean(denominator),
+        .by = c(year, org)
+      )
+    dc_data <- dc_data |> 
+      inner_join(
+        annual_health_populations,
+        by = join_by(
+          year,
+          org
+        )
+      ) |> 
+      mutate(
+        health_population = recipes::importance_weights(health_population)
+      )
+  }
+  
   return(dc_data)
 }
 
@@ -339,6 +358,22 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
   
   set.seed(seed)
   
+  # check for any weighting variables 
+  variable_classes <- lapply(data, class) |> 
+    unlist() |> 
+    unique()
+  
+  if (any(variable_classes == "hardhat_importance_weights")) {
+    weight_field <- summarise(
+      data, 
+      across(everything(), function(x) paste(class(x), collapse = ", "))) |> 
+      pivot_longer(cols = everything()) |> 
+      filter(grepl("hardhat_importance_weights",value)) |> 
+      pull(name)
+  } else {
+    weight_field <- NULL
+  }
+  
   if (lagged_years > 0) {
     
     map_lag <- set_names(
@@ -352,12 +387,12 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
     # create lag variables
     
     if (remove_lag_target) {
-      not_lag_variables <- c("year", "org", target_variable)
+      not_lag_variables <- c("year", "org", target_variable, weight_field)
       if (model_type == "logistic_regression") 
         not_lag_variables <- c(not_lag_variables, "numerator", "remainder")
     }
     else {
-      not_lag_variables <- c("year", "org")
+      not_lag_variables <- c("year", "org", weight_field)
     }
     
     data <- data |> 
@@ -384,7 +419,7 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
         )
       
       if (!keep_current) {
-        keep_variables <- c("year", "org", target_variable)
+        keep_variables <- c("year", "org", target_variable, weight_field)
         if(model_type == "logistic_regression")
           keep_variables <- c(keep_variables, "numerator", "remainder")
         
@@ -535,14 +570,22 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
     (\(x) x[!(x %in% vars_to_remove)])()
   
   # set recipe
-  model_recipe <- data_train |> 
+  if (model_type %in% "logistic_regression") {
+    model_recipe <- bind_rows(
+      data_train,
+      data_validation
+    )
+  } else if (model_type %in% "random_forest") {
+    model_recipe <- data_train
+  }
+  model_recipe <- model_recipe |> 
     recipe() |> 
     step_rm(
       all_of(c("year", "org", vars_to_remove))
     )
   
-  if (model_type == "logistic_regression") {
-    predictor_variables <- predictor_variables[!predictor_variables %in% c("numerator", "remainder")]
+  if (model_type %in% "logistic_regression") {
+    predictor_variables <- predictor_variables[!predictor_variables %in% c("numerator", "remainder", weight_field)]
     
     model_recipe <- model_recipe |> 
       update_role(
@@ -587,6 +630,14 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
   modelling_workflow <- workflow() |> 
     add_model(model_setup) |> 
     add_recipe(model_recipe)
+  
+  # if any weighting variables, include them in the workflow
+  
+  if (!is.null(weight_field)) {
+    
+    modelling_workflow <- modelling_workflow |> 
+      add_case_weights(all_of(weight_field))
+  }
   
   if (model_type == "random_forest") {
     # design the tuning of the hyperparameters
@@ -714,7 +765,10 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
   } else if (model_type == "logistic_regression") {
     model_fit <- fit(
       object = modelling_workflow,
-      data = data_train
+      data = bind_rows(
+        data_train,
+        data_validation
+      )
     )
     
     assumptions_check <- model_fit$fit$fit |> 

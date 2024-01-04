@@ -2545,7 +2545,7 @@ quarterly_ics_populations <- function() {
   if (file.exists(summary_filepath)) {
     # obtain the latest expected month from the NHSE website
     latest_available_month_year <- names(links[1])
-    latest_recorded_month_year <- health_pop_denominators |> #read.csv(summary_filepath) |> 
+    latest_recorded_month_year <- read.csv(summary_filepath) |> 
       distinct(
         month,
         year
