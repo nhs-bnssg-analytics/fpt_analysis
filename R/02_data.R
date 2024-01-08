@@ -276,7 +276,7 @@ purrr::walk(
 
 # tidy xlsx spreadsheets
 # this function ignores the xls files
-quarterly_overnight_beds <- list.files(
+quarterly_overnight_beds_by_trust <- list.files(
   "data-raw/Bed Availability and Occupancy Data – Overnight/",
   full.names = TRUE
 ) |> 
@@ -297,7 +297,7 @@ org_lkp <- attach_icb_to_org(orgs) |>
     .by = health_org_code
   )
 
-quarterly_overnight_beds <- quarterly_overnight_beds |> 
+quarterly_overnight_beds <- quarterly_overnight_beds_by_trust |> 
   left_join(
     org_lkp,
     by = join_by(
@@ -354,7 +354,7 @@ purrr::walk(
 
 # tidy xlsx spreadsheets
 # this function ignores the xls files
-quarterly_day_beds <- list.files(
+quarterly_day_beds_by_trust <- list.files(
   "data-raw/Bed Availability and Occupancy Data – Day/",
   full.names = TRUE
 ) |> 
@@ -375,7 +375,7 @@ org_lkp <- attach_icb_to_org(orgs) |>
     .by = health_org_code
   )
 
-quarterly_day_beds <- quarterly_day_beds |> 
+quarterly_day_beds <- quarterly_day_beds_by_trust |> 
   left_join(
     org_lkp,
     by = join_by(
@@ -409,6 +409,163 @@ bind_rows(
     row.names = FALSE
   )
 
+# covid hospital activity
+
+url <- "https://www.england.nhs.uk/statistics/statistical-work-areas/covid-19-hospital-activity/"
+
+links <- obtain_links(url) |> 
+  (\(x) x[grepl("xlsx$", x)])() |> 
+  (\(x) x[!grepl("Supplementary", x)])() |> 
+  (\(x) x[grepl("Covid-Publication", x)])()
+
+
+files <- purrr::map_chr(
+  links,
+  ~ check_and_download(
+    url = .x,
+    filepath = paste0("data-raw/Covid activity/", basename(.x))
+  )
+)
+
+quarterly_covid_bed_occupancy <- files |> 
+  map_df(
+    ~ tidyxl::xlsx_cells(
+      .x,
+      sheets = c(
+        "Total Beds Occupied Covid"
+      )
+    ),
+    .id = "file_id"
+  ) |> 
+  filter(
+    is_blank != TRUE,
+    row >= 13
+  ) |> 
+  group_by(file_id) |> 
+  behead(
+    direction = "left",
+    name = "Region"
+  ) |> 
+  behead(
+    direction = "left",
+    name = "org"
+  ) |> 
+  behead(
+    direction = "left",
+    name = "org_name"
+  ) |> 
+  behead(
+    direction = "up",
+    name = "Date"
+  ) |> 
+  ungroup() |> 
+  filter(
+    !is.na(org)
+  ) |> 
+  select(
+    numerator = "numeric",
+    "org", "org_name",
+    "Date"
+  ) |> 
+  mutate(
+    Date = as.Date(Date),
+    year = lubridate::year(Date),
+    month_name = lubridate::month(
+      Date,
+      label = TRUE,
+      abbr = FALSE),
+    quarter = purrr::map_int(
+      month_name,
+      quarter_from_month_string
+    )
+  ) |> 
+  summarise(
+    numerator = mean(numerator),
+    .by = c(
+      year, quarter, org
+    )
+  ) |> 
+  arrange(org, year, quarter)
+
+quarterly_total_beds_by_trust <- bind_rows(
+  quarterly_day_beds_by_trust,
+  quarterly_overnight_beds_by_trust
+) |> 
+  filter(
+    grepl("Total", metric)
+  ) |> 
+  select(
+    "year",
+    "quarter",
+    "org",
+    "denominator"
+  ) |> 
+  summarise(
+    denominator = sum(denominator),
+    .by = c(
+      year, 
+      quarter,
+      org
+    )
+  )
+
+quarterly_covid_beds_by_trust <- inner_join(
+  quarterly_covid_bed_occupancy,
+  quarterly_total_beds_by_trust,
+  by = join_by(
+    year,
+    quarter,
+    org
+  )
+) |> 
+  mutate(
+    metric = "Mean proportion of beds that contain a patient with confirmed COVID",
+    frequency = "quarter"
+  )
+
+orgs <- quarterly_covid_beds_by_trust |> 
+  pull(org) |> 
+  unique()
+
+org_lkp <- attach_icb_to_org(orgs) |> 
+  mutate(
+    divisor = n(),
+    .by = health_org_code
+  )
+
+quarterly_covid_beds <- quarterly_covid_beds_by_trust |> 
+  left_join(
+    org_lkp,
+    by = join_by(
+      org == health_org_code
+    ),
+    relationship = "many-to-many"
+  ) |> 
+  summarise(
+    across(
+      c(numerator, denominator),
+      ~ sum(.x / divisor, na.rm = TRUE) # some health_orgs attributed to multiple icbs, so these are split equally between the icbs
+    ),
+    .by = c(year, quarter, icb_code, metric, frequency)
+  ) |> 
+  rename(
+    org = icb_code
+  ) |> 
+  mutate(value = numerator / denominator)
+
+annual_covid_beds <- quarterly_covid_beds |> 
+  quarterly_to_annual_mean(
+    year_type = "financial"
+  )
+
+bind_rows(
+  quarterly_covid_beds,
+  annual_covid_beds
+) |> 
+  write.csv(
+    "covid-beds.csv",
+    row.names = FALSE
+  )
 
 # Total beds per 60+ population
 
@@ -1443,4 +1600,6 @@ bind_rows(
     "data/referral-to-treatment.csv",
     row.names = FALSE
   )
+
+
 
