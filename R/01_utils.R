@@ -1769,6 +1769,15 @@ quarterly_to_annual_mean <- function(data, year_type) {
       )
   }
   
+  # only keep years with 4 quarters of data
+  years_to_keep <- data |> 
+    distinct(
+      year, quarter
+    ) |> 
+    count(year) |> 
+    filter(n == 4) |> 
+    pull(year)
+  
   data <- data |> 
     summarise(
       across(
@@ -1785,6 +1794,9 @@ quarterly_to_annual_mean <- function(data, year_type) {
         "annual",
         year_type
       )
+    ) |> 
+    filter(
+      year %in% years_to_keep
     )
   
   return(data)
@@ -1806,6 +1818,12 @@ quarterly_to_annual_sum <- function(data, year_type) {
       )
   }
   
+  # only keep years with 4 quarters of data
+  years_to_keep <- data |> 
+    count(year) |> 
+    filter(n == 4) |> 
+    pull(year)
+  
   data <- data |> 
     summarise(
       across(
@@ -1822,6 +1840,9 @@ quarterly_to_annual_sum <- function(data, year_type) {
         "annual",
         year_type
       )
+    ) |> 
+    filter(
+      year %in% years_to_keep
     )
   
   return(data)
@@ -2589,3 +2610,4 @@ quarterly_ics_populations <- function() {
   return(quarterly_health_pop_denominators)
   
 }
+
