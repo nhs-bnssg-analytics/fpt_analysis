@@ -754,7 +754,7 @@ links <- obtain_links(url) |>
 
 file <- download_url_to_directory(
   url = links,
-  new_directory = "Clinical workforce",
+  new_directory = "data-raw/Clinical workforce/",
   filename = "Latest workforce statistics.zip"
 )
 
@@ -1150,7 +1150,7 @@ xl_files <- purrr::map_chr(
   excel_links,
   ~ download_url_to_directory(
     url = .x,
-    new_directory = "Social care funding"
+    new_directory = "data-raw/Social care funding/"
   )
 ) 
 
@@ -1380,7 +1380,7 @@ url <- "https://www.england.nhs.uk/statistics/wp-content/uploads/sites/2/2023/09
 
 file <- download_url_to_directory(
   url,
-  "Ambulance response times"
+  "data-raw/Ambulance response times/"
 )
 
 keep_indicators <- paste0("A", c(8:12, 24, 27, 30, 33, 36))
@@ -1405,7 +1405,7 @@ csv_link <- obtain_links("https://www.england.nhs.uk/statistics/statistical-work
 
 file <- download_url_to_directory(
   csv_link,
-  "Ambulance response times"
+  "data-raw/Ambulance response times/"
 )
 
 monthly_ambsys <- read.csv(
@@ -1491,9 +1491,9 @@ excel_links <- obtain_links(url) |>
 
 files <- purrr::map_chr(
   excel_links,
-  ~ download_url_to_directory(
-    url = .x,
-    new_directory = "No criteria to reside"
+  ~ check_and_download(
+    filepath = paste0("data-raw/No criteria to reside/", basename(.x)),
+    url = .x
   )
 )
 
@@ -1531,13 +1531,18 @@ url <- "https://www.england.nhs.uk/statistics/statistical-work-areas/cancer-wait
 excel_links <- obtain_links(url) |> 
   (\(x) x[grepl("xlsx$", x)])() |> 
   (\(x) x[grepl("Commissioner", x)])() |> 
-  (\(x) x[grepl("Revision", x)])()
+  (\(x) x[grepl("Revision", x)])() |> 
+  (\(x) x[!grepl("Jul-2022-Sep-2023", x)])()
+
+list.files("data-raw/Cancer wait times/", full.names = TRUE) |> 
+  file.remove() |> 
+  invisible()
 
 files <- purrr::map_chr(
   excel_links,
-  ~ download_url_to_directory(
-    url = .x,
-    new_directory = "Cancer wait times"
+  ~ check_and_download(
+    filepath = paste0("data-raw/Cancer wait times/", basename(.x)),
+    url = .x
   )
 )
 

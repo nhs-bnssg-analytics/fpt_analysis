@@ -410,7 +410,28 @@ tidy_cancer_wait_times <- function(filepath) {
         filepath = filepath,
         sheet = .x
       )
+    ) |> 
+    filter(
+      !grepl("COMMISSIONING|LHB", org_name, ignore.case = TRUE)
     )
+  
+  if (length(sheet_names) > 1) {
+    cancer_wait_times <- cancer_wait_times |> 
+      summarise(
+        across(
+          c(numerator, denominator),
+          sum
+        ),
+        .by = c(
+          year, month, org, org_name, frequency
+        )
+      ) |> 
+      mutate(
+        value = numerator / denominator,
+        metric = "62-DAY (proportion within standard)"
+      )
+  }
+  
   return(cancer_wait_times)
 }
 
@@ -2188,10 +2209,12 @@ lsoa_utla_icb_weighted_pops <- function() {
   # create all ages population of LSOA11 to UTLA by year
   # Note, missing 2021 and 2022 populations
   pops <- list.files("data-raw/Population/",
-                     full.names = TRUE) |> 
-    set_names(
-      nm = function(x) str_extract(x, "[0-9]{4}")
-    )
+                     full.names = TRUE) 
+  
+  pops <- set_names(
+    pops,
+    nm = str_extract(pops, "[0-9]{4}")
+  )
   
   pops <- pops[names(pops) %in% names(urls)] |> 
     purrr::map_df(
@@ -2334,10 +2357,12 @@ lsoa_stp_icb_weighted_pops <- function() {
   # create all ages population of LSOA11 to UTLA by year
   # Note, missing 2021 and 2022 populations
   pops <- list.files("data-raw/Population/",
-                     full.names = TRUE) |> 
-    set_names(
-      nm = function(x) str_extract(x, "[0-9]{4}")
-    )
+                     full.names = TRUE)
+  
+  pops <- set_names(
+    pops,
+    nm = str_extract(pops, "[0-9]{4}")
+  )
   
   pops <- pops[names(pops) %in% names(urls)] |> 
     purrr::map_df(
