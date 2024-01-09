@@ -992,9 +992,15 @@ monthly_sickness_absence <- bind_rows(
     monthly_sickness_monthly_files
   )
 
+trust_ics_lkp <- trust_to_ics_proportions(
+  final_year = max(monthly_sickness_absence$year)
+) |> 
+  rename(
+    health_org_code = "TrustCode",
+    icb_code = "org"
+  )
 
-
-org_icb_lkp <- monthly_sickness_absence |> 
+orgs <- monthly_sickness_absence |> 
   distinct(org) |> 
   mutate(
     role = map_chr(
@@ -1019,10 +1025,37 @@ org_icb_lkp <- monthly_sickness_absence |>
     )
   ) |> 
   pull(org) |> 
-  attach_icb_to_org() |> 
+  setdiff(
+    unique(trust_ics_lkp$health_org_code)
+  )
+
+org_lkp <- nearest_health_orgs(
+  missing_orgs = orgs,
+  known_orgs = unique(trust_ics_lkp$health_org_code),
+  n = 2
+) |> 
   mutate(
-    divisor = n(),
-    .by = health_org_code
+    known_org_proportion = 1 - (distance / sum(distance)),
+    .by = missing_org
+  ) |> 
+  left_join(
+    trust_ics_lkp,
+    by = join_by(
+      known_org == health_org_code
+    ),
+    relationship = "many-to-many"
+  ) |> 
+  mutate(
+    proportion = proportion * known_org_proportion
+  ) |> 
+  select(
+    "year",
+    health_org_code = "missing_org",
+    "icb_code",
+    "proportion"
+  ) |> 
+  bind_rows(
+    trust_ics_lkp
   )
 
 # denominators
@@ -1042,8 +1075,9 @@ quarterly_health_pop_denominators <- quarterly_ics_populations() |>
 
 quarterly_sickness_absence <- monthly_sickness_absence |> 
   inner_join(
-    org_icb_lkp,
+    org_lkp,
     by = join_by(
+      year,
       org == health_org_code
     ),
     relationship = "many-to-many"
@@ -1060,7 +1094,7 @@ quarterly_sickness_absence <- monthly_sickness_absence |>
   summarise(
     across(
       c(numerator),
-      ~ sum(.x / divisor, na.rm = TRUE)
+      ~ sum(.x * proportion, na.rm = TRUE)
     ),
     .by = c(
       year, quarter, metric, icb_code
