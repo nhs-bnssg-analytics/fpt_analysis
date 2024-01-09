@@ -20,40 +20,6 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
-/* CSS for syntax highlighting */
-pre > code.sourceCode { white-space: pre; position: relative; }
-pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
-pre > code.sourceCode > span:empty { height: 1.2em; }
-.sourceCode { overflow: visible; }
-code.sourceCode > span { color: inherit; text-decoration: inherit; }
-div.sourceCode { margin: 1em 0; }
-pre.sourceCode { margin: 0; }
-@media screen {
-div.sourceCode { overflow: auto; }
-}
-@media print {
-pre > code.sourceCode { white-space: pre-wrap; }
-pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
-}
-pre.numberSource code
-  { counter-reset: source-line 0; }
-pre.numberSource code > span
-  { position: relative; left: -4em; counter-increment: source-line; }
-pre.numberSource code > span > a:first-child::before
-  { content: counter(source-line);
-    position: relative; left: -1em; text-align: right; vertical-align: baseline;
-    border: none; display: inline-block;
-    -webkit-touch-callout: none; -webkit-user-select: none;
-    -khtml-user-select: none; -moz-user-select: none;
-    -ms-user-select: none; user-select: none;
-    padding: 0 4px; width: 4em;
-  }
-pre.numberSource { margin-left: 3em;  padding-left: 4px; }
-div.sourceCode
-  {   }
-@media screen {
-pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
-}
 </style>
 
 
@@ -226,6 +192,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
  <span class="menu-text">Random Forest</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../outputs/Modelling/logistic_regression.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Logistic regression</span></a>
+  </div>
+</li>
       </ul>
   </li>
     </ul>
@@ -238,7 +210,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#data-structure" id="toc-data-structure" class="nav-link active" data-scroll-target="#data-structure">Data structure</a></li>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#data-definitons" id="toc-data-definitons" class="nav-link" data-scroll-target="#data-definitons">Data definitons</a></li>
+  <li><a href="#data-structure" id="toc-data-structure" class="nav-link" data-scroll-target="#data-structure">Data structure</a></li>
   <li><a href="#splitting-dataset" id="toc-splitting-dataset" class="nav-link" data-scroll-target="#splitting-dataset">Splitting dataset</a></li>
   <li><a href="#missing-data" id="toc-missing-data" class="nav-link" data-scroll-target="#missing-data">Missing data</a></li>
   <li><a href="#modelling" id="toc-modelling" class="nav-link" data-scroll-target="#modelling">Modelling</a></li>
@@ -246,14 +220,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#next-steps" id="toc-next-steps" class="nav-link" data-scroll-target="#next-steps">Next steps</a>
   <ul class="collapse">
   <li><a href="#notes" id="toc-notes" class="nav-link" data-scroll-target="#notes">Notes</a></li>
-  </ul></li>
-  <li><a href="#results" id="toc-results" class="nav-link" data-scroll-target="#results">Results</a>
-  <ul class="collapse">
-  <li><a href="#linear-model" id="toc-linear-model" class="nav-link" data-scroll-target="#linear-model">Linear model</a></li>
-  <li><a href="#linear-model-current-and-lag" id="toc-linear-model-current-and-lag" class="nav-link" data-scroll-target="#linear-model-current-and-lag">Linear model current and lag</a></li>
-  <li><a href="#linear-model-using-only-lagged-data" id="toc-linear-model-using-only-lagged-data" class="nav-link" data-scroll-target="#linear-model-using-only-lagged-data">Linear model using only lagged data</a></li>
-  <li><a href="#linear-model-using-only-lagged-data-without-lagged-target-variable" id="toc-linear-model-using-only-lagged-data-without-lagged-target-variable" class="nav-link" data-scroll-target="#linear-model-using-only-lagged-data-without-lagged-target-variable">Linear model using only lagged data (without lagged target variable)</a></li>
-  <li><a href="#random-forest-current-and-lag" id="toc-random-forest-current-and-lag" class="nav-link" data-scroll-target="#random-forest-current-and-lag">Random forest current and lag</a></li>
   </ul></li>
   </ul>
 </nav>
@@ -278,16 +244,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 </header>
 
+<section id="introduction" class="level2">
+<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<p>The aim of the modelling process is to predict “next year’s” target variable from information that has occurred in previous years. In the modelling process, the “target variable” is the variable, or performance metric, that the modelling process is attempting to predict. Each performance metric will have a different model that creates the best predictions, but the process to identify the best model will be the same.</p>
+<p>The models are all evaluated using the R<sup>2</sup> metric (coefficient of determination), which is the proportion of the variance of the target variable that is explained by the predictor variable.</p>
+</section>
+<section id="data-definitons" class="level2">
+<h2 class="anchored" data-anchor-id="data-definitons">Data definitons</h2>
+<p>Each metric (performance, demand and capacity) has been collated with a numerator, a denominator and a calculated value, which is either a proportion or a rate.</p>
+<p>By its nature, a proportion is always between 0 and 1. All other values can only take a positive number.</p>
+<p>For modelling, the data used could be either the “value” (e.g., the calculated proportion or rate) or the numerator. The performance of the modelling process could be dependent on the modelling technique used.</p>
+</section>
 <section id="data-structure" class="level2">
 <h2 class="anchored" data-anchor-id="data-structure">Data structure</h2>
-<p>The project aims to allow us to predict the value of a performance metric in future years (1, 2, 5 years, say) for each of the ICSs. Performance metrics could be impacted by demand and capacity metrics for the same years, or potentially years building up to that year.</p>
-<p>To enable testing different models, the data structure should consider the following for each ICS and each year:</p>
-<ul>
-<li>a value for each target variable (performance metrics) - required</li>
-<li>a value for each predictor variable (demand and capacity metrics) - optional</li>
-<li>a lagged value (1 to x years lag) for target and predictor variable - optional</li>
-<li>inclusion of ICB code and year in for prediction variables?</li>
-</ul>
+<p>For modelling, the data are structured as a record for each Integrated Care System (ICS) for each year. The fields will contain the target variable (the metric that the model is trying to predict) alongside lagged values of the predictor variables. The number of years to lag the predictor variables needs to be determined and could potentially be model specific.</p>
 </section>
 <section id="splitting-dataset" class="level2">
 <h2 class="anchored" data-anchor-id="splitting-dataset">Splitting dataset</h2>
@@ -347,99 +317,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="notes" class="level3">
 <h3 class="anchored" data-anchor-id="notes">Notes</h3>
 <p>Parametric modelling should have more thought on the input features, whereas ML potentially can throw them all in and see what happens</p>
-</section>
-</section>
-<section id="results" class="level2">
-<h2 class="anchored" data-anchor-id="results">Results</h2>
-<p>This section documents the results of modelling steps for reference and the project progresses</p>
-<section id="linear-model" class="level3">
-<h3 class="anchored" data-anchor-id="linear-model">Linear model</h3>
-<ul>
-<li>No lagged data</li>
-<li>selection pattern: <code>matches("^ESR|^Workforce|^Bed|age band|Year 6|GPPS")</code></li>
-<li>data are ordered by time before splitting into train (2013-2018), val (2019) and test (2020)</li>
-<li>correlation threshold: 0.9</li>
-<li>impute missing with knn for all predictors</li>
-</ul>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># A tibble: 3 × 4</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="co">#   .metric .estimator  train validation</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co">#   &lt;chr&gt;   &lt;chr&gt;       &lt;dbl&gt;      &lt;dbl&gt;</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># 1 rmse    standard   0.0317     0.0432</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co"># 2 rsq     standard   0.830      0.283 </span></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co"># 3 mae     standard   0.0257     0.0353</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-</section>
-<section id="linear-model-current-and-lag" class="level3">
-<h3 class="anchored" data-anchor-id="linear-model-current-and-lag">Linear model current and lag</h3>
-<ul>
-<li>Current year and lagged data (including lagged target variable)</li>
-<li>selection pattern: <code>matches("^ESR|^Workforce|^Bed|age band|Year 6|GPPS")</code></li>
-<li>data are ordered by time before splitting into train (2013-2018), val (2019) and test (2020)</li>
-<li>correlation threshold: 0.9</li>
-<li>impute missing with knn for all predictors</li>
-</ul>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># A tibble: 3 × 4</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="co">#   .metric .estimator  train validation</span></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co">#   &lt;chr&gt;   &lt;chr&gt;       &lt;dbl&gt;      &lt;dbl&gt;</span></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co"># 1 rmse    standard   0.0263     0.0363</span></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="co"># 2 rsq     standard   0.883      0.452 </span></span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="co"># 3 mae     standard   0.0215     0.0281</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-</section>
-<section id="linear-model-using-only-lagged-data" class="level3">
-<h3 class="anchored" data-anchor-id="linear-model-using-only-lagged-data">Linear model using only lagged data</h3>
-<ul>
-<li>Only lagged data (including lagged target variable)</li>
-<li>selection pattern: <code>matches("^ESR|^Workforce|^Bed|age band|Year 6|GPPS")</code></li>
-<li>data are ordered by time before splitting into train (2014-2018), val (2019) and test (2020)</li>
-<li>correlation threshold: 0.9</li>
-<li>impute missing with knn for all predictors</li>
-</ul>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># A tibble: 3 × 4</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="co">#   .metric .estimator  train validation</span></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="co">#   &lt;chr&gt;   &lt;chr&gt;       &lt;dbl&gt;      &lt;dbl&gt;</span></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co"># 1 rmse    standard   0.0238     0.0368</span></span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="co"># 2 rsq     standard   0.883      0.498 </span></span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="co"># 3 mae     standard   0.0191     0.0254</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-</section>
-<section id="linear-model-using-only-lagged-data-without-lagged-target-variable" class="level3">
-<h3 class="anchored" data-anchor-id="linear-model-using-only-lagged-data-without-lagged-target-variable">Linear model using only lagged data (without lagged target variable)</h3>
-<ul>
-<li>Only lagged data (not including lagged target variable)</li>
-<li>selection pattern: <code>matches("^ESR|^Workforce|^Bed|age band|Year 6|GPPS")</code></li>
-<li>data are ordered by time before splitting into train (2014-2018), val (2019) and test (2020)</li>
-<li>correlation threshold: 0.9</li>
-<li>impute missing with knn for all predictors</li>
-</ul>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># A tibble: 3 × 4</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="co">#   .metric .estimator  train validation</span></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="co">#   &lt;chr&gt;   &lt;chr&gt;       &lt;dbl&gt;      &lt;dbl&gt;</span></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="co"># 1 rmse    standard   0.0322     0.0449</span></span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="co"># 2 rsq     standard   0.787      0.236 </span></span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="co"># 3 mae     standard   0.0258     0.0368</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-</section>
-<section id="random-forest-current-and-lag" class="level3">
-<h3 class="anchored" data-anchor-id="random-forest-current-and-lag">Random forest current and lag</h3>
-<ul>
-<li>Current year and lagged data (including lagged target variable)</li>
-<li>selection pattern: <code>matches("^ESR|^Workforce|^Bed|age band|Year 6|GPPS")</code></li>
-<li>data are ordered by time before splitting into train (2013-2018), val (2019) and test (2020)</li>
-<li>impute missing with knn for all predictors</li>
-</ul>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># A tibble: 3 × 5</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="co">#   .metric .estimator  train validation   test</span></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="co">#   &lt;chr&gt;   &lt;chr&gt;       &lt;dbl&gt;      &lt;dbl&gt;  &lt;dbl&gt;</span></span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="co"># 1 rmse    standard   0.0166     0.0574 0.132 </span></span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="co"># 2 rsq     standard   0.976      0.258  0.0839</span></span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="co"># 3 mae     standard   0.0134     0.0493 0.125 </span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
 
 
 </section>

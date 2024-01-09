@@ -51,6 +51,7 @@ Data need to be split before training model. Some considerations are:
 ## Other questions
 
 * What to do with IMD? It is published by LSOA for a single year. Should the information for each ICS be applied for each year? Should it relate to the population variables? How else to integrate deprivation into the analysis?
+* accuracy measure? Is Rsq appropriate? Need to pick a measure that suits the question we have...we're most interested in trends for each ICS (MDA? or SMAPE?)
 
 ## Next steps
 
@@ -60,8 +61,6 @@ Data need to be split before training model. Some considerations are:
 * Stepwise modelling for linear/logistic (step aic - more popular at the moment; step bic)
 * How to keep the predictions between 0 and 1? Does it mean the model should be a logistic regression?
 * collect more data
-* feature engineering
-  + combine total beds with population (or population in need, eg, population over 65)
 * demonstrate proof of concept to stakeholders
   + identify other metrics that would be useful to predict
 * demonstrate scenario modelling
@@ -73,7 +72,8 @@ Data need to be split before training model. Some considerations are:
 * Are there more primary care statistics available? Primary care capacity? GP availability?
 * COVID prevalence? Flu admissions? (https://www.england.nhs.uk/statistics/statistical-work-areas/covid-19-hospital-activity/)
 * Theatre capacity?
-
+* are there any publications from the mental health minimum dataset or the community services minimum dataset
+* can any of the performance metrics be used as predictors
 
 
 

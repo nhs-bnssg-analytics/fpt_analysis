@@ -563,7 +563,7 @@ bind_rows(
   annual_covid_beds
 ) |> 
   write.csv(
-    "covid-beds.csv",
+    "data/covid-beds.csv",
     row.names = FALSE
   )
 

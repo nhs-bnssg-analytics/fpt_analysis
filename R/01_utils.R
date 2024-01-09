@@ -32,11 +32,6 @@ obtain_links_and_text <- function(url){
 # downloading files -------------------------------------------------------
 
 download_url_to_directory <- function(url, new_directory, filename) {
-  new_directory <- paste0(
-    "data-raw/",
-    new_directory,
-    "/"
-  )
   if (!isTRUE(file.info(new_directory)$isdir)) 
     dir.create(new_directory, recursive = TRUE)
   
@@ -2152,7 +2147,7 @@ lsoa_utla_icb_weighted_pops <- function() {
       ~ list(
         download_url_to_directory(
           url = .x,
-          new_directory = "Lookups",
+          new_directory = "data-raw/Lookups",
           filename = paste0(
             "LSOA11_UTLA",
             names(.x),
@@ -2296,7 +2291,7 @@ lsoa_stp_icb_weighted_pops <- function() {
       ~ list(
         download_url_to_directory(
           url = .x,
-          new_directory = "Lookups",
+          new_directory = "data-raw/Lookups",
           filename = paste0(
             "LSOA11_STP",
             names(.x),
