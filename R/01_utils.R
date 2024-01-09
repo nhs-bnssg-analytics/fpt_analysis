@@ -63,7 +63,7 @@ check_and_download <- function(filepath, url) {
   if (!file.exists(filepath)) {
     filepath <- download_url_to_directory(
       url = url,
-      new_directory = basename(dirname(filepath)),
+      new_directory = paste0(dirname(filepath), "/"),
       filename = basename(filepath)
     )
   }
@@ -2606,3 +2606,231 @@ quarterly_ics_populations <- function() {
   
 }
 
+
+
+trust_to_ics_proportions <- function(final_year = 2020) {
+  lsoa_to_icb <- check_and_download(
+    filepath = "data-raw/Lookups/lsoa_icb.xlsx",
+    url = "https://www.arcgis.com/sharing/rest/content/items/1ac8547e9a8945478f0b5ea7ffe1a6b1/data"
+    ) |> 
+    readxl::read_excel(
+      sheet = "LSOA11_LOC22_ICB22_LAD22"
+    ) |> 
+    distinct(
+      LSOA11CD, 
+      ICB22CDH
+    ) |> 
+    rename(
+      org = "ICB22CDH"
+    )
+  
+  url <- "https://opendata.arcgis.com/api/v3/datasets/d382604321554ed49cc15dbc1edb3de3_0/downloads/data?format=csv&spatialRefId=4326&where=1%3D1"
+  msoa_to_icb <- check_and_download(
+    filepath = "data-raw/Lookups/lsoa_to_msoa.csv",
+    url = url
+  ) |> 
+    read.csv() |> 
+    distinct(
+      LSOA11CD, MSOA11CD
+    ) |> 
+    left_join(
+      lsoa_to_icb,
+      by = join_by(LSOA11CD)
+    ) |> 
+    distinct(
+      MSOA11CD, org
+    ) |> 
+    add_count(
+      MSOA11CD,
+      name = "divisor"
+    )
+  
+  # this link changes because it is generated with php
+  # the file can be found here: https://app.box.com/s/qh8gzpzeo1firv1ezfxx2e6c4tgtrudl
+  url <- "https://public.boxcloud.com/d/1/b1!7W3mn1auJzo7ynSDxwv-yHEPAD9A0XAGHysRAIG2Fb7L0s0YjMdFmJ9fnCkSxWbfq2P-gibV_Kr82SRwSXVXS_z4eovILa_VrgZ18DrcQvC5IbrnE1NiQs_AuNPZvXyqX9ZB3rZO-Emtr_loF_I2rjc10jUkl8Hk69IZTNWgZAyTHkbieervYP1Z1Kgu1TczSyULmOnJKmAVjBTcKNwvtoH-N8ZCicqbsmZlHNgaYCn2ORpI3e71mUn-UJhFcs3LgTugANRuDEbtjX3P9Tehn2byK2iTY7gAZJZpp3zCa6VIi-exRQSHtmsgHP1lKa8X_GmlvM-c9g614Uq7bTp-NYhAMuub1ShQodT4hTkfT4uFr_EpRdXbLIWjgjELwXc5QN2G9VVWvOYIGhkHcPOnh3Smw4FBj2Buv0WFh521VKYDAscVaTELxBa-HasSBuC5xkMm_GGxIAPBu1hVok7Uo8thMccxk2HoN0izQEIbzhA1Kj8LaIVPwUSP2eym-ORDOb7zDOQb3lGh34ILjVt97o2vK9Oe-XcLuBlQH11K83LfQo_v78Ihgqb9hxIhHSPTzF44CHbDNFuu-_XJMj7f9F5GSfTEdQ_-uMhgpJEms85ZxyiZ-ZXte6VJvqzGcsiqcLlOPNBqynGgOtAFPC4BQlYozYLUfSOMJZmuxMIf-SPfx9zbZ4jzH5oSbrKv5X0Nkm7pFxvnggIJHdarAl8ErF9077MKz8OMDpUTOHsIMMIIHKJ5tlKIQcfzCgi6ZoFQHm9_iZwQM_B_JqBnGDBPaP86Qz2j3qrHgBT2D46N-yRBggHJAmtf4bTVtFJvJxkoTKfZIhSs1_7RYy4_T7uSpOjAwlrQahNkwuYyLiphvynRL8CW722JcftCyqY5JKc3UK7A9-aubh88vOg_J1knXBGvgZzkwNx09ltt9ZtgS9MlgHEfs2rFO_AkaDPuLwvaD_zikUn1AgNYUllo-v7O8nDYESclCvMgeznzvAxPnL4eXxTs9ZIbpaXAckpgGUerZ5jyOsfTEXbyhX2Mz97f-kGAMqwjoKrV1s5Qqfgyn0XrBIDrxv8xmMnkxl5r2ht0JwuJW3RbtxWxUZijC8MrSyodE9ZKWu7yxwtJ5N-FSRUd_yj6vjC3ho0_TtilJ9lbTMbGIhPE0Zx1b5XXDmodIS7JX8NJ_i9U2646jUOjA--Wgh__j4IdUcyGzosUhu-1VpaCnDyBONI1vUNe21g2HTcxn1yhAQzADuthyGnFz9wA7wfBS80D-6_MaqsDl595a77sYFB8BAecAePiulMR0SA7_fTXrApoKqImTSftxHuD2bnzra166n-Bl6SPm15RVGoMU3X6pzzqlxR9j0qqWFPE5KboUp79RYgXsnXGFpoTJ0sX4LA./download"
+  
+  file <- check_and_download(
+    filepath = "data-raw/Catchment populations/catchment-populations.xlsx",
+    url = url
+  )
+  
+  msoas_in_catchments <- c(
+    "All Admissions"#,
+    # "Elective", 
+    # "Emergency"
+  ) |> 
+    map_df(
+      ~ readxl::read_excel(
+        path = file,
+        sheet = .x
+      )
+    ) |> 
+    select(
+      year = "CatchmentYear",
+      # type = "AdmissionType",
+      MSOA11CD = "msoa",
+      "TrustCode",
+      "patients"
+    )
+  
+  trust_to_ics_proportions <- msoas_in_catchments |> 
+    left_join(
+      msoa_to_icb,
+      by = join_by(MSOA11CD),
+      relationship = "many-to-many"
+    ) |> 
+    mutate(
+      patients = patients / divisor
+    ) |> 
+    summarise(
+      patients = sum(patients),
+      .by = c(
+        year,
+        # type,
+        TrustCode,
+        org
+      )
+    ) |> 
+    mutate(
+      proportion = patients / sum(patients),
+      .by = c(
+        year,
+        # type,
+        TrustCode
+      )
+    ) |> 
+    select(
+      "year",
+      "TrustCode",
+      "org",
+      "proportion"
+    )
+  
+  if (final_year <= max(trust_to_ics_proportions$year)) {
+    trust_to_ics_proportions <- trust_to_ics_proportions |> 
+      filter(
+        year <= final_year
+      )
+  } else {
+    additional_years <- seq(
+      from = max(trust_to_ics_proportions$year) + 1,
+      to = final_year,
+      by = 1
+    )
+    trust_to_ics_proportions_extra_years <- trust_to_ics_proportions |> 
+      filter(
+        year == max(year)
+      ) |> 
+      select(!c("year")) |> 
+      cross_join(
+        tibble(year = additional_years)
+      )
+    
+    trust_to_ics_proportions <- bind_rows(
+      trust_to_ics_proportions,
+      trust_to_ics_proportions_extra_years
+    )
+  }
+  
+  return(trust_to_ics_proportions)
+}
+
+#' returns tibble of the top n nearest known orgs to any missing orgs, along
+#' with the distance between them
+#' @param missing_orgs character; org codes for missing orgs
+#' @param known_orgs character; org codes for known orgs
+#' @param n number; top n nearest orgs to return
+#' @details accesses the post code from the ODS API for both missing and known
+#'   orgs. Subsequently, obtains longs and lats from the postcodes.io API. Uses
+#'   the geosphere package to calculate the distance between each missing org
+#'   and known org, then filters for the top n for each missing org
+nearest_health_orgs <- function(missing_orgs, known_orgs, n) {
+  code_table <- tibble(
+    org = c(missing_orgs, known_orgs),
+    missing = org %in% missing_orgs
+  ) |> 
+    mutate(
+      postcode = map_chr(
+        org,
+        ~ ods_info(.x)[["Organisation"]][["GeoLoc"]][["Location"]][["PostCode"]]
+      ),
+      postcode = gsub(" ", "", postcode)
+    )
+  
+  lats_and_longs <- split(
+    code_table$postcode, 
+    ceiling(
+      seq_along(
+        code_table$postcode
+      ) / 100
+    )
+  ) |> 
+    lapply(list) |> 
+    lapply(
+      set_names,
+      "postcodes"
+    ) |> 
+    lapply(
+      bulk_postcode_lookup
+    ) |> 
+    map_depth(
+      .depth = 1,
+      .f = ~ map_df(
+        .x,
+        function(x) tibble(
+          postcode = pluck(x, "query"),
+          longitude = pluck(x, "result", "longitude"),
+          latitude = pluck(x, "result", "latitude")
+        )
+      )
+    ) |> 
+    bind_rows()
+  
+  code_table <- code_table |> 
+    left_join(
+      lats_and_longs,
+      by = join_by(postcode)
+    )
+  
+  known_org_locations <- code_table |> 
+    filter(missing == FALSE)
+  
+  missing_org_locations <- code_table |> 
+    filter(missing == TRUE)
+  
+  closest_orgs <- geosphere::distm(
+    missing_org_locations[,c('longitude','latitude')], 
+    known_org_locations[,c('longitude','latitude')], 
+    fun = geosphere::distVincentyEllipsoid) |> 
+    data.frame() |> 
+    set_names(
+      known_org_locations$org
+    ) |> 
+    bind_cols(
+      tibble(
+        missing_org = missing_org_locations$org
+      )
+    ) |> 
+    pivot_longer(
+      cols = !c(missing_org),
+      names_to = "known_org",
+      values_to = "distance"
+    ) |> 
+    mutate(
+      rnk = rank(distance),
+      .by = missing_org
+    ) |> 
+    arrange(
+      missing_org, rnk
+    ) |> 
+    filter(
+      rnk <= n
+    ) |> 
+    select(
+      missing_org,
+      known_org,
+      distance
+    )
+  
+  return(closest_orgs)
+}
