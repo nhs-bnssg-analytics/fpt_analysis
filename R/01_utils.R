@@ -2754,7 +2754,11 @@ nearest_health_orgs <- function(missing_orgs, known_orgs, n) {
         org,
         ~ ods_info(.x)[["Organisation"]][["GeoLoc"]][["Location"]][["PostCode"]]
       ),
-      postcode = gsub(" ", "", postcode)
+      postcode = gsub(" ", "", postcode),
+      postcode = case_when(
+        postcode == "B95ST" ~ "B95SS",
+        .default = postcode
+      )
     )
   
   lats_and_longs <- split(
@@ -2787,9 +2791,11 @@ nearest_health_orgs <- function(missing_orgs, known_orgs, n) {
     bind_rows()
   
   code_table <- code_table |> 
-    left_join(
-      lats_and_longs,
-      by = join_by(postcode)
+    rename(
+      postcode_ods = "postcode"
+    ) |> 
+    bind_cols(
+      lats_and_longs
     )
   
   known_org_locations <- code_table |> 

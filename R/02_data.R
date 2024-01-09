@@ -149,10 +149,15 @@ lsoa_icb_lkp <- check_and_download(
   )
 
 pops_files <- list.files("data-raw/Population/",
-                         full.names = TRUE) |> 
-  set_names(
-    nm = function(x) str_extract(x, "[0-9]{4}")
+                         full.names = TRUE)
+
+pops_files <- set_names(
+  pops_files,
+  nm = str_extract(
+    pops_files,
+    "[0-9]{4}"
   )
+)
 
 lsoa_pops <- map(
   pops_files,
@@ -262,9 +267,12 @@ excel_urls <- excel_urls[grepl("xls$|xlsx$", excel_urls, ignore.case = TRUE)]
 # download files
 files <- purrr::map_chr(
   excel_urls,
-  ~ download_url_to_directory(
+  ~ check_and_download(
     url = .x,
-    new_directory = "Bed Availability and Occupancy Data – Overnight"
+    filepath = paste0(
+      "data-raw/Bed Availability and Occupancy Data – Overnight/",
+      basename(.x)
+    )
   )
 )
 
@@ -287,20 +295,57 @@ quarterly_overnight_beds_by_trust <- list.files(
     )
   )
 
-orgs <- quarterly_overnight_beds |> 
-  pull(org) |> 
-  unique()
+trust_ics_lkp <- trust_to_ics_proportions(
+  final_year = max(quarterly_overnight_beds_by_trust$year)
+) |> 
+  rename(
+    health_org_code = "TrustCode",
+    icb_code = "org"
+  )
 
-org_lkp <- attach_icb_to_org(orgs) |> 
+# organisations not in the Trust catchment populations
+# these are community hospitals
+orgs <- quarterly_overnight_beds_by_trust |> 
+  pull(org) |> 
+  unique() |> 
+  setdiff(
+    unique(trust_ics_lkp$health_org_code)
+  )
+
+org_lkp <- nearest_health_orgs(
+  missing_orgs = orgs,
+  known_orgs = unique(trust_ics_lkp$health_org_code),
+  n = 2
+) |> 
   mutate(
-    divisor = n(),
-    .by = health_org_code
+    known_org_proportion = 1 - (distance / sum(distance)),
+    .by = missing_org
+  ) |> 
+  left_join(
+    trust_ics_lkp,
+    by = join_by(
+      known_org == health_org_code
+    ),
+    relationship = "many-to-many"
+  ) |> 
+  mutate(
+    proportion = proportion * known_org_proportion
+  ) |> 
+  select(
+    "year",
+    health_org_code = "missing_org",
+    "icb_code",
+    "proportion"
+  ) |> 
+  bind_rows(
+    trust_ics_lkp
   )
 
 quarterly_overnight_beds <- quarterly_overnight_beds_by_trust |> 
   left_join(
     org_lkp,
     by = join_by(
+      year,
       org == health_org_code
     ),
     relationship = "many-to-many"
@@ -308,7 +353,7 @@ quarterly_overnight_beds <- quarterly_overnight_beds_by_trust |>
   summarise(
     across(
       c(numerator, denominator),
-      ~ sum(.x / divisor, na.rm = TRUE) # some health_orgs attributed to multiple icbs, so these are split equally between the icbs
+      ~ sum(.x * proportion, na.rm = TRUE) # some health_orgs attributed to multiple icbs, so these are split between the icbs
     ),
     .by = c(year, quarter, icb_code, metric, frequency)
   ) |> 
@@ -339,12 +384,14 @@ excel_urls <- excel_urls[grepl("xls$|xlsx$", excel_urls, ignore.case = TRUE)]
 # download files
 files <- purrr::map_chr(
   excel_urls,
-  ~ download_url_to_directory(
+  ~ check_and_download(
     url = .x,
-    new_directory = "Bed Availability and Occupancy Data – Day"
+    filepath = paste0(
+      "data-raw/Bed Availability and Occupancy Data – Day/",
+      basename(.x)
+    )
   )
 )
-
 
 # clean and move file names
 purrr::walk(
@@ -365,20 +412,55 @@ quarterly_day_beds_by_trust <- list.files(
     )
   )
 
-orgs <- quarterly_day_beds |> 
-  pull(org) |> 
-  unique()
+trust_ics_lkp <- trust_to_ics_proportions(
+  final_year = max(quarterly_day_beds_by_trust$year)
+) |> 
+  rename(
+    health_org_code = "TrustCode",
+    icb_code = "org"
+  )
 
-org_lkp <- attach_icb_to_org(orgs) |> 
+orgs <- quarterly_day_beds_by_trust |> 
+  pull(org) |> 
+  unique() |> 
+  setdiff(
+    unique(trust_ics_lkp$health_org_code)
+  )
+
+org_lkp <- nearest_health_orgs(
+  missing_orgs = orgs,
+  known_orgs = unique(trust_ics_lkp$health_org_code),
+  n = 2
+) |> 
   mutate(
-    divisor = n(),
-    .by = health_org_code
+    known_org_proportion = 1 - (distance / sum(distance)),
+    .by = missing_org
+  ) |> 
+  left_join(
+    trust_ics_lkp,
+    by = join_by(
+      known_org == health_org_code
+    ),
+    relationship = "many-to-many"
+  ) |> 
+  mutate(
+    proportion = proportion * known_org_proportion
+  ) |> 
+  select(
+    "year",
+    health_org_code = "missing_org",
+    "icb_code",
+    "proportion"
+  ) |> 
+  bind_rows(
+    trust_ics_lkp
   )
 
 quarterly_day_beds <- quarterly_day_beds_by_trust |> 
   left_join(
     org_lkp,
     by = join_by(
+      year,
       org == health_org_code
     ),
     relationship = "many-to-many"
@@ -386,7 +468,7 @@ quarterly_day_beds <- quarterly_day_beds_by_trust |>
   summarise(
     across(
       c(numerator, denominator),
-      ~ sum(.x / divisor, na.rm = TRUE) # some health_orgs attributed to multiple icbs, so these are split equally between the icbs
+      ~ sum(.x * proportion, na.rm = TRUE) # some health_orgs attributed to multiple icbs, so these are split between the icbs
     ),
     .by = c(year, quarter, icb_code, metric, frequency)
   ) |> 
