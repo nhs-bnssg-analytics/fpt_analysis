@@ -440,8 +440,8 @@ tidy_a_and_e <- function(filepath) {
   sheets <- readxl::excel_sheets(
     filepath
   ) |> 
-    # (function(x) x[grepl("Provider Level Data|A&E Data", x)])()
-    (function(x) x[grepl("STP Level Data|System Level Data", x)])()
+    (function(x) x[grepl("Provider Level Data|A&E Data", x)])()
+    # (function(x) x[grepl("STP Level Data|System Level Data", x)])()
   
   if (length(sheets) == 0) {
     return(
@@ -459,7 +459,7 @@ tidy_a_and_e <- function(filepath) {
     )
   }
   
-  a_and_e_tidy <- readxl::read_xls(
+  a_and_e_tidy <- readxl::read_excel(
     filepath,
     sheet = sheets,
     range = "R2C2:R500C31",
@@ -517,10 +517,10 @@ tidy_a_and_e <- function(filepath) {
     filter(
       category != "error",
       metric %in% c(
-        "Type 1 Departments - Major A&E",
-        "Type 2 Departments - Single Specialty",
-        "Type 3 Departments - Other A&E/Minor Injury Unit",
-        "Total attendances"
+        "Type 1 Departments - Major A&E"#,
+        # "Type 2 Departments - Single Specialty",
+        # "Type 3 Departments - Other A&E/Minor Injury Unit",
+        # "Total attendances"
       )
     ) |> 
     select(!c(
@@ -547,7 +547,8 @@ tidy_a_and_e <- function(filepath) {
       frequency = "monthly"
     ) |> 
     filter(
-      !is.na(org)
+      !is.na(org),
+      denominator != 0
     )
   
   return(a_and_e_tidy)

@@ -1148,9 +1148,9 @@ excel_links <- purrr::map(
 
 xl_files <- purrr::map_chr(
   excel_links,
-  ~ download_url_to_directory(
+  ~ check_and_download(
     url = .x,
-    new_directory = "data-raw/Social care funding/"
+    filepath = paste0("data-raw/Social care funding/", basename(.x))
   )
 ) 
 
@@ -1378,9 +1378,9 @@ bind_rows(
 # ambulance response times
 url <- "https://www.england.nhs.uk/statistics/wp-content/uploads/sites/2/2023/09/20230825-AmbSYS-AmbCO-indicator-list.xlsx"
 
-file <- download_url_to_directory(
-  url,
-  "data-raw/Ambulance response times/"
+file <- check_and_download(
+  url = url,
+  filepath = paste0("data-raw/Ambulance response times/", basename(url))
 )
 
 keep_indicators <- paste0("A", c(8:12, 24, 27, 30, 33, 36))
@@ -1403,9 +1403,9 @@ csv_link <- obtain_links("https://www.england.nhs.uk/statistics/statistical-work
   (function(x) x[grepl("csv$", x)])() |> 
   (function(x) x[grepl("^AmbSYS", basename(x))])()
 
-file <- download_url_to_directory(
-  csv_link,
-  "data-raw/Ambulance response times/"
+file <- check_and_download(
+  url = csv_link,
+  filepath = paste0("data-raw/Ambulance response times/", basename(csv_link))
 )
 
 monthly_ambsys <- read.csv(
@@ -1631,19 +1631,83 @@ excel_file_links <- purrr::map(
 
 files <- purrr::map_chr(
   excel_file_links,
-  ~ download_url_to_directory(
-    url = .x,
-    new_directory = "A and E wait times"
+  ~ check_and_download(
+    filepath = paste0("data-raw/A and E wait times/", basename(.x)),
+    url = .x
   )
 )
 
-monthly_a_and_e <- purrr::map_dfr(
+monthly_a_and_e_by_trust <- purrr::map_dfr(
   files, 
   tidy_a_and_e
+)
+
+trust_ics_lkp <- trust_to_ics_proportions(
+  final_year = max(monthly_a_and_e$year)
 ) |> 
-  convert_ons_to_health_code(
-    latest_codes_used = FALSE
+  rename(
+    health_org_code = "TrustCode",
+    icb_code = "org"
   )
+
+# organisations not in the Trust catchment populations
+# these are community hospitals
+orgs <- monthly_a_and_e_by_trust |> 
+  pull(org) |> 
+  unique() |> 
+  setdiff(
+    unique(trust_ics_lkp$health_org_code)
+  )
+
+org_lkp <- nearest_health_orgs(
+  missing_orgs = orgs,
+  known_orgs = unique(trust_ics_lkp$health_org_code),
+  n = 2
+) |> 
+  mutate(
+    known_org_proportion = 1 - (distance / sum(distance)),
+    .by = missing_org
+  ) |> 
+  left_join(
+    trust_ics_lkp,
+    by = join_by(
+      known_org == health_org_code
+    ),
+    relationship = "many-to-many"
+  ) |> 
+  mutate(
+    proportion = proportion * known_org_proportion
+  ) |> 
+  select(
+    "year",
+    health_org_code = "missing_org",
+    "icb_code",
+    "proportion"
+  ) |> 
+  bind_rows(
+    trust_ics_lkp
+  )
+
+monthly_a_and_e <- monthly_a_and_e_by_trust |> 
+  left_join(
+    org_lkp,
+    by = join_by(
+      year,
+      org == health_org_code
+    ),
+    relationship = "many-to-many"
+  ) |> 
+  summarise(
+    across(
+      c(numerator, denominator),
+      ~ sum(.x * proportion, na.rm = TRUE) # some health_orgs attributed to multiple icbs, so these are split between the icbs
+    ),
+    .by = c(year, month, icb_code, metric, frequency)
+  ) |> 
+  rename(
+    org = icb_code
+  ) |> 
+  mutate(value = numerator / denominator)
 
 quarterly_a_and_e <- monthly_to_quarterly_sum(
   monthly_a_and_e
@@ -1683,9 +1747,9 @@ xl_files <- purrr::map(
 
 files <- purrr::map_chr(
   xl_files,
-  ~ download_url_to_directory(
-    url = .x,
-    new_directory = "Referral to Treatment"
+  ~ check_and_download(
+    filepath = paste0("data-raw/Referral to Treatment/", basename(.x)),
+    url = .x
   )
 ) |> 
   purrr::map_chr(
