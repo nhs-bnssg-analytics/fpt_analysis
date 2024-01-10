@@ -98,6 +98,10 @@ random_forest <- rf_modelling_outputs |>
       y = rsq
     )
   ) +
+  geom_hline(
+    yintercept = 0.5,
+    linetype = "dashed"
+  ) +
   geom_line(
     aes(
       group = data_type,
@@ -142,7 +146,7 @@ ggsave(
     predict_year, 
     ".png"
   ),
-  width = 8,
+  width = 10,
   height = 6,
   units = "in",
   bg = "white"
@@ -185,11 +189,11 @@ inputs <- expand.grid(
   training_years = 2:6,
   correlation_threshold = seq(
     from = 0.5,
-    to = 0.9,
-    length.out = 5
+    to = 1,
+    length.out = 6
   )
 ) |> 
-  slice(-(63))
+  slice(-78)
 
 custom_logistic_modelling <- function(lagged_years, correlation_threshold, training_years) {
   modelling_performance(

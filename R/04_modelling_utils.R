@@ -132,7 +132,9 @@ load_data <- function(target_variable, value_type = "value", incl_numerator_rema
     encoding = "latin1"
   ) |> 
     filter(
-      !(grepl("incorrect geography|remove", status))
+      # !(grepl("incorrect geography|remove", status))
+      grepl("include", status) |
+        metric == target_variable
     ) |> 
     select(metric, denominator_description)
   
@@ -781,6 +783,7 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
     ) |> 
       lapply(
         function(x) predict(model_fit, new_data = x) |> 
+          rename(.pred = any_of(".pred_res")) |> 
           bind_cols(x)
       ) |> 
       bind_rows(
