@@ -727,6 +727,66 @@ tidy_rtt <- function(filepath) {
   return(rtt)
 }
 
+tidy_covid_beds <- function(filepath) {
+  
+  covid <- tidyxl::xlsx_cells(
+    filepath,
+    sheets = c(
+      "Total Beds Occupied Covid"
+      )
+    ) |> 
+    filter(
+      is_blank != TRUE,
+      row >= 13
+    ) |> 
+    behead(
+      direction = "left",
+      name = "Region"
+    ) |> 
+    behead(
+      direction = "left",
+      name = "org"
+    ) |> 
+    behead(
+      direction = "left",
+      name = "org_name"
+    ) |> 
+    behead(
+      direction = "up",
+      name = "Date"
+    ) |> 
+    ungroup() |> 
+    filter(
+      !is.na(org)
+    ) |> 
+    select(
+      numerator = "numeric",
+      "org", "org_name",
+      "Date"
+    ) |> 
+    mutate(
+      Date = as.Date(Date),
+      year = lubridate::year(Date),
+      month_name = lubridate::month(
+        Date,
+        label = TRUE,
+        abbr = FALSE),
+      quarter = purrr::map_int(
+        month_name,
+        quarter_from_month_string
+      )
+    ) |> 
+    summarise(
+      numerator = mean(numerator),
+      .by = c(
+        year, quarter, org
+      )
+    ) |> 
+    arrange(org, year, quarter)
+  
+  return(covid)
+}
+
 rename_remove_social_care_files <- function(filepath) {
   if (!("T1" %in% readxl::excel_sheets(filepath))) {
     file.remove(filepath)
@@ -1837,6 +1897,7 @@ quarterly_to_annual_sum <- function(data, year_type) {
   
   # only keep years with 4 quarters of data
   years_to_keep <- data |> 
+    distinct(year, quarter) |> 
     count(year) |> 
     filter(n == 4) |> 
     pull(year)

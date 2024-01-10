@@ -511,63 +511,8 @@ files <- purrr::map_chr(
 
 quarterly_covid_bed_occupancy <- files |> 
   map_df(
-    ~ tidyxl::xlsx_cells(
-      .x,
-      sheets = c(
-        "Total Beds Occupied Covid"
-      )
-    ),
-    .id = "file_id"
-  ) |> 
-  filter(
-    is_blank != TRUE,
-    row >= 13
-  ) |> 
-  group_by(file_id) |> 
-  behead(
-    direction = "left",
-    name = "Region"
-  ) |> 
-  behead(
-    direction = "left",
-    name = "org"
-  ) |> 
-  behead(
-    direction = "left",
-    name = "org_name"
-  ) |> 
-  behead(
-    direction = "up",
-    name = "Date"
-  ) |> 
-  ungroup() |> 
-  filter(
-    !is.na(org)
-  ) |> 
-  select(
-    numerator = "numeric",
-    "org", "org_name",
-    "Date"
-  ) |> 
-  mutate(
-    Date = as.Date(Date),
-    year = lubridate::year(Date),
-    month_name = lubridate::month(
-      Date,
-      label = TRUE,
-      abbr = FALSE),
-    quarter = purrr::map_int(
-      month_name,
-      quarter_from_month_string
-    )
-  ) |> 
-  summarise(
-    numerator = mean(numerator),
-    .by = c(
-      year, quarter, org
-    )
-  ) |> 
-  arrange(org, year, quarter)
+    tidy_covid_beds
+  )
 
 quarterly_total_beds_by_trust <- bind_rows(
   quarterly_day_beds_by_trust,
@@ -591,7 +536,7 @@ quarterly_total_beds_by_trust <- bind_rows(
     )
   )
 
-quarterly_covid_beds_by_trust <- inner_join(
+quarterly_covid_beds_by_trust <- right_join(
   quarterly_covid_bed_occupancy,
   quarterly_total_beds_by_trust,
   by = join_by(
@@ -601,6 +546,7 @@ quarterly_covid_beds_by_trust <- inner_join(
   )
 ) |> 
   mutate(
+    numerator = replace_na(numerator, 0),
     metric = "Mean proportion of beds that contain a patient with confirmed COVID",
     frequency = "quarter"
   )
