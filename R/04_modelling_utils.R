@@ -559,8 +559,12 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
   
   # add the entirely missing vars to the mostly missing vars
   vars_to_remove <- unique(
-    c(mostly_missing_vars, entirely_missing_vars)
+    c(mostly_missing_vars, entirely_missing_vars, "org")
   )
+  
+  if (model_type == "random_forest") {
+    vars_to_remove <- c(vars_to_remove, "year")
+  }
   
   # identify fields to impute
   missing_data <- names(data)[colSums(is.na(data)) > 0] |> 
@@ -583,7 +587,7 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
   model_recipe <- model_recipe |> 
     recipe() |> 
     step_rm(
-      all_of(c("year", "org", vars_to_remove))
+      all_of(vars_to_remove)
     )
   
   if (model_type %in% "logistic_regression") {
@@ -596,6 +600,13 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
       ) |> 
       step_rm(
         all_of(target_variable)
+      ) |> 
+      step_rename(
+        years_from_2020 = year
+      ) |> 
+      step_mutate(
+        years_from_2020 = years_from_2020 - 2020,
+        role = "predictor"
       )
   } else if (model_type %in% c("random_forest")) {
     model_recipe <- model_recipe |> 
@@ -621,8 +632,9 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
   
   if (model_type %in% c("logistic_regression")) {
     model_recipe <- model_recipe |> 
-      step_corr(all_predictors(),
-                threshold = correlation_threshold)
+      step_corr(
+        all_of(predictor_variables),
+        threshold = correlation_threshold)
   }
   
   model_recipe <- model_recipe |> 
@@ -807,7 +819,7 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
         names_from = data,
         values_from = .estimate
       )
-      
+      # browser()
   }
   
   prediction_plot <- dataset_predictions |> 
