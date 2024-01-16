@@ -9,6 +9,7 @@ data(mtcars)
 
 junk <- mtcars |> 
   mutate(
+    mpg = round(mpg, 0),
     total = hp + mpg,
     prop = hp / total
   )
@@ -55,7 +56,7 @@ m_tidy_cbind <- fit(
 
 junk1 <- junk |> 
   mutate(
-    total = importance_weights(total)
+    total = frequency_weights(total)
   )
 
 rec <- junk1 |> 
