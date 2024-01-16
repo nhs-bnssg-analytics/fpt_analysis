@@ -123,6 +123,74 @@ metric_to_numerator <- function(metric_name) {
   return(numerator_description)
 }
 
+identify_missing_vars <- function(data_train, data_validation, data_test, model_type) {
+  
+  data <- bind_rows(
+    data_train, 
+    data_validation,
+    data_test
+  )
+  
+  # identify variables in train and val that are over 40% missing, so they are
+  # subsequently removed
+  mostly_missing_vars <- bind_rows(
+    data_train,
+    data_validation
+  ) |> 
+    lapply(
+      function(x) sum(is.na(x)) / length(x)
+    ) |> 
+    (\(x) x[x > 0.4])() |> 
+    names(x = _)
+  
+  # mostly zero vars should be covid variables when modelling pre-pandemic
+  mostly_zero_vars <- bind_rows(
+    data_train,
+    data_validation
+  ) |> 
+    select(
+      !any_of("total_cases")
+    ) |> 
+    lapply(
+      function(x) sum(x == 0, na.rm = TRUE) / length(x)
+    ) |> 
+    (\(x) x[x > 0.95])() |> 
+    names(x = _)
+  
+  # identify variables that are (almost) entirely missing from any of the
+  # datasets
+  
+  entirely_missing_vars <- list(
+    data_train,
+    data_validation,
+    data_test
+  ) |> 
+    lapply(
+      function(x) names(x)[(colSums(is.na(x)) / nrow(x)) > 0.95]
+    ) |> 
+    unlist() |> 
+    unique()
+  
+  # add the entirely missing vars to the mostly missing vars
+  vars_to_remove <- unique(
+    c(mostly_missing_vars, mostly_zero_vars, entirely_missing_vars, "org")
+  )
+  
+  if (model_type == "random_forest") {
+    vars_to_remove <- c(vars_to_remove, "year")
+  }
+  
+  # identify fields to impute
+  missing_data <- names(data)[colSums(is.na(data)) > 0] |> 
+    (\(x) x[!(x %in% vars_to_remove)])()
+  
+  vars <- list(
+    vars_to_remove = vars_to_remove,
+    vars_to_impute = missing_data
+  )
+  return(vars)
+}
+
 # load data ---------------------------------------------------------------
 
 load_data <- function(target_variable, value_type = "value", incl_numerator_remainder = FALSE,
@@ -360,20 +428,15 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
   
   set.seed(seed)
   
-  # check for any weighting variables 
-  variable_classes <- lapply(data, class) |> 
-    unlist() |> 
-    unique()
-  
-  if (any(variable_classes == "hardhat_importance_weights")) {
-    weight_field <- summarise(
-      data, 
-      across(everything(), function(x) paste(class(x), collapse = ", "))) |> 
-      pivot_longer(cols = everything()) |> 
-      filter(grepl("hardhat_importance_weights",value)) |> 
-      pull(name)
-  } else {
-    weight_field <- NULL
+  # create case weights field for logistic regression
+  if (model_type == "logistic_regression" &
+      all(c("numerator", "remainder") %in% names(data))
+      ) {
+    data <- data |> 
+      mutate(
+        total_cases = frequency_weights(numerator + remainder)
+      ) |> 
+      select(!c("numerator", "remainder"))
   }
   
   if (lagged_years > 0) {
@@ -389,12 +452,13 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
     # create lag variables
     
     if (remove_lag_target) {
-      not_lag_variables <- c("year", "org", target_variable, weight_field)
-      if (model_type == "logistic_regression") 
-        not_lag_variables <- c(not_lag_variables, "numerator", "remainder")
+      not_lag_variables <- c("year", "org", target_variable)
+    } else {
+      not_lag_variables <- c("year", "org")
     }
-    else {
-      not_lag_variables <- c("year", "org", weight_field)
+    
+    if (model_type == "logistic_regression") {
+      not_lag_variables <- c(not_lag_variables, "total_cases")
     }
     
     data <- data |> 
@@ -421,9 +485,11 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
         )
       
       if (!keep_current) {
-        keep_variables <- c("year", "org", target_variable, weight_field)
-        if(model_type == "logistic_regression")
-          keep_variables <- c(keep_variables, "numerator", "remainder")
+        keep_variables <- c("year", "org", target_variable)
+        
+        if (model_type == "logistic_regression") {
+          keep_variables <- c(keep_variables, "total_cases")
+        }
         
         data <- data |>
           select(
@@ -492,10 +558,12 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
       prop = proportions
     ) 
   }
+  
   data_train <- rsample::training(splits)
   data_validation <- rsample::validation(splits)
   data_test <- rsample::testing(splits)
   
+  # check what the year ranges are for each training set
   dataset_yrs <- lapply(
     list(data_train, data_validation, data_test),
     function(x) range(x$year)
@@ -506,7 +574,6 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
   
   
   # set model
-  
   if (model_type == "random_forest") {
     # how many cores on the machine so we can parallelise
     cores <- parallel::detectCores()
@@ -523,84 +590,43 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
       ) |> 
       set_mode("regression")
   } else if (model_type == "logistic_regression") {
-    model_setup <- parsnip::linear_reg() |> 
+    model_setup <- parsnip::linear_reg(
+      penalty = tune(),
+      mixture = tune()
+    ) |> 
       set_engine(
-        "glm", 
-        family = stats::quasibinomial(link = "logit") # could try binomial
+        "glmnet", 
+        family = stats::quasibinomial(link = "logit")
       ) |> 
       set_mode("regression")
   }
   
   # identify variables in train and val that are over 40% missing, so they are
   # subsequently removed
-  mostly_missing_vars <- bind_rows(
-    data_train,
-    data_validation
-  ) |> 
-    lapply(
-      function(x) sum(is.na(x)) / length(x)
-    ) |> 
-    (\(x) x[x > 0.4])() |> 
-    names(x = _)
-  
-  # identify variables that are (almost) entirely missing from any of the
-  # datasets
-  
-  entirely_missing_vars <- list(
-    data_train,
-    data_validation,
-    data_test
-  ) |> 
-    lapply(
-      function(x) names(x)[(colSums(is.na(x)) / nrow(x)) > 0.95]
-    ) |> 
-    unlist() |> 
-    unique()
-  
-  # add the entirely missing vars to the mostly missing vars
-  vars_to_remove <- unique(
-    c(mostly_missing_vars, entirely_missing_vars, "org")
+  vars_selection <- identify_missing_vars(
+    data_train = data_train,
+    data_validation = data_validation,
+    data_test = data_test,
+    model_type = model_type
   )
   
-  if (model_type == "random_forest") {
-    vars_to_remove <- c(vars_to_remove, "year")
-  }
-  
-  # identify fields to impute
-  missing_data <- names(data)[colSums(is.na(data)) > 0] |> 
-    (\(x) x[!(x %in% vars_to_remove)])()
-  
   # identify predictor variables
-  predictor_variables <- names(data)[!(names(data) %in% c("year", "org", target_variable))] |> 
+  predictor_variables <- names(data)[!(names(data) %in% c("year", target_variable, "total_cases"))] |> 
     # remove variables that are mostly/entirely missing
-    (\(x) x[!(x %in% vars_to_remove)])()
+    (\(x) x[!(x %in% vars_selection[["vars_to_remove"]])])()
   
-  # set recipe
-  if (model_type %in% "logistic_regression") {
-    model_recipe <- bind_rows(
-      data_train,
-      data_validation
-    )
-  } else if (model_type %in% "random_forest") {
-    model_recipe <- data_train
-  }
-  model_recipe <- model_recipe |> 
+  model_recipe <- data_train |> 
     recipe() |> 
     step_rm(
-      all_of(vars_to_remove)
+      all_of(vars_selection[["vars_to_remove"]])
+    ) |> 
+    update_role(
+      all_of(target_variable),
+      new_role = "outcome"
     )
   
   if (model_type %in% "logistic_regression") {
-    predictor_variables <- predictor_variables[!predictor_variables %in% c("numerator", "remainder", weight_field)]
-    
     model_recipe <- model_recipe |> 
-      update_role(
-        numerator, remainder,
-        new_role = "outcome"
-      ) |> 
-      step_rm(
-        all_of(target_variable)
-      ) |> 
       step_rename(
         years_from_2020 = year
       ) |> 
@@ -610,10 +636,6 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
       )
   } else if (model_type %in% c("random_forest")) {
     model_recipe <- model_recipe |> 
-      update_role(
-        all_of(target_variable),
-        new_role = "outcome"
-      ) |> 
       step_rm(
         any_of(
           c("numerator", "remainder")
@@ -628,13 +650,15 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
     )
   
   model_recipe <- model_recipe |> 
-    step_impute_median(all_of(missing_data))
+    step_impute_median(
+      all_of(vars_selection[["vars_to_impute"]])
+    )
   
   if (model_type %in% c("logistic_regression")) {
     model_recipe <- model_recipe |> 
-      step_corr(
-        all_of(predictor_variables),
-        threshold = correlation_threshold)
+      step_normalize(
+        all_of(predictor_variables)
+      )
   }
   
   model_recipe <- model_recipe |> 
@@ -645,12 +669,10 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
     add_model(model_setup) |> 
     add_recipe(model_recipe)
   
-  # if any weighting variables, include them in the workflow
-  
-  if (!is.null(weight_field)) {
-    
+  # if logistic regression add case weights to workflow
+  if (model_type == "logistic_regression") {
     modelling_workflow <- modelling_workflow |> 
-      add_case_weights(all_of(weight_field))
+      add_case_weights(total_cases)
   }
   
   if (model_type == "random_forest") {
@@ -676,152 +698,121 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
           by = 10
         ) * 10
       )
-    } 
+    }
+  } else if (model_type == "logistic_regression") {
+    tuning_grid = 20
+  }
     
-    residuals <- modelling_workflow |> 
-      tune_grid(
-        data_validation_set,
-        grid = tuning_grid,
-        control = control_grid(save_pred = TRUE)
-      )
-    
-    tuning_parameters <- autoplot(residuals)
-    
-    # select the best parameters
-    best <- residuals |> 
-      select_best(metric = "rsq")
-    
-    # the last workflow
-    modelling_workflow_final <- modelling_workflow |>
-      finalize_workflow(best)
-    
-    
-    evaluation_metrics <- metric_set(
-      yardstick::rmse,
-      yardstick::rsq,
-      yardstick::mae)
-    
-    # the last fit
-    model_fit <- last_fit(
-      modelling_workflow_final,
-      splits,
-      add_validation_set = TRUE,
-      metrics = evaluation_metrics
+  residuals <- modelling_workflow |> 
+    tune_grid(
+      data_validation_set,
+      grid = tuning_grid,
+      control = control_grid(save_pred = TRUE)
     )
+  
+  tuning_parameters <- autoplot(residuals)
     
-    validation_metrics <- residuals |> 
-      collect_metrics() |> 
+  # select the best parameters
+  best <- residuals |> 
+    select_best(metric = "rsq")
+  
+  # the last workflow
+  modelling_workflow_final <- modelling_workflow |>
+    finalize_workflow(best)
+  
+  
+  evaluation_metrics <- metric_set(
+    yardstick::rmse,
+    yardstick::rsq,
+    yardstick::mae)
+  
+  # the last fit
+  model_fit <- last_fit(
+    modelling_workflow_final,
+    splits,
+    add_validation_set = TRUE,
+    metrics = evaluation_metrics
+  )
+  
+  validation_metrics <- residuals |> 
+    collect_metrics()
+  
+  if (model_type == "random_forest") {
+    validation_metrics <- validation_metrics |> 
       inner_join(
         best,
         by = join_by(mtry, trees, min_n, .config)
-      ) |> 
-      select(
-        ".metric",
-        .estimate = "mean"
-      ) |> 
-      mutate(
-        data = "validation"
       )
-    
-    test_metrics <- model_fit |> 
-      collect_metrics() |> 
-      select(
-        ".metric",
-        ".estimate"
-      ) |> 
-      mutate(
-        data = "test"
-      )
-    
-    train_metrics <- calculate_train_metric(
-      final_fit = model_fit,
-      training_data = data_train,
-      target_variable = target_variable,
-      metric = "rsq"
-    )
-    
-    evaluation_metrics <- bind_rows(
-      train_metrics,
-      validation_metrics,
-      test_metrics
-    ) |>
-      tidyr::pivot_wider(
-        names_from = data,
-        values_from = .estimate
-      )
-    
-    validation_predictions <- residuals |> 
-      collect_predictions(parameters = best) |> 
-      mutate(
-        data = "validation"
-      )
-    
-    test_predictions <- model_fit %>% 
-      collect_predictions() |> 
-      mutate(
-        data = "test"
-      )
-    
-    train_predictions <- add_prediction_to_data(
-      data = data_train,
-      final_fit = model_fit
-    ) |> 
-      mutate(
-        data = "train"
-      )
-    
-    dataset_predictions <- bind_rows(
-      train_predictions,
-      validation_predictions,
-      test_predictions
-    )
-    
   } else if (model_type == "logistic_regression") {
-    model_fit <- fit(
-      object = modelling_workflow,
-      data = bind_rows(
-        data_train,
-        data_validation
+    validation_metrics <- validation_metrics |> 
+      inner_join(
+        best,
+        by = join_by(mixture, penalty, .config)
       )
-    )
-    
-    assumptions_check <- model_fit$fit$fit |> 
-      performance::check_model()
-    
-    dataset_predictions <- list(
-      train = data_train,
-      validation = data_validation,
-      test = data_test
-    ) |> 
-      lapply(
-        function(x) predict(model_fit, new_data = x) |> 
-          rename(.pred = any_of(".pred_res")) |> 
-          bind_cols(x)
-      ) |> 
-      bind_rows(
-        .id = "data"
-      )
-    
-    evaluation_metrics <- dataset_predictions |> 
-      select(
-        "data",
-        observed = all_of(target_variable),
-        ".pred"
-      ) |> 
-      summarise(
-        `.estimate` = cor(observed, .pred) ^ 2,
-        .by = data
-      ) |>
-      mutate(
-        .metric = "rsq"
-      ) |> 
-      tidyr::pivot_wider(
-        names_from = data,
-        values_from = .estimate
-      )
-      # browser()
   }
   
+  validation_metrics <- validation_metrics |> 
+    select(
+      ".metric",
+      .estimate = "mean"
+    ) |> 
+    mutate(
+      data = "validation"
+    )
+  
+  test_metrics <- model_fit |> 
+    collect_metrics() |> 
+    select(
+      ".metric",
+      ".estimate"
+    ) |> 
+    mutate(
+      data = "test"
+    )
+  
+  train_metrics <- calculate_train_metric(
+    final_fit = model_fit,
+    training_data = data_train,
+    target_variable = target_variable,
+    metric = "rsq"
+  )
+  
+  evaluation_metrics <- bind_rows(
+    train_metrics,
+    validation_metrics,
+    test_metrics
+  ) |>
+    tidyr::pivot_wider(
+      names_from = data,
+      values_from = .estimate
+    )
+  
+  validation_predictions <- residuals |> 
+    collect_predictions(parameters = best) |> 
+    mutate(
+      data = "validation"
+    )
+  
+  test_predictions <- model_fit %>% 
+    collect_predictions() |> 
+    mutate(
+      data = "test"
+    )
+  
+  train_predictions <- add_prediction_to_data(
+    data = data_train,
+    final_fit = model_fit
+  ) |> 
+    mutate(
+      data = "train"
+    )
+  
+  dataset_predictions <- bind_rows(
+    train_predictions,
+    validation_predictions,
+    test_predictions
+  )
+    
   prediction_plot <- dataset_predictions |> 
     plot_observed_expected(
       target_variable = target_variable
@@ -842,25 +833,14 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
     `Lagged target variable` = ifelse(lagged_years > 0, !remove_lag_target, NA)
   )
   
-  if (model_type %in% c("logistic_regression")) {
-    output <- list(
-      dataset_yrs = dataset_yrs,
-      assumptions_check = assumptions_check,
-      prediction_plot = prediction_plot,
-      evaluation_metrics = evaluation_metrics,
-      variable_importance = variable_importance,
-      inputs = inputs
-    )
-  } else if (model_type == "random_forest") {
-    output <- list(
-      dataset_yrs = dataset_yrs,
-      tuning_parameters = tuning_parameters,
-      prediction_plot = prediction_plot,
-      evaluation_metrics = evaluation_metrics,
-      variable_importance = variable_importance,
-      inputs = inputs
-    )
-  }
+  output <- list(
+    dataset_yrs = dataset_yrs,
+    tuning_parameters = tuning_parameters,
+    prediction_plot = prediction_plot,
+    evaluation_metrics = evaluation_metrics,
+    variable_importance = variable_importance,
+    inputs = inputs
+  )
   
   return(output)
   

@@ -159,8 +159,8 @@ ggsave(
 dc_data <- load_data(
   target_variable, 
   incl_numerator_remainder = TRUE,
-  value_type = "value",
-  include_weights = TRUE
+  value_type = model_value_type,
+  include_weights = FALSE
   ) |> 
   select(
     any_of(c("org", "year", target_variable)),
@@ -186,36 +186,26 @@ dc_data <- load_data(
 
 inputs <- expand.grid(
   lagged_years = 0:2,
-  training_years = 2:6,
-  correlation_threshold = seq(
-    from = 0.5,
-    to = 1,
-    length.out = 6
-  )
-) |> 
-  slice(-78)
+  training_years = 2:6
+)
 
-custom_logistic_modelling <- function(lagged_years, correlation_threshold, training_years) {
-  modelling_performance(
+logistic <- map2(
+  .x = inputs$training_years,
+  .y = inputs$lagged_years,
+  ~ modelling_performance(
     data = dc_data,
     target_variable = target_variable,
-    lagged_years = lagged_years, 
-    remove_lag_target = TRUE,
-    shuffle_training_records = TRUE,
+    lagged_years = .y, 
+    training_years = .x,
     keep_current = FALSE,
+    remove_lag_target = TRUE,
     time_series_split = TRUE, 
+    shuffle_training_records = TRUE,
     model_type = "logistic_regression", 
-    correlation_threshold = correlation_threshold,
-    seed = 321 ,
-    training_years = training_years,
+    seed = 321,
     predict_proportions = TRUE
   )
-}
-
-logistic <- inputs |> 
-  pmap(
-    custom_logistic_modelling
-  )
+)
 
 logistic_results <- logistic |> 
   map_df(
@@ -229,10 +219,6 @@ logistic_results <- logistic |>
     lagged_years = paste(
       lagged_years,
       "lagged years"
-    ),
-    training_years = paste(
-      training_years,
-      "training years"
     )
   ) |> 
   pivot_longer(
@@ -242,7 +228,7 @@ logistic_results <- logistic |>
   ) |> 
   ggplot(
     aes(
-      x = correlation_threshold,
+      x = training_years,
       y = rsq
     )
   ) +
@@ -256,14 +242,14 @@ logistic_results <- logistic |>
       colour = data_type
     )
   ) +
-  theme_minimal() +
-  facet_grid(
-    cols = vars(training_years),
-    rows = vars(lagged_years)
+  theme_bw() +
+  facet_wrap(
+    facets = vars(lagged_years),
+    ncol = 1
   ) +
   ylim(0,1) +
   scale_colour_manual(
-    name = "Type",
+    name = "Data type",
     values = c(
       test = "#33a02c",
       validation = "#ff7f00",
@@ -278,25 +264,76 @@ logistic_results <- logistic |>
     drop = TRUE
   ) +
   labs(
-    title = "Rsq for logistic regression where correlation thresholds, lagged years and training years were applied",
+    title = "Rsq for logistic regression where different combinations of lagged years and training years were applied",
     subtitle = "Only previous years data used (without target variable), shuffled training data",
-    caption = target_variable,
-    x = "Correlation threshold",
+    caption = paste(
+      target_variable,
+      "in",
+      predict_year
+    ),
+    x = "Number of training years",
     y = bquote(~R^2)
+  ) +
+  theme(
+    plot.title = element_text(size = 8),
+    plot.subtitle = element_text(size = 6),
+    plot.caption = element_text(size = 5),
+    axis.text = element_text(size = 5),
+    axis.title = element_text(size = 9),
+    legend.text = element_text(size = 7),
+    legend.title = element_text(size = 7)
   )
 
 ggsave(
   logistic_results,
   filename = paste0(
-    "tests/model_testing/logistic_regression_rtt_admitted_", 
+    "tests/model_testing/glmnet_logistic_regression_rtt_admitted_", 
     model_value_type, 
     "_predicting_", 
     predict_year, 
     ".png"
   ),
-  width = 10,
-  height = 8,
+  width = 6,
+  height = 6,
   units = "in",
   bg = "white"
 )
 
+# prediction plot for best performing model
+logistic |> 
+  map_df(
+    ~ pluck(.x, "evaluation_metrics")
+  ) |> 
+  filter(
+    .metric == "rsq"
+  ) |> 
+  select(
+    rsq = "test"
+  ) |> 
+  bind_cols(
+    inputs
+  ) |> 
+  mutate(
+    id = row_number()
+  ) |> 
+  filter(
+    rsq == max(rsq)
+  ) |> 
+  select(
+    "rsq", "id"
+  ) |> 
+  slice(1) |> 
+  (\(x) logistic[[x$id]]$prediction_plot +
+     labs(
+       title = paste(
+         logistic[[x$id]]$inputs$`Training years`,
+         "training years,",
+         logistic[[x$id]]$inputs$`Lagged years`,
+         "lagged years"
+       ),
+       subtitle = paste("Rsq: ", x$rsq),
+       caption = paste(
+         "Predicting",
+         predict_year
+       )
+     ))()
