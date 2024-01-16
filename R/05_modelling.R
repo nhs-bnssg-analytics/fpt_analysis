@@ -108,9 +108,9 @@ random_forest <- rf_modelling_outputs |>
       colour = data_type
     )
   ) +
-  theme_minimal() +
+  theme_bw() +
   scale_colour_manual(
-    name = "Type",
+    name = "Data type",
     values = c(
       test = "#33a02c",
       validation = "#ff7f00",
@@ -131,9 +131,22 @@ random_forest <- rf_modelling_outputs |>
   labs(
     title = "Rsq for random forest for different length years and different amounts of lagging in training data",
     subtitle = "Only previous years data used (without target variable), shuffled training data",
-    caption = target_variable,
+    caption = paste(
+      target_variable,
+      "in",
+      predict_year
+    ),
     x = "Number of years in training data",
     y = bquote(~R^2)
+  ) +
+  theme(
+    plot.title = element_text(size = 8),
+    plot.subtitle = element_text(size = 6),
+    plot.caption = element_text(size = 5),
+    axis.text = element_text(size = 5),
+    axis.title = element_text(size = 9),
+    legend.text = element_text(size = 7),
+    legend.title = element_text(size = 7)
   )
 
 
@@ -146,7 +159,7 @@ ggsave(
     predict_year, 
     ".png"
   ),
-  width = 10,
+  width = 6,
   height = 6,
   units = "in",
   bg = "white"
