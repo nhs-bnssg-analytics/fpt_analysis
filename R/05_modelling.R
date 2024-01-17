@@ -62,7 +62,8 @@ rf_modelling_outputs <- map2(
     remove_lag_target = TRUE,
     time_series_split = TRUE, 
     shuffle_training_records = TRUE,
-    model_type = "random_forest", 
+    model_type = "random_forest",
+    validation_type = "train_validation", 
     seed = 321 
   )
 )
@@ -216,7 +217,8 @@ logistic <- map2(
     shuffle_training_records = TRUE,
     model_type = "logistic_regression", 
     seed = 321,
-    predict_proportions = TRUE
+    predict_proportions = TRUE,
+    validation_type = "train_validation"
   )
 )
 

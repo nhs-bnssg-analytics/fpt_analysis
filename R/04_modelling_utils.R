@@ -396,6 +396,7 @@ load_data <- function(target_variable, value_type = "value", incl_numerator_rema
 #'   threshold for removing correlated variables (logistic models only)
 #' @param predict_proportions logical; should proportions be the predicted value
 #'   (TRUE) or a count (FALSE)
+#' @param validation_type string; either "cross_validation" or "train_validation"
 #' @param seed numeric; seed number
 #' @details This webpage was useful
 #'   https://www.tidyverse.org/blog/2022/05/case-weights/
@@ -409,6 +410,7 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
                                   tuning_grid = "auto",
                                   correlation_threshold = 0.9,
                                   predict_proportions = TRUE,
+                                  validation_type,
                                   seed = 321) {
   
   model_type <- match.arg(
@@ -577,13 +579,25 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
   )
   
   # create train and validation set for tuning hyperparameters
-  data_validation_set <- validation_set(splits)
+  if (validation_type == "cross_validation") {
+    validation_set <- vfold_cv(
+      bind_rows(
+        data_train,
+        data_validation
+      ),
+      v = 4,
+      strata = target_variable
+    )  
+  } else if (validation_type == "train_validation") {
+    validation_set <- validation_set(splits)
+  }
   
+  
+  # how many cores on the machine so we can parallelise
+  cores <- parallel::detectCores()
   
   # set model
   if (model_type == "random_forest") {
-    # how many cores on the machine so we can parallelise
-    cores <- parallel::detectCores()
     
     # set model
     model_setup <- rand_forest(
@@ -603,7 +617,8 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
     ) |> 
       set_engine(
         "glmnet", 
-        family = stats::quasibinomial(link = "logit")
+        family = stats::quasibinomial(link = "logit"), 
+        num.threads = cores
       ) |> 
       set_mode("regression")
   }
@@ -715,7 +730,8 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
     
   residuals <- modelling_workflow |> 
     tune_grid(
-      data_validation_set,
+      # data_validation_set,
+      resamples = validation_set,
       grid = tuning_grid,
       control = control_grid(save_pred = TRUE)
     )
