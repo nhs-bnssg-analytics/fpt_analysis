@@ -3,7 +3,7 @@
 #'   are attributed to training.
 #' @value a numeric vector of length 2 representing the proportions of the total
 #'   dataset that should be split into training and validation
-train_validation_proportions <- function(data) {
+train_validation_proportions <- function(data, shuffle_training_records = FALSE) {
   
   proportions <- data |> 
     count(year) |> 
@@ -26,6 +26,10 @@ train_validation_proportions <- function(data) {
       proportions
     ) |> 
     head(2)
+  
+  if (shuffle_training_records) {
+    proportions <- sum(proportions) * c(0.75, 0.25)
+  }
   
   return(proportions)
 }
@@ -532,7 +536,10 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
   
   # splitting
   
-  proportions <- train_validation_proportions(data)
+  proportions <- train_validation_proportions(
+    data,
+    shuffle_training_records = shuffle_training_records
+  )
   
   # split dataset into train, validation and test
   if (time_series_split) {
@@ -656,8 +663,11 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
   
   if (model_type %in% c("logistic_regression")) {
     model_recipe <- model_recipe |> 
-      step_normalize(
+      step_zv(
         all_of(predictor_variables)
+      ) |> 
+      step_normalize(
+        any_of(predictor_variables)
       )
   }
   
