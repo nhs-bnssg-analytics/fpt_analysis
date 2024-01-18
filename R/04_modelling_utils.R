@@ -180,9 +180,9 @@ identify_missing_vars <- function(data_train, data_validation, data_test, model_
     c(mostly_missing_vars, mostly_zero_vars, entirely_missing_vars, "org")
   )
   
-  if (model_type == "random_forest") {
+  # if (model_type == "random_forest") {
     vars_to_remove <- c(vars_to_remove, "year")
-  }
+  # }
   
   # identify fields to impute
   missing_data <- names(data)[colSums(is.na(data)) > 0] |> 
@@ -649,14 +649,14 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
     )
   
   if (model_type %in% "logistic_regression") {
-    model_recipe <- model_recipe |> 
-      step_rename(
-        years_from_2020 = year
-      ) |> 
-      step_mutate(
-        years_from_2020 = years_from_2020 - 2020,
-        role = "predictor"
-      )
+    # model_recipe <- model_recipe |> 
+    #   step_rename(
+    #     years_from_2020 = year
+    #   ) |> 
+    #   step_mutate(
+    #     years_from_2020 = years_from_2020 - 2020,
+    #     role = "predictor"
+    #   )
   } else if (model_type %in% c("random_forest")) {
     model_recipe <- model_recipe |> 
       step_rm(
