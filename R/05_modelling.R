@@ -7,6 +7,7 @@ source("R/04_modelling_utils.R")
 
 target_variable <- "Proportion of incomplete pathways greater than 18 weeks from referral (incomplete)"
 model_value_type <- "value"
+val_type <- "train_validation"
 predict_year <- 2022
 
 # random forest -----------------------------------------------------------
@@ -63,7 +64,7 @@ rf_modelling_outputs <- map2(
     time_series_split = TRUE, 
     shuffle_training_records = TRUE,
     model_type = "random_forest",
-    validation_type = "train_validation", 
+    validation_type = val_type, 
     seed = 321 
   )
 )
@@ -158,6 +159,8 @@ ggsave(
     model_value_type, 
     "_predicting_", 
     predict_year, 
+    "using_",
+    val_type,
     ".png"
   ),
   width = 6,
@@ -218,7 +221,7 @@ logistic <- map2(
     model_type = "logistic_regression", 
     seed = 321,
     predict_proportions = TRUE,
-    validation_type = "train_validation"
+    validation_type = val_type
   )
 )
 
@@ -306,6 +309,8 @@ ggsave(
     model_value_type, 
     "_predicting_", 
     predict_year, 
+    "_using_",
+    val_type,
     ".png"
   ),
   width = 6,

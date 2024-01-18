@@ -586,7 +586,7 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
         data_validation
       ),
       v = 4,
-      strata = target_variable
+      strata = all_of(target_variable)
     )  
   } else if (validation_type == "train_validation") {
     validation_set <- validation_set(splits)
@@ -618,6 +618,7 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
       set_engine(
         "glmnet", 
         family = stats::quasibinomial(link = "logit"), 
+        nlambda = 600,
         num.threads = cores
       ) |> 
       set_mode("regression")
@@ -725,12 +726,11 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
       )
     }
   } else if (model_type == "logistic_regression") {
-    tuning_grid = 20
+    tuning_grid <- 20
   }
-    
+  
   residuals <- modelling_workflow |> 
     tune_grid(
-      # data_validation_set,
       resamples = validation_set,
       grid = tuning_grid,
       control = control_grid(save_pred = TRUE)
