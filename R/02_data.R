@@ -295,72 +295,9 @@ quarterly_overnight_beds_by_trust <- list.files(
     )
   )
 
-trust_ics_lkp <- trust_to_ics_proportions(
-  final_year = max(quarterly_overnight_beds_by_trust$year)
-) |> 
-  rename(
-    health_org_code = "TrustCode",
-    icb_code = "org"
-  )
-
-# organisations not in the Trust catchment populations
-# these are community hospitals
-orgs <- quarterly_overnight_beds_by_trust |> 
-  pull(org) |> 
-  unique() |> 
-  setdiff(
-    unique(trust_ics_lkp$health_org_code)
-  )
-
-org_lkp <- nearest_health_orgs(
-  missing_orgs = orgs,
-  known_orgs = unique(trust_ics_lkp$health_org_code),
-  n = 2
-) |> 
-  mutate(
-    known_org_proportion = 1 - (distance / sum(distance)),
-    .by = missing_org
-  ) |> 
-  left_join(
-    trust_ics_lkp,
-    by = join_by(
-      known_org == health_org_code
-    ),
-    relationship = "many-to-many"
-  ) |> 
-  mutate(
-    proportion = proportion * known_org_proportion
-  ) |> 
-  select(
-    "year",
-    health_org_code = "missing_org",
-    "icb_code",
-    "proportion"
-  ) |> 
-  bind_rows(
-    trust_ics_lkp
-  )
-
 quarterly_overnight_beds <- quarterly_overnight_beds_by_trust |> 
-  left_join(
-    org_lkp,
-    by = join_by(
-      year,
-      org == health_org_code
-    ),
-    relationship = "many-to-many"
-  ) |> 
-  summarise(
-    across(
-      c(numerator, denominator),
-      ~ sum(.x * proportion, na.rm = TRUE) # some health_orgs attributed to multiple icbs, so these are split between the icbs
-    ),
-    .by = c(year, quarter, icb_code, metric, frequency)
-  ) |> 
-  rename(
-    org = icb_code
-  ) |> 
-  mutate(value = numerator / denominator)
+  apply_catchment_proportions()
+  
 
 annual_overnight_beds <- quarterly_to_annual_sum(
   quarterly_overnight_beds,
@@ -412,75 +349,14 @@ quarterly_day_beds_by_trust <- list.files(
     )
   )
 
-trust_ics_lkp <- trust_to_ics_proportions(
-  final_year = max(quarterly_day_beds_by_trust$year)
-) |> 
-  rename(
-    health_org_code = "TrustCode",
-    icb_code = "org"
-  )
-
-orgs <- quarterly_day_beds_by_trust |> 
-  pull(org) |> 
-  unique() |> 
-  setdiff(
-    unique(trust_ics_lkp$health_org_code)
-  )
-
-org_lkp <- nearest_health_orgs(
-  missing_orgs = orgs,
-  known_orgs = unique(trust_ics_lkp$health_org_code),
-  n = 2
-) |> 
-  mutate(
-    known_org_proportion = 1 - (distance / sum(distance)),
-    .by = missing_org
-  ) |> 
-  left_join(
-    trust_ics_lkp,
-    by = join_by(
-      known_org == health_org_code
-    ),
-    relationship = "many-to-many"
-  ) |> 
-  mutate(
-    proportion = proportion * known_org_proportion
-  ) |> 
-  select(
-    "year",
-    health_org_code = "missing_org",
-    "icb_code",
-    "proportion"
-  ) |> 
-  bind_rows(
-    trust_ics_lkp
-  )
-
 quarterly_day_beds <- quarterly_day_beds_by_trust |> 
-  left_join(
-    org_lkp,
-    by = join_by(
-      year,
-      org == health_org_code
-    ),
-    relationship = "many-to-many"
-  ) |> 
-  summarise(
-    across(
-      c(numerator, denominator),
-      ~ sum(.x * proportion, na.rm = TRUE) # some health_orgs attributed to multiple icbs, so these are split between the icbs
-    ),
-    .by = c(year, quarter, icb_code, metric, frequency)
-  ) |> 
-  rename(
-    org = icb_code
-  ) |> 
-  mutate(value = numerator / denominator)
+  apply_catchment_proportions()
 
 annual_day_beds <- quarterly_to_annual_sum(
   quarterly_day_beds,
   year_type = "financial"
 )
+
 
 bind_rows(
   quarterly_day_beds,
@@ -491,7 +367,7 @@ bind_rows(
     row.names = FALSE
   )
 
-# covid hospital activity
+# Covid hospital activity -------------------------------------------------
 
 url <- "https://www.england.nhs.uk/statistics/statistical-work-areas/covid-19-hospital-activity/"
 
@@ -509,11 +385,41 @@ files <- purrr::map_chr(
   )
 )
 
-quarterly_covid_bed_occupancy <- files |> 
-  map_df(
-    tidy_covid_beds
-  )
+# remove existing files that have been replaced online
+existing_files <- list.files(
+  "data-raw/Covid activity/",
+  full.names = TRUE
+)
 
+setdiff(
+  existing_files,
+  files
+) |> 
+  file.remove() |> 
+  invisible()
+
+covid_numerators_by_trust <- files |> 
+  map_df(
+    # this function sums the numerators for each day (rather than taking a mean)
+    tidy_covid_beds
+  ) |> 
+  # take the most recent published data where days are published more than once
+  filter(
+    published_date == max(published_date), 
+    .by = c(
+      Date
+    )
+  ) |> 
+  summarise(
+    numerator = sum(numerator),
+    .by = c(
+      sheet, year, quarter, org
+    ),
+    days = n()
+  ) |> 
+  arrange(sheet, org, year, quarter)
+
+## covid bed occupancy
 quarterly_total_beds_by_trust <- bind_rows(
   quarterly_day_beds_by_trust,
   quarterly_overnight_beds_by_trust
@@ -536,85 +442,28 @@ quarterly_total_beds_by_trust <- bind_rows(
     )
   )
 
-quarterly_covid_beds_by_trust <- right_join(
-  quarterly_covid_bed_occupancy,
-  quarterly_total_beds_by_trust,
-  by = join_by(
-    year,
-    quarter,
-    org
-  )
+quarterly_covid_beds <- covid_numerators_by_trust |> 
+  filter(
+    sheet == "Total Beds Occupied Covid"
+  ) |> 
+  select(!c("sheet")) |> 
+  mutate(
+    numerator = numerator / days
+  ) |> 
+  right_join(
+    quarterly_total_beds_by_trust,
+    by = join_by(
+      year,
+      quarter,
+      org
+    )
 ) |> 
   mutate(
     numerator = replace_na(numerator, 0),
     metric = "Mean proportion of beds that contain a patient with confirmed COVID",
     frequency = "quarter"
-  )
-
-trust_ics_lkp <- trust_to_ics_proportions(
-  final_year = max(quarterly_covid_beds_by_trust$year)
-) |> 
-  rename(
-    health_org_code = "TrustCode",
-    icb_code = "org"
-  )
-
-orgs <- quarterly_covid_beds_by_trust |> 
-  pull(org) |> 
-  unique() |> 
-  setdiff(
-    unique(trust_ics_lkp$health_org_code)
-  )
-
-org_lkp <- nearest_health_orgs(
-  missing_orgs = orgs,
-  known_orgs = unique(trust_ics_lkp$health_org_code),
-  n = 2
-) |> 
-  mutate(
-    known_org_proportion = 1 - (distance / sum(distance)),
-    .by = missing_org
   ) |> 
-  left_join(
-    trust_ics_lkp,
-    by = join_by(
-      known_org == health_org_code
-    ),
-    relationship = "many-to-many"
-  ) |> 
-  mutate(
-    proportion = proportion * known_org_proportion
-  ) |> 
-  select(
-    "year",
-    health_org_code = "missing_org",
-    "icb_code",
-    "proportion"
-  ) |> 
-  bind_rows(
-    trust_ics_lkp
-  )
-
-quarterly_covid_beds <- quarterly_covid_beds_by_trust |> 
-  left_join(
-    org_lkp,
-    by = join_by(
-      year,
-      org == health_org_code
-    ),
-    relationship = "many-to-many"
-  ) |> 
-  summarise(
-    across(
-      c(numerator, denominator),
-      ~ sum(.x * proportion, na.rm = TRUE) # some health_orgs attributed to multiple icbs, so these are split between the icbs
-    ),
-    .by = c(year, quarter, icb_code, metric, frequency)
-  ) |> 
-  rename(
-    org = icb_code
-  ) |> 
-  mutate(value = numerator / denominator)
+  apply_catchment_proportions()
 
 annual_covid_beds <- quarterly_covid_beds |> 
   quarterly_to_annual_mean(
@@ -630,6 +479,74 @@ bind_rows(
     row.names = FALSE
   )
 
+## covid admissions
+## getting total annual admissions data by trust
+
+url <- "https://digital.nhs.uk/data-and-information/publications/statistical/hospital-admitted-patient-care-activity"
+
+links <- obtain_links(url) |> 
+  (\(x) x[grepl("[0-9]{4}-[0-9]{2}$", x)])() |> 
+  (\(x) paste0("https://digital.nhs.uk", x))() |> 
+  map(
+    obtain_links
+  ) |> 
+  unlist() |> 
+  (\(x) x[grepl("xlsx$", x)])() |> 
+  (\(x) x[grepl("prov", x)])() |> 
+  (\(x) x[!grepl("leve", x)])()
+
+files <- links |> 
+  purrr::map_chr(
+    ~ check_and_download(
+      filepath = paste0("data-raw/Hospital admissions/", basename(.x)),
+      url = .x
+    )
+  )
+
+admissions_by_trust <- files |> 
+  map_df(
+    tidy_admissions
+  )
+
+
+covid_admissions <- covid_numerators_by_trust |> 
+  filter(
+    sheet == "Admissions Total"
+  ) |> 
+  mutate(
+    org = case_when(
+      grepl("^R", org) & (nchar(org) == 5) ~ substr(org, 1, 3),
+      .default = org
+    )
+  ) |> 
+  summarise(
+    numerator = sum(numerator),
+    .by = c(
+      year, org
+    )
+  )
+
+# Org codes in covid_admissions and not in admissions_by_trust are community
+# hospitals. Org codes in admissions_by_trust and not in covid_admissions are
+# "treatment centres" (R0176), which often includes eye care
+admissions_with_covid <- covid_admissions |> 
+  inner_join(
+    admissions_by_trust,
+    by = join_by(org, year)
+  ) |> 
+  mutate(
+    frequency = "annual financial",
+    metric = "Mean proportion of admissions with COVID diagnosis in last 24 hours"
+  ) |> 
+  apply_catchment_proportions()
+
+
+admissions_with_covid |> 
+  write.csv(
+    "data/covid-admissions.csv",
+    row.names = FALSE
+  )
+  
 # Total beds per 60+ population
 
 population_60_plus <- read.csv(
@@ -1035,6 +952,10 @@ quarterly_sickness_absence <- monthly_sickness_absence |>
       month %in% 7:9 ~ 2L,
       month %in% 10:12 ~ 3L,
       .default = NA_real_
+    ),
+    year = case_when(
+      quarter == 4 ~ year - 1,
+      .default = year
     )
   ) |> 
   summarise(
