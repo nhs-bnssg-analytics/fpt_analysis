@@ -732,12 +732,43 @@ tidy_covid_beds <- function(filepath) {
   covid <- tidyxl::xlsx_cells(
     filepath,
     sheets = c(
-      "Total Beds Occupied Covid"
+      "Total Beds Occupied Covid",
+      "Admissions Total",
+      "Diagnoses Total",
+      "All Absences",
+      "Covid Absences"
       )
+    )
+  
+  pub_date_row <- covid |> 
+    filter(
+      character == "Published:"
     ) |> 
+    pull(row) |> 
+    unique()
+  
+  pub_date <- covid |> 
+    filter(
+      row == pub_date_row,
+      col == 3
+    ) |> 
+    distinct(
+      date, character
+    ) |> 
+    mutate(
+      pub_date = case_when(
+        is.na(date) ~ lubridate::dmy(character),
+        .default = date
+      )) |> 
+    pull()
+  
+  covid <- covid |> 
     filter(
       is_blank != TRUE,
       row >= 13
+    ) |> 
+    group_by(
+      sheet
     ) |> 
     behead(
       direction = "left",
@@ -760,6 +791,7 @@ tidy_covid_beds <- function(filepath) {
       !is.na(org)
     ) |> 
     select(
+      "sheet",
       numerator = "numeric",
       "org", "org_name",
       "Date"
@@ -774,15 +806,13 @@ tidy_covid_beds <- function(filepath) {
       quarter = purrr::map_int(
         month_name,
         quarter_from_month_string
-      )
-    ) |> 
-    summarise(
-      numerator = mean(numerator),
-      .by = c(
-        year, quarter, org
-      )
-    ) |> 
-    arrange(org, year, quarter)
+      ),
+      year = case_when(
+        quarter == 4 ~ year - 1,
+        .default = year
+      ),
+      published_date = pub_date
+    )
   
   return(covid)
 }
@@ -912,6 +942,75 @@ tidy_social_care_funding <- function(filepath) {
   return(tidy_sc_funding)
 }
 
+tidy_admissions <- function(filepath) {
+  
+  year_from_file = str_extract(
+    filepath,
+    pattern = "[0-9]{4}"
+  ) |> 
+    as.numeric()
+  
+  admissions <- filepath |> 
+    tidyxl::xlsx_cells() |> 
+    filter(
+      grepl("Hospital", sheet)
+    )
+  
+  min_details <- admissions |> 
+    filter(
+      grepl("Hospital provider code and description", character)
+    )
+  
+  min_row <- min_details |> 
+    pull(row)
+  min_col <- min_details |> 
+    pull(col)
+  
+  admissions <- admissions |> 
+    filter(
+      !is.na(content),
+      row >= min_row,
+      col >= min_col
+    ) |> 
+    behead(
+      direction = "left",
+      name = "org"
+    ) |> 
+    behead(
+      direction = "left",
+      name = "org_name"
+    ) |> 
+    behead(
+      direction = "up",
+      name = "type"
+    ) |> 
+    filter(
+      type == "Admissions",
+      !grepl("^Y|Total|^Q", org),
+      org != ""
+    ) |> 
+    mutate(
+      numeric = case_when(
+        character == "*" ~ 0,
+        .default = numeric
+      ),
+      year = year_from_file,
+      org = case_when(
+        grepl("^R", org) & (nchar(org) == 5) ~ substr(org, 1, 3),
+        .default = org
+      )
+    ) |> 
+    summarise(
+      denominator = sum(numeric),
+      .by = c(
+        year,
+        org,
+        org_name
+      )
+    )
+  
+  return(admissions)
+}
 
 open_pops_file <- function(raw_pops_file) {
   
@@ -1836,15 +1935,15 @@ monthly_to_annual_sum <- function(data, year_type = "financial") {
 quarterly_to_annual_mean <- function(data, year_type) {
   year_type <- match.arg(year_type, c("financial", "calendar"))
   
-  if (year_type == "financial") {
-    data <- data |> 
-      mutate(
-        year = case_when(
-          quarter == 1 ~ year - 1,
-          .default = year
-        )
-      )
-  }
+  # if (year_type == "financial") {
+  #   data <- data |> 
+  #     mutate(
+  #       year = case_when(
+  #         quarter == 1 ~ year - 1,
+  #         .default = year
+  #       )
+  #     )
+  # }
   
   # only keep years with 4 quarters of data
   years_to_keep <- data |> 
@@ -1885,15 +1984,15 @@ quarterly_to_annual_mean <- function(data, year_type) {
 quarterly_to_annual_sum <- function(data, year_type) {
   year_type <- match.arg(year_type, c("financial", "calendar"))
   
-  if (year_type == "financial") {
-    data <- data |> 
-      mutate(
-        year = case_when(
-          quarter == 1 ~ year - 1,
-          .default = year
-        )
-      )
-  }
+  # if (year_type == "financial") {
+  #   data <- data |> 
+  #     mutate(
+  #       year = case_when(
+  #         quarter == 1 ~ year - 1,
+  #         .default = year
+  #       )
+  #     )
+  # }
   
   # only keep years with 4 quarters of data
   years_to_keep <- data |> 
@@ -2926,4 +3025,89 @@ nearest_health_orgs <- function(missing_orgs, known_orgs, n) {
     )
   
   return(closest_orgs)
+}
+
+#' applies the numerator/denominator calculated at trust level to the MSOAs in
+#' the catchment that feed that trusts (for all admissions). The proportion of
+#' that catchment in each ICS is then applied to the trust value to calculate
+#' ICS values. Trusts that aren't acute (and hence don't have a published
+#' catchment population) have their catchments estimated from the nearest 2
+#' known acute trust catchments, where the weighting of the catchment is related
+#' to the proximity of the known catchments.
+#'
+#' @param data; tibble with org, year, quarter, metric, frequency, numerator and
+#'   denominator
+#' 
+apply_catchment_proportions <- function(data) {
+  
+  
+  trust_ics_lkp <- trust_to_ics_proportions(
+    final_year = max(data$year)
+  ) |> 
+    rename(
+      health_org_code = "TrustCode",
+      icb_code = "org"
+    ) 
+  
+  # organisations not in the Trust catchment populations
+  # these are usually community hospitals
+  orgs <- data |> 
+    pull(org) |> 
+    unique() |> 
+    setdiff(
+      unique(trust_ics_lkp$health_org_code)
+    )
+  
+  
+  org_lkp <- nearest_health_orgs(
+    missing_orgs = orgs,
+    known_orgs = unique(trust_ics_lkp$health_org_code),
+    n = 2
+  ) |> 
+    mutate(
+      known_org_proportion = 1 - (distance / sum(distance)),
+      .by = missing_org
+    ) |> 
+    left_join(
+      trust_ics_lkp,
+      by = join_by(
+        known_org == health_org_code
+      ),
+      relationship = "many-to-many"
+    ) |> 
+    mutate(
+      proportion = proportion * known_org_proportion
+    ) |> 
+    select(
+      "year",
+      health_org_code = "missing_org",
+      "icb_code",
+      "proportion"
+    ) |> 
+    bind_rows(
+      trust_ics_lkp
+    )
+  
+  data <- data |> 
+    left_join(
+      org_lkp,
+      by = join_by(
+        year,
+        org == health_org_code
+      ),
+      relationship = "many-to-many"
+    ) |> 
+    summarise(
+      across(
+        c(numerator, denominator),
+        ~ sum(.x * proportion, na.rm = TRUE) # some health_orgs attributed to multiple icbs, so these are split between the icbs
+      ),
+      .by = c(year, any_of(c("quarter", "month")), icb_code, metric, frequency)
+    ) |> 
+    rename(
+      org = icb_code
+    ) |> 
+    mutate(value = numerator / denominator)
+  
+  return(data)
 }
