@@ -547,6 +547,46 @@ admissions_with_covid |>
     row.names = FALSE
   )
   
+## covid absences
+workforce <- tidy_workforce_ftes(
+  type = "HC" # headcount
+) |> 
+  rename(
+    denominator = "numerator"
+  ) |> 
+  filter(
+    grepl("^Total", metric)
+  )
+
+covid_absences <- covid_numerators_by_trust |> 
+  filter(
+    sheet == "Covid Absences"
+  ) |> 
+  summarise(
+    numerator = sum(numerator / days),
+    .by = c(
+      year, org
+    )
+  ) |> 
+  inner_join(
+    workforce,
+    by = join_by(
+      org, year
+    )
+  ) |> 
+  select(!c("month", "metric")) |> 
+  apply_catchment_proportions() |> 
+  mutate(
+    frequency = "annual financial",
+    metric = "Mean proportion of workforce absent in a provider setting due to COVID per available headcount"
+  )
+
+write.csv(
+  covid_absences,
+  "data/covid-absences.csv",
+  row.names = FALSE
+)
+
 # Total beds per 60+ population
 
 population_60_plus <- read.csv(
@@ -603,58 +643,15 @@ write.csv(
 
 # NHS workforce per population
 # collecting the numerator
-url <- "https://digital.nhs.uk/data-and-information/publications/statistical/nhs-workforce-statistics"
-
-links <- obtain_links(url) |> 
-  (\(x) x[grepl(paste(month.abb, collapse = "|"), x, ignore.case = TRUE)])() |> 
-  (\(x) x[grepl("[0-9]{4}$", x)])() |> 
-  head(1) |> 
-  (\(x) paste0("https://digital.nhs.uk/", x))() |> 
-  obtain_links() |> 
-  (\(x) x[grepl("zip$", x)])() |> 
-  (\(x) x[grepl("csv", x)])()
-  
-
-file <- download_url_to_directory(
-  url = links,
-  new_directory = "data-raw/Clinical workforce/",
-  filename = "Latest workforce statistics.zip"
-)
-
-annual_workforce_fte <- unzip_file(
-  zip_filepath = file,
-  filename_pattern = "ICS"
-) |> 
-  filter(
-    Data.Type == "FTE"
-  ) |> 
-  mutate(
-    Date = as.Date(Date),
-    month = lubridate::month(Date),
-    year = lubridate::year(Date),
-    months_from_july = abs(7 - month) # some years dont have july data
-  ) |> 
-  filter(
-    months_from_july == min(months_from_july),
-    .by = year
-  ) |> 
-  mutate(
-    month = 7
-  ) |>
-  select(
-    "year",
-    "month",
-    org = "ICS.code",
-    "Staff.Group",
-    numerator = "Total"
-  )
+annual_workforce_fte <- tidy_workforce_ftes() |> 
+  apply_catchment_proportions()
 
 # collecting the denominator (populations by health areas)
 quarterly_health_pop_denominators <- quarterly_ics_populations()
 
 workforce_metrics <- annual_workforce_fte |> 
   complete(
-    year, month, org, Staff.Group
+    year, month, org, metric
   ) |> 
   inner_join(
     quarterly_health_pop_denominators,
@@ -668,13 +665,13 @@ workforce_metrics <- annual_workforce_fte |>
     numerator = replace_na(numerator, 0),
     metric = paste0(
       "Workforce FTEs per 10,000 population (",
-      Staff.Group,
+      metric,
       ")"
     ),
     value = numerator / (denominator / 1e4),
     frequency = "annual calendar"
   ) |> 
-  select(!c("Staff.Group", "month"))
+  select(!c("month"))
 
 write.csv(
   workforce_metrics,

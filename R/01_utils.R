@@ -734,8 +734,6 @@ tidy_covid_beds <- function(filepath) {
     sheets = c(
       "Total Beds Occupied Covid",
       "Admissions Total",
-      "Diagnoses Total",
-      "All Absences",
       "Covid Absences"
       )
     )
@@ -815,6 +813,81 @@ tidy_covid_beds <- function(filepath) {
     )
   
   return(covid)
+}
+
+#' @param type "HC" or "FTE"
+tidy_workforce_ftes <- function(type = "FTE") {
+  
+  type <- match.arg(type, c("HC", "FTE"))
+  
+  url <- "https://digital.nhs.uk/data-and-information/publications/statistical/nhs-workforce-statistics"
+  
+  links <- obtain_links(url) |> 
+    (\(x) x[grepl(paste(month.abb, collapse = "|"), x, ignore.case = TRUE)])() |> 
+    (\(x) x[grepl("[0-9]{4}$", x)])() |> 
+    head(1) |> 
+    (\(x) paste0("https://digital.nhs.uk/", x))() |> 
+    obtain_links() |> 
+    (\(x) x[grepl("zip$", x)])() |> 
+    (\(x) x[grepl("csv", x)])()
+  
+  
+  file <- download_url_to_directory(
+    url = links,
+    new_directory = "data-raw/Clinical workforce/",
+    filename = "Latest workforce statistics.zip"
+  )
+  
+  operational_ftes <- unzip_file(
+    zip_filepath = file,
+    filename_pattern = "Organisation"
+  ) |> 
+    filter(
+      Data.Type == type,
+      # remove ambulance because FTEs only applied to one ICS in each region
+      # remove PCT, ICB and CCG so as only to retain front line staff
+      !(Cluster.Group %in% c("Ambulance" , "PCT",
+                             "Clinical Commissioning Group", 
+                             "Integrated Care Board")),
+      Staff.Group != "Ambulance staff"
+    ) |> 
+    mutate(
+      Date = as.Date(Date),
+      month = lubridate::month(Date),
+      year = lubridate::year(Date),
+      months_from_july = abs(7 - month) # some years dont have july data
+    ) |> 
+    filter(
+      year > 2013
+    ) |> 
+    filter(
+      months_from_july == min(months_from_july),
+      .by = year
+    ) |> 
+    mutate(
+      month = 7,
+      metric = paste(
+        Staff.Group,
+        Cluster.Group,
+        sep = " - "
+      )
+    ) |>
+    select(
+      "year",
+      "month",
+      "ICS.code",
+      org = "Org.Code",
+      "metric",
+      numerator = "Total"
+    ) |> 
+    mutate(
+      org = case_when(
+        grepl("-", org) ~ gsub("-.*", "", org),
+        .default= org
+      )
+    )
+  
+  return(operational_ftes)
 }
 
 rename_remove_social_care_files <- function(filepath) {
@@ -2795,6 +2868,7 @@ quarterly_ics_populations <- function() {
 
 
 trust_to_ics_proportions <- function(final_year = 2020) {
+  #lsoa code to icb code
   lsoa_to_icb <- check_and_download(
     filepath = "data-raw/Lookups/lsoa_icb.xlsx",
     url = "https://www.arcgis.com/sharing/rest/content/items/1ac8547e9a8945478f0b5ea7ffe1a6b1/data"
@@ -3035,8 +3109,8 @@ nearest_health_orgs <- function(missing_orgs, known_orgs, n) {
 #' known acute trust catchments, where the weighting of the catchment is related
 #' to the proximity of the known catchments.
 #'
-#' @param data; tibble with org, year, quarter, metric, frequency, numerator and
-#'   denominator
+#' @param data; tibble with org, year, (quarter), (metric), (frequency), and
+#'   numerator or denominator
 #' 
 apply_catchment_proportions <- function(data) {
   
@@ -3058,19 +3132,37 @@ apply_catchment_proportions <- function(data) {
       unique(trust_ics_lkp$health_org_code)
     )
   
+  # table of which known health orgs existed in which years
+  health_orgs_by_year <- trust_ics_lkp |> 
+    distinct(
+      year, health_org_code
+    )
   
   org_lkp <- nearest_health_orgs(
     missing_orgs = orgs,
     known_orgs = unique(trust_ics_lkp$health_org_code),
     n = 2
   ) |> 
+    left_join(
+      health_orgs_by_year,
+      by = join_by(known_org == health_org_code),
+      relationship = "many-to-many"
+    ) |> 
     mutate(
-      known_org_proportion = 1 - (distance / sum(distance)),
-      .by = missing_org
+      n_trusts = n(),
+      .by = c(missing_org, year)
+    ) |> 
+    mutate(
+      known_org_proportion = case_when(
+        n_trusts == 1 ~ 1,
+        .default = 1 - (distance / sum(distance))
+      ),
+      .by = c(missing_org, year)
     ) |> 
     left_join(
       trust_ics_lkp,
       by = join_by(
+        year,
         known_org == health_org_code
       ),
       relationship = "many-to-many"
@@ -3099,15 +3191,19 @@ apply_catchment_proportions <- function(data) {
     ) |> 
     summarise(
       across(
-        c(numerator, denominator),
+        any_of(c("numerator", "denominator")),
         ~ sum(.x * proportion, na.rm = TRUE) # some health_orgs attributed to multiple icbs, so these are split between the icbs
       ),
-      .by = c(year, any_of(c("quarter", "month")), icb_code, metric, frequency)
+      .by = c(year, any_of(c("quarter", "month", "metric", "frequency")), icb_code)
     ) |> 
     rename(
       org = icb_code
-    ) |> 
-    mutate(value = numerator / denominator)
+    ) 
+  
+  if (all(c("numerator", "denominator") %in% names(data))) {
+    data <- data |> 
+      mutate(value = numerator / denominator)
+  }
   
   return(data)
 }
