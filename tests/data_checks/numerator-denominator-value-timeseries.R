@@ -8,7 +8,7 @@ metrics <- read.csv(
   here::here("data/configuration-table.csv"),
   encoding = "latin1"
 ) |> 
-  filter(!(status %in% c("incorrect geography", "remove"))) |> 
+  filter(status %in% c("", "include")) |> 
   select(
     "metric", 
     "numerator_description",
@@ -29,7 +29,8 @@ dc_data <- list.files(here::here("data"), full.names = TRUE) |>
     grepl("^Q", org)
   ) |> 
   select(
-    "year", "org", "metric", "numerator", "denominator", "value"
+    "year", "org", "metric", "numerator", "denominator", "value", 
+    "numerator_description", "denominator_description"
   ) |> 
   mutate(
     year = as.integer(year)
@@ -55,7 +56,21 @@ for (i in c("numerator", "denominator", "value")) {
       ) |> 
       filter(
         metric == met
-      ) |> 
+      )
+    
+    if (i == "numerator") {
+      chart_title <- p |> 
+        pull("numerator_description")  
+    } else if (i == "denominator") {
+      chart_title <- p |> 
+        pull("denominator_description")  
+    } else if (i == "value") {
+      chart_title <- p |> 
+        pull("metric")  
+    }
+    chart_title <- unique(chart_title)
+    
+    p <- p |> 
       ggplot(
         aes(x = year)
       ) +
@@ -77,7 +92,7 @@ for (i in c("numerator", "denominator", "value")) {
         breaks = function(x) seq(x[1], x[2], by = 1)
       ) +
       labs(
-        title = met,
+        title = chart_title,
         y = "",
         x = ""
       ) +
