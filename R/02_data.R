@@ -540,8 +540,27 @@ admissions_with_covid <- covid_admissions |>
   ) |> 
   apply_catchment_proportions()
 
+backcast_denominator <- admissions_with_covid |> 
+  filter(year == min(year)) |> 
+  select(
+    !c("year", "numerator", "value")
+  ) |> 
+  cross_join(
+    tibble(
+      year = seq(
+        from = min(admissions_by_trust$year),
+        to = min(admissions_with_covid$year) - 1,
+        by = 1
+      ),
+      numerator = 0,
+      value = 0
+    )
+  )
 
 admissions_with_covid |> 
+  bind_rows(
+    backcast_denominator
+  ) |> 
   write.csv(
     "data/covid-admissions.csv",
     row.names = FALSE
@@ -581,11 +600,31 @@ covid_absences <- covid_numerators_by_trust |>
     metric = "Mean proportion of workforce absent in a provider setting due to COVID per available headcount"
   )
 
-write.csv(
-  covid_absences,
-  "data/covid-absences.csv",
-  row.names = FALSE
-)
+backcast_denominator <- covid_absences |> 
+  filter(year == min(year)) |> 
+  select(
+    !c("year", "numerator", "value")
+  ) |> 
+  cross_join(
+    tibble(
+      year = seq(
+        from = min(workforce$year),
+        to = min(covid_absences$year) - 1,
+        by = 1
+      ),
+      numerator = 0,
+      value = 0
+    )
+  )
+
+covid_absences |> 
+  bind_rows(
+    backcast_denominator
+  ) |> 
+  write.csv(
+    "data/covid-absences.csv",
+    row.names = FALSE
+  )
 
 # Total beds per 60+ population
 
