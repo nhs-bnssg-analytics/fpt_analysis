@@ -2,11 +2,11 @@
 .Rhistory
 .RData
 .Ruserdata
-.png
-.html
-.css
-.json
-.docx
+*.png
+*.html
+*.css
+*.json
+*.docx
 *.Rproj
 
 /data/

@@ -1501,77 +1501,11 @@ files <- purrr::map_chr(
   )
 )
 
-monthly_a_and_e_by_trust <- purrr::map_dfr(
+monthly_a_and_e <- purrr::map_dfr(
   files, 
   tidy_a_and_e
-)
-
-trust_ics_lkp <- trust_to_ics_proportions(
-  final_year = max(monthly_a_and_e$year)
 ) |> 
-  rename(
-    health_org_code = "TrustCode",
-    icb_code = "org"
-  )
-
-# organisations not in the Trust catchment populations
-# these are community hospitals
-orgs <- monthly_a_and_e_by_trust |> 
-  pull(org) |> 
-  unique() |> 
-  setdiff(
-    unique(trust_ics_lkp$health_org_code)
-  )
-
-org_lkp <- nearest_health_orgs(
-  missing_orgs = orgs,
-  known_orgs = unique(trust_ics_lkp$health_org_code),
-  n = 2
-) |> 
-  mutate(
-    known_org_proportion = 1 - (distance / sum(distance)),
-    .by = missing_org
-  ) |> 
-  left_join(
-    trust_ics_lkp,
-    by = join_by(
-      known_org == health_org_code
-    ),
-    relationship = "many-to-many"
-  ) |> 
-  mutate(
-    proportion = proportion * known_org_proportion
-  ) |> 
-  select(
-    "year",
-    health_org_code = "missing_org",
-    "icb_code",
-    "proportion"
-  ) |> 
-  bind_rows(
-    trust_ics_lkp
-  )
-
-monthly_a_and_e <- monthly_a_and_e_by_trust |> 
-  left_join(
-    org_lkp,
-    by = join_by(
-      year,
-      org == health_org_code
-    ),
-    relationship = "many-to-many"
-  ) |> 
-  summarise(
-    across(
-      c(numerator, denominator),
-      ~ sum(.x * proportion, na.rm = TRUE) # some health_orgs attributed to multiple icbs, so these are split between the icbs
-    ),
-    .by = c(year, month, icb_code, metric, frequency)
-  ) |> 
-  rename(
-    org = icb_code
-  ) |> 
-  mutate(value = numerator / denominator)
+  apply_catchment_proportions()
 
 quarterly_a_and_e <- monthly_to_quarterly_sum(
   monthly_a_and_e
