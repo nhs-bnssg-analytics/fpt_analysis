@@ -2550,7 +2550,7 @@ lsoa_stp_icb_weighted_pops <- function() {
           url = .x,
           new_directory = "data-raw/Lookups",
           filename = paste0(
-            "LSOA11_STP",
+            "/LSOA11_STP",
             names(.x),
             ".csv"
           )
