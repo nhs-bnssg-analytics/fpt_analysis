@@ -74,19 +74,32 @@ calculate_train_metric <- function(final_fit, training_data, target_variable, me
   return(training_metric)
 }
 
-plot_observed_expected <- function(data, target_variable) {
- p <- data |> 
+plot_observed_expected <- function(data, target_variable, distinguish_year) {
+  p <- data |> 
     ggplot(
       aes(x = .data[[target_variable]], 
           y = .pred)) + 
     # Create a diagonal line:
-    geom_abline(lty = 2) + 
+    geom_abline(lty = 2) +
     geom_point(
       alpha = 0.5,
+      shape = 21,
       aes(
-        colour = data
+        fill = data
       )
-    ) + 
+    )
+  
+  if (distinguish_year == TRUE) {
+    p <- p +
+      geom_point(
+        data = ~ filter(.x, year == max(year)),
+        shape = 21,
+        fill = NA,
+        colour = "black"
+      )
+  } 
+  
+  p <- p + 
     labs(
       y = stringr::str_wrap(
         paste("Predicted", tolower(target_variable)),
@@ -96,7 +109,7 @@ plot_observed_expected <- function(data, target_variable) {
     # Scale and size the x- and y-axis uniformly:
     coord_obs_pred() +
     theme_minimal() +
-    scale_colour_manual(
+    scale_fill_manual(
       name = "Type",
       values = c(
         test = "#33a02c",
@@ -111,6 +124,7 @@ plot_observed_expected <- function(data, target_variable) {
       breaks = c("train", "validation", "test"),
       drop = TRUE
     )
+ 
  
  return(p)
 }
@@ -392,8 +406,6 @@ load_data <- function(target_variable, value_type = "value", incl_numerator_rema
 #' @param tuning_grid data.frame with numeric columns for mtry, min_n and trees
 #'   (if using random_forest) or a signle column named threshold (if performing
 #'   logistic_regression). Can also take the value "auto", which is the default.
-#' @param correlation_threshold numeric; between 0 and 1, determining the
-#'   threshold for removing correlated variables (logistic models only)
 #' @param predict_proportions logical; should proportions be the predicted value
 #'   (TRUE) or a count (FALSE)
 #' @param validation_type string; either "cross_validation" or "train_validation"
@@ -408,7 +420,6 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
                                   shuffle_training_records = FALSE,
                                   model_type = "logistic", 
                                   tuning_grid = "auto",
-                                  correlation_threshold = 0.9,
                                   predict_proportions = TRUE,
                                   validation_type,
                                   seed = 321) {
@@ -538,13 +549,14 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
   
   # splitting
   
-  proportions <- train_validation_proportions(
-    data,
-    shuffle_training_records = shuffle_training_records
-  )
   
   # split dataset into train, validation and test
   if (time_series_split) {
+    proportions <- train_validation_proportions(
+      data,
+      shuffle_training_records = shuffle_training_records
+    )
+    
     if (shuffle_training_records) {
       final_year <- data |> 
         filter(year == max(year))
@@ -562,6 +574,8 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
     )
     
   } else {
+    # 60% train, 20% val, 20% test
+    proportions <- c(0.6, 0.2)
     splits <- rsample::initial_validation_split(
       data = data,
       prop = proportions
@@ -618,7 +632,7 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
       set_engine(
         "glmnet", 
         family = stats::quasibinomial(link = "logit"), 
-        nlambda = 600,
+        nlambda = 200,
         num.threads = cores
       ) |> 
       set_mode("regression")
@@ -648,16 +662,7 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
       new_role = "outcome"
     )
   
-  if (model_type %in% "logistic_regression") {
-    # model_recipe <- model_recipe |> 
-    #   step_rename(
-    #     years_from_2020 = year
-    #   ) |> 
-    #   step_mutate(
-    #     years_from_2020 = years_from_2020 - 2020,
-    #     role = "predictor"
-    #   )
-  } else if (model_type %in% c("random_forest")) {
+  if (model_type %in% c("random_forest")) {
     model_recipe <- model_recipe |> 
       step_rm(
         any_of(
@@ -728,11 +733,19 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
   } else if (model_type == "logistic_regression") {
     tuning_grid <- 20
   }
+ 
+  evaluation_metrics <- metric_set(
+    yardstick::rmse,
+    yardstick::rsq,
+    yardstick::mae,
+    yardstick::mape,
+    yardstick::smape)
   
   residuals <- modelling_workflow |> 
     tune_grid(
       resamples = validation_set,
       grid = tuning_grid,
+      metrics = evaluation_metrics,
       control = control_grid(save_pred = TRUE)
     )
   
@@ -746,12 +759,6 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
   modelling_workflow_final <- modelling_workflow |>
     finalize_workflow(best)
   
-  
-  evaluation_metrics <- metric_set(
-    yardstick::rmse,
-    yardstick::rsq,
-    yardstick::mae)
-  
   # the last fit
   model_fit <- last_fit(
     modelling_workflow_final,
@@ -759,7 +766,7 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
     add_validation_set = TRUE,
     metrics = evaluation_metrics
   )
-  
+  browser()
   validation_metrics <- residuals |> 
     collect_metrics()
   
@@ -813,16 +820,34 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
       values_from = .estimate
     )
   
+  validation_row_years <- data_validation |> 
+    mutate(
+      .row = row_number()
+    ) |> 
+    select(
+      ".row",
+      "year"
+    )
+  
   validation_predictions <- residuals |> 
     collect_predictions(parameters = best) |> 
     mutate(
       data = "validation"
+    ) |> 
+    left_join(
+      validation_row_years,
+      by = join_by(.row)
     )
   
   test_predictions <- model_fit %>% 
     collect_predictions() |> 
     mutate(
       data = "test"
+    ) |> 
+    bind_cols(
+      tibble(
+        year = data_test$year
+      )
     )
   
   train_predictions <- add_prediction_to_data(
@@ -841,7 +866,8 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
     
   prediction_plot <- dataset_predictions |> 
     plot_observed_expected(
-      target_variable = target_variable
+      target_variable = target_variable,
+      distinguish_year = TRUE
     )
   
   # variable importance

@@ -9,17 +9,26 @@ target_variable <- "Proportion of incomplete pathways greater than 18 weeks from
 model_value_type <- "value"
 val_type <- "train_validation"
 predict_year <- 2022
+ts_split <- FALSE #set whether to leave the latest year for testing (TRUE) or not (FALSE)
+if (ts_split) {
+  chart_subtitle <- "Only previous years data used for training (without target variable), shuffled training data"
+  figure_caption <- paste(
+    target_variable,
+    "in",
+    predict_year
+  )
+} else {
+  chart_subtitle <- "Observations are randomly selected for training, validating and testing models"
+  figure_caption <- paste(
+    target_variable
+  )
+}
 
 # random forest -----------------------------------------------------------
 dc_data <- load_data(
   target_variable,
   value_type = model_value_type
 ) |> 
-  select(
-    any_of(c("org", "year", target_variable)),
-    any_of(c("numerator", "remainder")),
-    matches("^FTE|^Workforce|^Bed|bed days|beds|age band|deprivation|Year 6|obese|GPPS|QOF")
-  ) |> 
   dplyr::filter(
     # retain all rows where target variable is not na
     # retain all rows where we have population age group information
@@ -61,13 +70,28 @@ rf_modelling_outputs <- map2(
     training_years = .x,
     keep_current = FALSE,
     remove_lag_target = TRUE,
-    time_series_split = TRUE, 
+    time_series_split = ts_split, 
     shuffle_training_records = TRUE,
     model_type = "random_forest",
     validation_type = val_type, 
     seed = 321 
   )
 )
+
+table <- rf_modelling_outputs[[nrow(inputs)]]$inputs |> 
+  select(!c("Training years", "Lagged years"))
+  
+table_annotation <- ggplot(table) +
+  ggplot2::annotation_custom(
+    tableGrob(table, rows = NULL),
+    xmin = 0, 
+    xmax = 1, 
+    ymin = -0, 
+    ymax = 1
+  ) +
+  theme(
+    rect = element_blank()
+  )
 
 random_forest <- rf_modelling_outputs |> 
   map_df(
@@ -132,7 +156,6 @@ random_forest <- rf_modelling_outputs |>
   ) +
   labs(
     title = "Rsq for random forest for different length years and different amounts of lagging in training data",
-    subtitle = "Only previous years data used (without target variable), shuffled training data",
     caption = paste(
       target_variable,
       "in",
@@ -149,22 +172,30 @@ random_forest <- rf_modelling_outputs |>
     axis.title = element_text(size = 9),
     legend.text = element_text(size = 7),
     legend.title = element_text(size = 7)
+  ) 
+  
+p <- random_forest / table_annotation + 
+  plot_layout(
+    heights = c(6, 1)
   )
 
+fname <- paste0(
+  "tests/model_testing/",
+  gsub("[[:punct:]]", "", Sys.time()),
+  "_random_forest_rtt_admitted_", 
+  model_value_type, 
+  "_predicting_", 
+  predict_year, 
+  "_using_",
+  val_type,
+  ".png"
+)
 
 ggsave(
-  random_forest,
-  filename = paste0(
-    "tests/model_testing/random_forest_rtt_admitted_", 
-    model_value_type, 
-    "_predicting_", 
-    predict_year, 
-    "using_",
-    val_type,
-    ".png"
-  ),
-  width = 6,
-  height = 6,
+  p,
+  filename = fname,
+  width = 10,
+  height = 7,
   units = "in",
   bg = "white"
 )
@@ -178,11 +209,6 @@ dc_data <- load_data(
   incl_numerator_remainder = TRUE,
   value_type = model_value_type,
   include_weights = FALSE
-  ) |> 
-  select(
-    any_of(c("org", "year", target_variable)),
-    any_of(c("numerator", "remainder", "health_population")),
-    matches("^FTE|^Workforce|^Bed|bed days|beds|age band|deprivation|Year 6|obese|GPPS|QOF")
   ) |> 
   dplyr::filter(
     # retain all rows where target variable is not na
@@ -204,7 +230,8 @@ dc_data <- load_data(
 inputs <- expand.grid(
   lagged_years = 0:2,
   training_years = 2:6
-)
+) |> 
+  tail(1)
 
 logistic <- map2(
   .x = inputs$training_years,
@@ -216,7 +243,7 @@ logistic <- map2(
     training_years = .x,
     keep_current = FALSE,
     remove_lag_target = TRUE,
-    time_series_split = TRUE, 
+    time_series_split = ts_split, 
     shuffle_training_records = TRUE,
     model_type = "logistic_regression", 
     seed = 321,
@@ -224,6 +251,21 @@ logistic <- map2(
     validation_type = val_type
   )
 )
+
+table <- logistic[[nrow(inputs)]]$inputs |> 
+  select(!c("Training years", "Lagged years"))
+
+table_annotation <- ggplot(table) +
+  ggplot2::annotation_custom(
+    tableGrob(table, rows = NULL),
+    xmin = 0, 
+    xmax = 1, 
+    ymin = -0, 
+    ymax = 1
+  ) +
+  theme(
+    rect = element_blank()
+  )
 
 logistic_results <- logistic |> 
   map_df(
@@ -283,12 +325,8 @@ logistic_results <- logistic |>
   ) +
   labs(
     title = "Rsq for logistic regression where different combinations of lagged years and training years were applied",
-    subtitle = "Only previous years data used (without target variable), shuffled training data",
-    caption = paste(
-      target_variable,
-      "in",
-      predict_year
-    ),
+    subtitle = chart_subtitle,
+    caption = figure_caption,
     x = "Number of training years",
     y = bquote(~R^2)
   ) +
@@ -302,18 +340,29 @@ logistic_results <- logistic |>
     legend.title = element_text(size = 7)
   )
 
+p <- logistic_results / table_annotation + 
+  plot_layout(
+    heights = c(6, 1)
+  )
+
+
+
+fname <- paste0(
+  "tests/model_testing/",
+  gsub("[[:punct:]]", "", Sys.time()),
+  "_logistic_rtt_admitted_", 
+  model_value_type, 
+  "_with_final_year_", 
+  predict_year, 
+  "_using_",
+  val_type,
+  ".png"
+)
+
 ggsave(
-  logistic_results,
-  filename = paste0(
-    "tests/model_testing/glmnet_logistic_regression_rtt_admitted_", 
-    model_value_type, 
-    "_predicting_", 
-    predict_year, 
-    "_using_",
-    val_type,
-    ".png"
-  ),
-  width = 6,
+  plot = p,
+  filename = fname, 
+  width = 10,
   height = 6,
   units = "in",
   bg = "white"
@@ -338,7 +387,7 @@ logistic |>
   ) |> 
   filter(
     rsq == max(rsq)
-  ) |> 
+  ) |>
   select(
     "rsq", "id"
   ) |> 
