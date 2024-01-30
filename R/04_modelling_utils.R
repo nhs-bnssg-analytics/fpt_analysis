@@ -191,7 +191,7 @@ identify_missing_vars <- function(data_train, data_validation, data_test, model_
   
   # add the entirely missing vars to the mostly missing vars
   vars_to_remove <- unique(
-    c(mostly_missing_vars, mostly_zero_vars, entirely_missing_vars, "org")
+    c(mostly_missing_vars, mostly_zero_vars, entirely_missing_vars, "org", "nhs_region")
   )
   
   # if (model_type == "random_forest") {
@@ -212,7 +212,8 @@ identify_missing_vars <- function(data_train, data_validation, data_test, model_
 # load data ---------------------------------------------------------------
 
 load_data <- function(target_variable, value_type = "value", incl_numerator_remainder = FALSE,
-                      broad_age_bands = TRUE, include_weights = FALSE) {
+                      broad_age_bands = TRUE) {
+  
   metrics <- read.csv(
     here::here("data/configuration-table.csv"),
     encoding = "latin1"
@@ -334,6 +335,18 @@ load_data <- function(target_variable, value_type = "value", incl_numerator_rema
       )
   }
   
+  ics_to_nhs_region <- "https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/SICBL22_ICB22_NHSER22_EN_LU/FeatureServer/0/query?outFields=*&where=1%3D1&f=geojson" |> 
+    jsonlite::fromJSON() |> 
+    pluck("features", "properties") |> 
+    distinct(
+      ICB22CDH,
+      NHSER22CDH
+    ) |> 
+    rename(
+      org = "ICB22CDH",
+      nhs_region = "NHSER22CDH"
+    )
+  
   dc_data <- dc_data |> 
     select(
       all_of(
@@ -347,32 +360,20 @@ load_data <- function(target_variable, value_type = "value", incl_numerator_rema
     ) |> 
     rename(
       value = all_of(value_type)
-    )
-  
-  dc_data <- dc_data |> 
+    ) |> 
     pivot_wider(
       names_from = metric,
       values_from = value
+    ) |> 
+    left_join(
+      ics_to_nhs_region,
+      by = join_by(
+        org
+      )
+    ) |> 
+    relocate(
+      nhs_region, .after = org
     )
-  
-  if (include_weights) {
-    annual_health_populations <- quarterly_ics_populations() |> 
-      summarise(
-        health_population = mean(denominator),
-        .by = c(year, org)
-      )
-    dc_data <- dc_data |> 
-      inner_join(
-        annual_health_populations,
-        by = join_by(
-          year,
-          org
-        )
-      ) |> 
-      mutate(
-        health_population = recipes::importance_weights(health_population)
-      )
-  }
   
   return(dc_data)
 }
@@ -408,7 +409,8 @@ load_data <- function(target_variable, value_type = "value", incl_numerator_rema
 #'   logistic_regression). Can also take the value "auto", which is the default.
 #' @param predict_proportions logical; should proportions be the predicted value
 #'   (TRUE) or a count (FALSE)
-#' @param validation_type string; either "cross_validation" or "train_validation"
+#' @param validation_type string; either "cross_validation",
+#'   "leave_group_out_validation" or "train_validation"
 #' @param seed numeric; seed number
 #' @details This webpage was useful
 #'   https://www.tidyverse.org/blog/2022/05/case-weights/
@@ -427,6 +429,11 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
   model_type <- match.arg(
     model_type,
     c("random_forest", "logistic_regression")
+  )
+  
+  validation_type <- match.arg(
+    validation_type,
+    c("train_validation", "leave_group_out_validation", "cross_validation")
   )
   
   if (model_type == "random_forest") {
@@ -469,9 +476,9 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
     # create lag variables
     
     if (remove_lag_target) {
-      not_lag_variables <- c("year", "org", target_variable)
+      not_lag_variables <- c("year", "org", "nhs_region", target_variable)
     } else {
-      not_lag_variables <- c("year", "org")
+      not_lag_variables <- c("year", "org", "nhs_region")
     }
     
     if (model_type == "logistic_regression") {
@@ -502,7 +509,7 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
         )
       
       if (!keep_current) {
-        keep_variables <- c("year", "org", target_variable)
+        keep_variables <- c("year", "org", "nhs_region", target_variable)
         
         if (model_type == "logistic_regression") {
           keep_variables <- c(keep_variables, "total_cases")
@@ -604,6 +611,14 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
     )  
   } else if (validation_type == "train_validation") {
     validation_set <- validation_set(splits)
+  } else if (validation_type == "leave_group_out_validation") {
+    validation_set <- group_vfold_cv(
+      bind_rows(
+        data_train,
+        data_validation
+      ), 
+      group = nhs_region
+    )
   }
   
   
@@ -766,7 +781,7 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
     add_validation_set = TRUE,
     metrics = evaluation_metrics
   )
-  browser()
+  
   validation_metrics <- residuals |> 
     collect_metrics()
   

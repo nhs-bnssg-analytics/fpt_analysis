@@ -7,8 +7,9 @@ source("R/04_modelling_utils.R")
 
 target_variable <- "Proportion of incomplete pathways greater than 18 weeks from referral (incomplete)"
 model_value_type <- "value"
-val_type <- "train_validation"
 predict_year <- 2022
+val_type <- "leave_group_out_validation"
+
 ts_split <- FALSE #set whether to leave the latest year for testing (TRUE) or not (FALSE)
 if (ts_split) {
   chart_subtitle <- "Only previous years data used for training (without target variable), shuffled training data"
@@ -207,8 +208,7 @@ ggsave(
 dc_data <- load_data(
   target_variable, 
   incl_numerator_remainder = TRUE,
-  value_type = model_value_type,
-  include_weights = FALSE
+  value_type = model_value_type
   ) |> 
   dplyr::filter(
     # retain all rows where target variable is not na
@@ -230,8 +230,7 @@ dc_data <- load_data(
 inputs <- expand.grid(
   lagged_years = 0:2,
   training_years = 2:6
-) |> 
-  tail(1)
+)
 
 logistic <- map2(
   .x = inputs$training_years,
@@ -253,11 +252,15 @@ logistic <- map2(
 )
 
 table <- logistic[[nrow(inputs)]]$inputs |> 
-  select(!c("Training years", "Lagged years"))
+  select(!c("Training years", "Lagged years")) |> 
+  mutate(
+    `Validation method` = val_type
+  )
 
 table_annotation <- ggplot(table) +
   ggplot2::annotation_custom(
-    tableGrob(table, rows = NULL),
+    tableGrob(table, rows = NULL, 
+              theme = ttheme_default(base_size = 5)),
     xmin = 0, 
     xmax = 1, 
     ymin = -0, 
@@ -362,7 +365,7 @@ fname <- paste0(
 ggsave(
   plot = p,
   filename = fname, 
-  width = 10,
+  width = 6,
   height = 6,
   units = "in",
   bg = "white"
