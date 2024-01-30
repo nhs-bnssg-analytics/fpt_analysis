@@ -469,6 +469,7 @@ load_data <- function(target_variable, value_type = "value", incl_numerator_rema
 #' @param validation_type string; either "cross_validation",
 #'   "leave_group_out_validation" or "train_validation"
 #' @param seed numeric; seed number
+#' @param eval_metric string; one of "rsq", "rmse", "mae", "smape", "mape"
 #' @details This webpage was useful
 #'   https://www.tidyverse.org/blog/2022/05/case-weights/
 #' 
@@ -481,6 +482,7 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
                                   tuning_grid = "auto",
                                   predict_proportions = TRUE,
                                   validation_type,
+                                  eval_metric,
                                   seed = 321) {
   
   model_type <- match.arg(
@@ -491,6 +493,11 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
   validation_type <- match.arg(
     validation_type,
     c("train_validation", "leave_group_out_validation", "cross_validation")
+  )
+  
+  eval_metric <- match.arg(
+    eval_metric,
+    c("rsq", "rmse", "mae", "mape", "smape")
   )
   
   if (model_type == "random_forest") {
@@ -704,7 +711,7 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
       set_engine(
         "glmnet", 
         family = stats::quasibinomial(link = "logit"), 
-        nlambda = 100,
+        nlambda = 150,
         num.threads = cores
       ) |> 
       set_mode("regression")
@@ -825,7 +832,7 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
     
   # select the best parameters
   best <- residuals |> 
-    select_best(metric = "rmse")
+    select_best(metric = eval_metric)
   
   # the last workflow
   modelling_workflow_final <- modelling_workflow |>

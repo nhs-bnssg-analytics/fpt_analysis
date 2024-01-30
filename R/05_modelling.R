@@ -25,6 +25,8 @@ if (ts_split) {
   )
 }
 
+evaluation_metric <- "rmse"
+
 # random forest -----------------------------------------------------------
 dc_data <- load_data(
   target_variable,
@@ -75,7 +77,8 @@ rf_modelling_outputs <- map2(
     shuffle_training_records = TRUE,
     model_type = "random_forest",
     validation_type = val_type, 
-    seed = 321 
+    seed = 321,
+    eval_metric = evaluation_metric
   )
 )
 
@@ -99,7 +102,7 @@ random_forest <- rf_modelling_outputs |>
     ~ pluck(.x, "evaluation_metrics")
   ) |> 
   filter(
-    .metric == "rsq"
+    .metric == evaluation_metric
   ) |> 
   bind_cols(
     inputs
@@ -117,12 +120,12 @@ random_forest <- rf_modelling_outputs |>
       test
     ),
     names_to = "data_type",
-    values_to = "rsq"
+    values_to = evaluation_metric
   ) |> 
   ggplot(
     aes(
       x = training_years,
-      y = rsq
+      y = .data[[evaluation_metric]]
     )
   ) +
   geom_hline(
@@ -156,14 +159,17 @@ random_forest <- rf_modelling_outputs |>
     ncol = 1
   ) +
   labs(
-    title = "Rsq for random forest for different length years and different amounts of lagging in training data",
+    title = paste(
+      toupper(evaluation_metric),
+      "for random forest for different length years and different amounts of lagging in training data"
+      ),
     caption = paste(
       target_variable,
       "in",
       predict_year
     ),
     x = "Number of years in training data",
-    y = bquote(~R^2)
+    y = evaluation_metric
   ) +
   theme(
     plot.title = element_text(size = 8),
@@ -247,7 +253,8 @@ logistic <- map2(
     model_type = "logistic_regression", 
     seed = 321,
     predict_proportions = TRUE,
-    validation_type = val_type
+    validation_type = val_type,
+    eval_metric = evaluation_metric
   )
 )
 
@@ -275,7 +282,7 @@ logistic_results <- logistic |>
     ~ pluck(.x, "evaluation_metrics")
   ) |> 
   filter(
-    .metric == "rsq"
+    .metric == evaluation_metric
   ) |> 
   bind_cols(inputs) |> 
   mutate(
@@ -287,18 +294,18 @@ logistic_results <- logistic |>
   pivot_longer(
     cols = c(train, validation, test),
     names_to = "data_type",
-    values_to = "rsq"
+    values_to = evaluation_metric
   ) |> 
   ggplot(
     aes(
       x = training_years,
-      y = rsq
+      y = .data[[evaluation_metric]]
     )
   ) +
-  geom_hline(
-    yintercept = 0.5,
-    linetype = "dashed"
-  ) +
+  # geom_hline(
+  #   yintercept = 0.5,
+  #   linetype = "dashed"
+  # ) +
   geom_line(
     aes(
       group = data_type,
@@ -310,7 +317,7 @@ logistic_results <- logistic |>
     facets = vars(lagged_years),
     ncol = 1
   ) +
-  ylim(0,1) +
+  # ylim(0,NA) +
   scale_colour_manual(
     name = "Data type",
     values = c(
@@ -327,11 +334,14 @@ logistic_results <- logistic |>
     drop = TRUE
   ) +
   labs(
-    title = "Rsq for logistic regression where different combinations of lagged years and training years were applied",
+    title = paste(
+      toupper(evaluation_metric),
+      "for logistic regression where different combinations of lagged years and training years were applied"
+      ),
     subtitle = chart_subtitle,
     caption = figure_caption,
     x = "Number of training years",
-    y = bquote(~R^2)
+    y = evaluation_metric
   ) +
   theme(
     plot.title = element_text(size = 8),
@@ -372,27 +382,34 @@ ggsave(
 )
 
 # prediction plot for best performing model
-logistic |> 
+best_pred_plot <- logistic |> 
   map_df(
     ~ pluck(.x, "evaluation_metrics")
   ) |> 
   filter(
-    .metric == "rsq"
+    .metric == evaluation_metric
   ) |> 
   select(
-    rsq = "test"
+    metric = "test"
   ) |> 
   bind_cols(
     inputs
   ) |> 
   mutate(
     id = row_number()
-  ) |> 
-  filter(
-    rsq == max(rsq)
-  ) |>
+  )
+
+if (evaluation_metric %in% c("rmse", "mae", "smape", "mape")) {
+  best_pred_plot <- best_pred_plot |> 
+    filter(metric == min(metric))
+} else if (evaluation_metric %in% c("rsq")) {
+  best_pred_plot <- best_pred_plot |> 
+    filter(metric == max(metric))
+}
+
+best_pred_plot <- best_pred_plot |> 
   select(
-    "rsq", "id"
+    "metric", "id"
   ) |> 
   slice(1) |> 
   (\(x) logistic[[x$id]]$prediction_plot +
@@ -403,7 +420,7 @@ logistic |>
          logistic[[x$id]]$inputs$`Lagged years`,
          "lagged years"
        ),
-       subtitle = paste("Rsq: ", x$rsq),
+       subtitle = paste0(evaluation_metric, ": ", x$metric),
        caption = paste(
          "Predicting",
          predict_year
