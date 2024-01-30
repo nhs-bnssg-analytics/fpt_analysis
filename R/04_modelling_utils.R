@@ -46,30 +46,87 @@ add_prediction_to_data <- function(data, final_fit) {
   return(data)
 }
 
-calculate_train_metric <- function(final_fit, training_data, target_variable, metric) {
+calculate_train_metric <- function(final_fit, training_data, target_variable, case_weights = FALSE) {
   
   training_metric <- add_prediction_to_data(
     data = training_data,
     final_fit = final_fit
   ) |> 
-    select(
-      observed = all_of(target_variable),
-      ".pred"
+    rename(
+      observed = all_of(target_variable)
     )
   
-  if (metric == "rsq") {
-    training_metric <- training_metric %$%
-      cor(
-        observed,
-        .pred
-      ) ^ 2
+  
+  if (case_weights) {
+    rsq <- training_metric  |> 
+      yardstick::rsq(
+        truth = observed,
+        estimate = .pred,
+        case_weights = total_cases
+      )
+    rmse <- training_metric  |> 
+      yardstick::rmse(
+        truth = observed,
+        estimate = .pred,
+        case_weights = total_cases
+      )
+    mae <- training_metric  |> 
+      yardstick::mae(
+        truth = observed,
+        estimate = .pred,
+        case_weights = total_cases
+      )
+    mape <- training_metric  |> 
+      yardstick::mape(
+        truth = observed,
+        estimate = .pred,
+        case_weights = total_cases
+      )
+    smape <- training_metric  |> 
+      yardstick::smape(
+        truth = observed,
+        estimate = .pred,
+        case_weights = total_cases
+      )
+  } else {
+    rsq <- training_metric  |> 
+      yardstick::rsq(
+        truth = observed,
+        estimate = .pred
+      )
+    rmse <- training_metric  |> 
+      yardstick::rmse(
+        truth = observed,
+        estimate = .pred
+      )
+    mae <- training_metric  |> 
+      yardstick::mae(
+        truth = observed,
+        estimate = .pred
+      )
+    mape <- training_metric  |> 
+      yardstick::mape(
+        truth = observed,
+        estimate = .pred
+      )
+    smape <- training_metric  |> 
+      yardstick::smape(
+        truth = observed,
+        estimate = .pred
+      )
   }
   
-  training_metric <- tibble(
-    data = "train",
-    .metric = metric,
-    .estimate = training_metric
-  )
+  training_metric <- bind_rows(
+    rsq,
+    rmse,
+    mae,
+    mape,
+    smape
+  ) |> 
+    mutate(
+      data = "train",  
+    ) |> 
+    select(!c(".estimator"))
   
   return(training_metric)
 }
@@ -647,7 +704,7 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
       set_engine(
         "glmnet", 
         family = stats::quasibinomial(link = "logit"), 
-        nlambda = 200,
+        nlambda = 100,
         num.threads = cores
       ) |> 
       set_mode("regression")
@@ -768,7 +825,7 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
     
   # select the best parameters
   best <- residuals |> 
-    select_best(metric = "rsq")
+    select_best(metric = "rmse")
   
   # the last workflow
   modelling_workflow_final <- modelling_workflow |>
@@ -818,11 +875,17 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
       data = "test"
     )
   
+  if (model_type == "logistic_regression") {
+    case_wts <- TRUE
+  } else {
+    case_wts <- FALSE
+  }
+  
   train_metrics <- calculate_train_metric(
     final_fit = model_fit,
     training_data = data_train,
     target_variable = target_variable,
-    metric = "rsq"
+    case_weights = case_wts
   )
   
   evaluation_metrics <- bind_rows(
