@@ -58,12 +58,12 @@ calculate_train_metric <- function(final_fit, training_data, target_variable, ca
   
   
   if (case_weights) {
-    rsq <- training_metric  |> 
-      yardstick::rsq(
-        truth = observed,
-        estimate = .pred,
-        case_weights = total_cases
-      )
+    # rsq <- training_metric  |> 
+    #   yardstick::rsq(
+    #     truth = observed,
+    #     estimate = .pred,
+    #     case_weights = total_cases
+    #   )
     rmse <- training_metric  |> 
       yardstick::rmse(
         truth = observed,
@@ -89,11 +89,11 @@ calculate_train_metric <- function(final_fit, training_data, target_variable, ca
         case_weights = total_cases
       )
   } else {
-    rsq <- training_metric  |> 
-      yardstick::rsq(
-        truth = observed,
-        estimate = .pred
-      )
+    # rsq <- training_metric  |> 
+    #   yardstick::rsq(
+    #     truth = observed,
+    #     estimate = .pred
+    #   )
     rmse <- training_metric  |> 
       yardstick::rmse(
         truth = observed,
@@ -117,7 +117,7 @@ calculate_train_metric <- function(final_fit, training_data, target_variable, ca
   }
   
   training_metric <- bind_rows(
-    rsq,
+    # rsq,
     rmse,
     mae,
     mape,
@@ -131,60 +131,6 @@ calculate_train_metric <- function(final_fit, training_data, target_variable, ca
   return(training_metric)
 }
 
-plot_observed_expected <- function(data, target_variable, distinguish_year) {
-  p <- data |> 
-    ggplot(
-      aes(x = .data[[target_variable]], 
-          y = .pred)) + 
-    # Create a diagonal line:
-    geom_abline(lty = 2) +
-    geom_point(
-      alpha = 0.5,
-      shape = 21,
-      aes(
-        fill = data
-      )
-    )
-  
-  if (distinguish_year == TRUE) {
-    p <- p +
-      geom_point(
-        data = ~ filter(.x, year == max(year)),
-        shape = 21,
-        fill = NA,
-        colour = "black"
-      )
-  } 
-  
-  p <- p + 
-    labs(
-      y = stringr::str_wrap(
-        paste("Predicted", tolower(target_variable)),
-        60),
-      x = stringr::str_wrap(target_variable, 60)
-    ) +
-    # Scale and size the x- and y-axis uniformly:
-    coord_obs_pred() +
-    theme_minimal() +
-    scale_fill_manual(
-      name = "Type",
-      values = c(
-        test = "#33a02c",
-        validation = "#ff7f00",
-        train = "#1f78b4"
-      ),
-      labels = c(
-        test = "Test",
-        validation = "Validation",
-        train = "Train"
-      ),
-      breaks = c("train", "validation", "test"),
-      drop = TRUE
-    )
- 
- 
- return(p)
-}
 
 metric_to_numerator <- function(metric_name) {
   numerator_description <- read.csv("data/configuration-table.csv") |> 
@@ -264,6 +210,270 @@ identify_missing_vars <- function(data_train, data_validation, data_test, model_
     vars_to_impute = missing_data
   )
   return(vars)
+}
+
+
+# plotting functions ------------------------------------------------------
+
+plot_observed_expected <- function(data, target_variable, distinguish_year) {
+  p <- data |> 
+    ggplot(
+      aes(x = .data[[target_variable]], 
+          y = .pred)) + 
+    # Create a diagonal line:
+    geom_abline(lty = 2) +
+    geom_point(
+      alpha = 0.5,
+      shape = 21,
+      aes(
+        fill = data
+      )
+    )
+  
+  if (distinguish_year == TRUE) {
+    p <- p +
+      geom_point(
+        data = ~ filter(.x, year == max(year)),
+        shape = 21,
+        fill = NA,
+        colour = "black"
+      )
+  } 
+  
+  p <- p + 
+    labs(
+      y = stringr::str_wrap(
+        paste("Predicted", tolower(target_variable)),
+        60),
+      x = stringr::str_wrap(target_variable, 60)
+    ) +
+    # Scale and size the x- and y-axis uniformly:
+    coord_obs_pred() +
+    theme_minimal() +
+    scale_fill_manual(
+      name = "Type",
+      values = c(
+        test = "#33a02c",
+        validation = "#ff7f00",
+        train = "#1f78b4"
+      ),
+      labels = c(
+        test = "Test",
+        validation = "Validation",
+        train = "Train"
+      ),
+      breaks = c("train", "validation", "test"),
+      drop = TRUE
+    )
+  
+  
+  return(p)
+}
+
+plot_modelling_performance <- function(modelling_results, inputs, val_type, 
+                                       evaluation_metric, chart_subtitle, 
+                                       figure_caption, show_validation_variance) {
+  
+  table <- modelling_results[[nrow(inputs)]]$inputs |> 
+    select(!c("Training years", "Lagged years")) |> 
+    mutate(
+      `Validation method` = val_type
+    )
+  
+  table_annotation <- ggplot(table) +
+    ggplot2::annotation_custom(
+      tableGrob(table, rows = NULL, 
+                theme = ttheme_default(base_size = 5)),
+      xmin = 0, 
+      xmax = 1, 
+      ymin = -0, 
+      ymax = 1
+    ) +
+    theme(
+      rect = element_blank()
+    )
+  
+  modelling_plot <- modelling_results |> 
+    map_df(
+      ~ pluck(.x, "evaluation_metrics"),
+      .id = "input_id"
+    ) |> 
+    mutate(
+      input_id = as.integer(input_id)
+    ) |> 
+    filter(
+      .metric == evaluation_metric
+    ) |> 
+    left_join(
+      inputs,
+      by = join_by(input_id)
+    ) |> 
+    mutate(
+      lagged_years = paste(
+        lagged_years,
+        "lagged years"
+      )
+    ) |> 
+    pivot_longer(
+      cols = c(train, validation, test),
+      names_to = "data_type",
+      values_to = evaluation_metric
+    ) |> 
+    ggplot(
+      aes(
+        x = training_years,
+        y = .data[[evaluation_metric]]
+      )
+    ) +
+    # geom_hline(
+    #   yintercept = 0.5,
+    #   linetype = "dashed"
+    # ) +
+    geom_line(
+      aes(
+        group = data_type,
+        colour = data_type
+      )
+    ) +
+    theme_bw() +
+    facet_wrap(
+      facets = vars(lagged_years),
+      ncol = 1
+    ) +
+    ylim(0, NA) +
+    scale_colour_manual(
+      name = "Data type",
+      values = c(
+        test = "#33a02c",
+        validation = "#ff7f00",
+        train = "#1f78b4"
+      ),
+      labels = c(
+        test = "Test",
+        validation = "Validation",
+        train = "Train"
+      ),
+      breaks = c("train", "validation", "test"),
+      drop = TRUE
+    ) +
+    labs(
+      title = paste(
+        toupper(evaluation_metric),
+        "for logistic regression where different combinations of lagged years and training years were applied"
+      ),
+      subtitle = chart_subtitle,
+      caption = figure_caption,
+      x = "Number of training years",
+      y = evaluation_metric
+    ) +
+    theme(
+      plot.title = element_text(size = 8),
+      plot.subtitle = element_text(size = 6),
+      plot.caption = element_text(size = 5),
+      axis.text = element_text(size = 5),
+      axis.title = element_text(size = 9),
+      legend.text = element_text(size = 7),
+      legend.title = element_text(size = 7)
+    )
+  
+  if (show_validation_variance) {
+    validation_data <- modelling_results |> 
+      map_df(
+        ~ pluck(.x, "errors_per_fold"),
+        .id = "input_id"
+      ) |> 
+      mutate(
+        input_id = as.integer(input_id)
+      ) |> 
+      filter(
+        .metric == evaluation_metric
+      ) |> 
+      left_join(
+        inputs,
+        by = join_by(input_id)
+      ) |> 
+      mutate(
+        lagged_years = paste(
+          lagged_years, "lagged years"
+        )
+      ) |> 
+      pivot_wider(
+        names_from = .metric,
+        values_from = .estimate
+      )
+    
+    modelling_plot <- modelling_plot +
+      geom_point(
+        data = validation_data,
+        colour = "gray30",
+        aes(
+          shape = .estimator
+        )
+      ) +
+      scale_shape_manual(
+        name = "",
+        values = c(
+          standard = 1
+        ),
+        labels = c(
+          standard = "Error on validation\nset folds"
+        )
+      ) + 
+      guides(
+        color = guide_legend(order = 1),
+        shape = guide_legend(order = 2)
+      )
+    
+  }
+  
+  p <- modelling_plot / table_annotation + 
+    plot_layout(
+      heights = c(6, 1)
+    )
+  
+  return(p)
+}
+
+plot_variable_importance <- function(model_last_fit, top_n = 10) {
+  p <- model_last_fit |> 
+    extract_fit_parsnip() |> 
+    vi() |> 
+    filter(
+      Importance != 0
+    )|>
+    arrange(
+      Importance
+    ) |> 
+    head(top_n) |> 
+    mutate(
+      Variable = factor(Variable,
+                        levels = Variable)
+    ) |> 
+    ggplot(
+      aes(
+        x = Importance,
+        y = Variable
+      )
+    ) +
+    geom_col(
+      aes(
+        fill = Sign
+      )
+    ) +
+    theme_minimal() +
+    scale_fill_manual(
+      name = "Direction of impact",
+      values = c(
+        POS = "#56B4E9",
+        NEG = "#E69F00"
+      ),
+      labels = c(
+        POS = "Positive",
+        NEG = "Negative"
+      )
+    )
+  
+  return(p)
 }
 
 # load data ---------------------------------------------------------------
@@ -469,7 +679,7 @@ load_data <- function(target_variable, value_type = "value", incl_numerator_rema
 #' @param validation_type string; either "cross_validation",
 #'   "leave_group_out_validation" or "train_validation"
 #' @param seed numeric; seed number
-#' @param eval_metric string; one of "rsq", "rmse", "mae", "smape", "mape"
+#' @param eval_metric string; one of "rmse", "mae", "smape", "mape"
 #' @details This webpage was useful
 #'   https://www.tidyverse.org/blog/2022/05/case-weights/
 #' 
@@ -497,7 +707,7 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
   
   eval_metric <- match.arg(
     eval_metric,
-    c("rsq", "rmse", "mae", "mape", "smape")
+    c("rmse", "mae", "mape", "smape")
   )
   
   if (model_type == "random_forest") {
@@ -704,6 +914,9 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
       ) |> 
       set_mode("regression")
   } else if (model_type == "logistic_regression") {
+    path_length <- 300
+    pen_vals <- 10 ^ seq(-4, 0, length.out = path_length)
+    
     model_setup <- parsnip::linear_reg(
       penalty = tune(),
       mixture = tune()
@@ -711,8 +924,10 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
       set_engine(
         "glmnet", 
         family = stats::quasibinomial(link = "logit"), 
+        # path_values = pen_vals,
         nlambda = 150,
-        num.threads = cores
+        num.threads = cores,
+        standardize = FALSE
       ) |> 
       set_mode("regression")
   }
@@ -765,7 +980,7 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
     model_recipe <- model_recipe |> 
       step_zv(
         all_of(predictor_variables)
-      ) |> 
+      ) |>
       step_normalize(
         any_of(predictor_variables)
       )
@@ -810,29 +1025,71 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
       )
     }
   } else if (model_type == "logistic_regression") {
-    tuning_grid <- 20
+    tuning_grid <- crossing(
+      penalty = pen_vals[seq_len(path_length) %% 10 == 0], 
+      mixture = seq(
+        from = 0,
+        to = 1.0,
+        length.out = 10
+      ))
+    
+    tuning_grid <- 30
   }
  
   evaluation_metrics <- metric_set(
     yardstick::rmse,
-    yardstick::rsq,
+    # yardstick::rsq,
     yardstick::mae,
     yardstick::mape,
     yardstick::smape)
+  
+  # obtain resample coefficients function
+  get_glmnet_coefs <- function(x) {
+    x %>% 
+      extract_fit_engine() %>% 
+      tidy(return_zeros = TRUE) %>% 
+      rename(penalty = lambda)
+  }
   
   residuals <- modelling_workflow |> 
     tune_grid(
       resamples = validation_set,
       grid = tuning_grid,
       metrics = evaluation_metrics,
-      control = control_grid(save_pred = TRUE)
+      control = control_grid(
+        save_pred = TRUE,
+        extract = get_glmnet_coefs
+      )
     )
   
   tuning_parameters <- autoplot(residuals)
     
+  # collate coefficients
+  tuning_coefs <- 
+    residuals |> 
+    select(id, .extracts) |> 
+    unnest(.extracts) |> 
+    select(id, mixture, .extracts) |>  
+    slice(
+      1,
+      .by = c(mixture, id)
+    ) |>   # │ Remove the redundant results
+    unnest(.extracts)
+  
   # select the best parameters
   best <- residuals |> 
     select_best(metric = eval_metric)
+  
+  # create metrics for each fold for best performing model
+  errors_per_fold <- collect_metrics(
+    residuals,
+    summarize = FALSE
+  ) |> 
+    inner_join(
+      best,
+      by = join_by(penalty, mixture, .config)
+    )
+  
   
   # the last workflow
   modelling_workflow_final <- modelling_workflow |>
@@ -845,7 +1102,7 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
     add_validation_set = TRUE,
     metrics = evaluation_metrics
   )
-  
+  # browser()
   validation_metrics <- residuals |> 
     collect_metrics()
   
@@ -955,16 +1212,11 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
       distinguish_year = TRUE
     )
   
-  # variable importance
-  variable_importance <- model_fit |> 
-    extract_fit_parsnip() |> 
-    vip::vip(num_features = 10)
-  
   inputs <- tibble(
     `Model type` = model_type,
     `Split type` = ifelse(time_series_split == TRUE, "Time-series", "Random"),
     `Shuffled training years` = ifelse(time_series_split == TRUE, shuffle_training_records, NA),
-    `Training years` = (max(data_validation$year) - min(data_train$year)) + 1,
+    `Training years` = training_years,
     `Lagged years` = lagged_years,
     `Current year included` = ifelse(lagged_years > 0, keep_current, NA),
     `Lagged target variable` = ifelse(lagged_years > 0, !remove_lag_target, NA)
@@ -975,10 +1227,42 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
     tuning_parameters = tuning_parameters,
     prediction_plot = prediction_plot,
     evaluation_metrics = evaluation_metrics,
-    variable_importance = variable_importance,
-    inputs = inputs
+    errors_per_fold = errors_per_fold,
+    inputs = inputs,
+    # coeffs = tuning_coefs
+    ft = model_fit
   )
   
   return(output)
   
+}
+
+# Modelling output functions ----------------------------------------------
+
+pick_best_model <- function(modelling_outputs, evaluation_metric) {
+  best_model <- modelling_outputs |> 
+    map_df(
+      ~ pluck(.x, "evaluation_metrics")
+    ) |> 
+    filter(
+      .metric == evaluation_metric
+    ) |> 
+    select(
+      metric = "test"
+    ) |> 
+    mutate(
+      input_id = row_number()
+    ) |> 
+    filter(metric == min(metric)) |> 
+    pull(metric)
+  
+  best_model_id <- best_model |> 
+    slice(1) |> 
+    pull(input_id)
+  
+  outputs <- modelling_outputs[[best_model_id]]
+  
+  outputs[["best_metric"]] <- best_metric
+  
+  return(outputs)
 }
