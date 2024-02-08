@@ -217,6 +217,13 @@ identify_missing_vars <- function(data_train, data_validation, data_test, model_
 
 plot_observed_expected <- function(data, target_variable, distinguish_year) {
   p <- data |> 
+    mutate(
+      data = factor(
+        data,
+        levels = c("train", "validation", "test"),
+        labels = c("Train", "Validation", "Test")
+      )
+    ) |> 
     ggplot(
       aes(x = .data[[target_variable]], 
           y = .pred)) + 
@@ -253,17 +260,16 @@ plot_observed_expected <- function(data, target_variable, distinguish_year) {
     scale_fill_manual(
       name = "Type",
       values = c(
-        test = "#33a02c",
-        validation = "#ff7f00",
-        train = "#1f78b4"
+        Test = "#33a02c",
+        Validation = "#ff7f00",
+        Train = "#1f78b4"
       ),
-      labels = c(
-        test = "Test",
-        validation = "Validation",
-        train = "Train"
-      ),
-      breaks = c("train", "validation", "test"),
+      breaks = c("Train", "Validation", "Test"),
       drop = TRUE
+    ) +
+    facet_wrap(
+      facets = vars(data),
+      ncol = 3
     )
   
   
@@ -272,7 +278,7 @@ plot_observed_expected <- function(data, target_variable, distinguish_year) {
 
 plot_modelling_performance <- function(modelling_results, inputs, val_type, 
                                        evaluation_metric, chart_subtitle, 
-                                       figure_caption, show_validation_variance) {
+                                       figure_caption, show_validation_variance, model_type) {
   
   table <- modelling_results[[nrow(inputs)]]$inputs |> 
     select(!c("Training years", "Lagged years")) |> 
@@ -359,7 +365,9 @@ plot_modelling_performance <- function(modelling_results, inputs, val_type,
     labs(
       title = paste(
         toupper(evaluation_metric),
-        "for logistic regression where different combinations of lagged years and training years were applied"
+        "for",
+        gsub("_", " ", model_type),
+        "where different combinations of lagged years and training years were applied"
       ),
       subtitle = chart_subtitle,
       caption = figure_caption,
@@ -435,16 +443,31 @@ plot_modelling_performance <- function(modelling_results, inputs, val_type,
 }
 
 plot_variable_importance <- function(model_last_fit, top_n = 10) {
+  
+  model_type <- model_last_fit |> 
+    extract_fit_engine() |> 
+    pluck("call") |> 
+    as.character() |> 
+    head(1)
+  
+  if (grepl("random", model_type, ignore.case = TRUE)) {
+    model_type <- "random_forest"
+  } else if (grepl("glm", model_type, ignore.case = TRUE)) {
+    model_type <- "logistic_regression"
+  } else {
+    stop("unknown model type")
+  }
+  
   p <- model_last_fit |> 
     extract_fit_parsnip() |> 
     vi() |> 
     filter(
       Importance != 0
-    )|>
+    ) |> 
+    head(top_n) |>
     arrange(
       Importance
     ) |> 
-    head(top_n) |> 
     mutate(
       Variable = factor(Variable,
                         levels = Variable)
@@ -455,38 +478,45 @@ plot_variable_importance <- function(model_last_fit, top_n = 10) {
         y = Variable
       )
     ) +
-    geom_col(
-      aes(
-        fill = Sign
+    theme_minimal()
+  
+  if (model_type == "logistic_regression") {
+    p <- p +
+      geom_col(
+        aes(
+          fill = Sign
+        )
+      ) +
+      scale_fill_manual(
+        name = "Direction of impact",
+        values = c(
+          POS = "#56B4E9",
+          NEG = "#E69F00"
+        ),
+        labels = c(
+          POS = "Positive",
+          NEG = "Negative"
+        )
       )
-    ) +
-    theme_minimal() +
-    scale_fill_manual(
-      name = "Direction of impact",
-      values = c(
-        POS = "#56B4E9",
-        NEG = "#E69F00"
-      ),
-      labels = c(
-        POS = "Positive",
-        NEG = "Negative"
-      )
-    )
+  } else if (model_type == "random_forest") {
+    p <- p +
+      geom_col() 
+  }
   
   return(p)
 }
 
-# load data ---------------------------------------------------------------
-
+#load data --------------------------------------------------------------- '
+#' @param binary_covid logical; whether to remove all calculated COVID fields 
+#' and include one that is 1 for years from 2020 onwards, and 0 prior to that
 load_data <- function(target_variable, value_type = "value", incl_numerator_remainder = FALSE,
-                      broad_age_bands = TRUE) {
+                      broad_age_bands = TRUE, binary_covid = TRUE) {
   
   metrics <- read.csv(
     here::here("data/configuration-table.csv"),
     encoding = "latin1"
   ) |> 
     filter(
-      # !(grepl("incorrect geography|remove", status))
       grepl("include", status) |
         metric == target_variable
     ) |> 
@@ -642,6 +672,19 @@ load_data <- function(target_variable, value_type = "value", incl_numerator_rema
       nhs_region, .after = org
     )
   
+  if (binary_covid) {
+    dc_data <- dc_data |> 
+      select(
+        !contains("COVID")
+      ) |> 
+      mutate(
+        pandemic_onwards = case_when(
+          year >= 2020 ~ 1L,
+          .default = 0L
+        )
+      )
+  }
+  
   return(dc_data)
 }
 
@@ -670,7 +713,8 @@ load_data <- function(target_variable, value_type = "value", incl_numerator_rema
 #'   the training years will update to incorporate 2019 as well)
 #' @param shuffle_training_records logical; should the training/validation set
 #'   be ordered or shuffled for imte_series_split = TRUE
-#' @param model_type character string; the modelling method to use
+#' @param model_type character string; the modelling method to use. Currently
+#'   accepts "logistic_regression" or "random_forest"
 #' @param tuning_grid data.frame with numeric columns for mtry, min_n and trees
 #'   (if using random_forest) or a signle column named threshold (if performing
 #'   logistic_regression). Can also take the value "auto", which is the default.
@@ -688,7 +732,7 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
                                   time_series_split = TRUE, training_years = NULL,
                                   remove_years = NULL,
                                   shuffle_training_records = FALSE,
-                                  model_type = "logistic", 
+                                  model_type = "logistic_regression", 
                                   tuning_grid = "auto",
                                   predict_proportions = TRUE,
                                   validation_type,
@@ -725,6 +769,16 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
   }
   
   set.seed(seed)
+  
+  print(
+    paste0(
+      training_years,
+      " training years, ",
+      lagged_years,
+      " lagged years ",
+      Sys.time()
+    )
+  )
   
   # create case weights field for logistic regression
   if (model_type == "logistic_regression" &
@@ -981,8 +1035,9 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
       step_zv(
         all_of(predictor_variables)
       ) |>
-      step_normalize(
-        any_of(predictor_variables)
+      step_range(
+        all_numeric_predictors(),
+        clipping = FALSE
       )
   }
   
@@ -1024,6 +1079,8 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
         ) * 10
       )
     }
+    
+    extract_input <- NULL
   } else if (model_type == "logistic_regression") {
     tuning_grid <- crossing(
       penalty = pen_vals[seq_len(path_length) %% 10 == 0], 
@@ -1034,6 +1091,16 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
       ))
     
     tuning_grid <- 30
+    
+    # obtain resample coefficients function
+    get_glmnet_coefs <- function(x) {
+      x %>% 
+        extract_fit_engine() %>% 
+        tidy(return_zeros = TRUE) %>% 
+        rename(penalty = lambda)
+    }
+    
+    extract_input <- get_glmnet_coefs
   }
  
   evaluation_metrics <- metric_set(
@@ -1043,14 +1110,6 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
     yardstick::mape,
     yardstick::smape)
   
-  # obtain resample coefficients function
-  get_glmnet_coefs <- function(x) {
-    x %>% 
-      extract_fit_engine() %>% 
-      tidy(return_zeros = TRUE) %>% 
-      rename(penalty = lambda)
-  }
-  
   residuals <- modelling_workflow |> 
     tune_grid(
       resamples = validation_set,
@@ -1058,23 +1117,29 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
       metrics = evaluation_metrics,
       control = control_grid(
         save_pred = TRUE,
-        extract = get_glmnet_coefs
+        extract = extract_input
       )
     )
   
   tuning_parameters <- autoplot(residuals)
     
   # collate coefficients
-  tuning_coefs <- 
-    residuals |> 
-    select(id, .extracts) |> 
-    unnest(.extracts) |> 
-    select(id, mixture, .extracts) |>  
-    slice(
-      1,
-      .by = c(mixture, id)
-    ) |>   # │ Remove the redundant results
-    unnest(.extracts)
+  if (model_type == "logistic_regression") {
+    tuning_coefs <- 
+      residuals |> 
+      select(id, .extracts) |> 
+      unnest(.extracts) |> 
+      select(id, mixture, .extracts) |>  
+      slice(
+        1,
+        .by = c(mixture, id)
+      ) |>   # │ Remove the redundant results
+      unnest(.extracts)
+    
+    joining_fields <- join_by(penalty, mixture, .config)
+  } else if (model_type == "random_forest") {
+    joining_fields <- join_by(mtry, min_n, trees, .config)
+  }
   
   # select the best parameters
   best <- residuals |> 
@@ -1087,7 +1152,7 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
   ) |> 
     inner_join(
       best,
-      by = join_by(penalty, mixture, .config)
+      by = joining_fields
     )
   
   
@@ -1102,7 +1167,7 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
     add_validation_set = TRUE,
     metrics = evaluation_metrics
   )
-  # browser()
+  
   validation_metrics <- residuals |> 
     collect_metrics()
   
@@ -1110,13 +1175,13 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
     validation_metrics <- validation_metrics |> 
       inner_join(
         best,
-        by = join_by(mtry, trees, min_n, .config)
+        by = joining_fields
       )
   } else if (model_type == "logistic_regression") {
     validation_metrics <- validation_metrics |> 
       inner_join(
         best,
-        by = join_by(mixture, penalty, .config)
+        by = joining_fields
       )
   }
   
@@ -1141,7 +1206,7 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
   
   if (model_type == "logistic_regression") {
     case_wts <- TRUE
-  } else {
+  } else if (model_type == "random_forest") {
     case_wts <- FALSE
   }
   
@@ -1162,14 +1227,28 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
       values_from = .estimate
     )
   
-  validation_row_years <- data_validation |> 
-    mutate(
-      .row = row_number()
-    ) |> 
-    select(
-      ".row",
-      "year"
-    )
+  if (validation_type == "train_validation") {
+    validation_row_years <- data_validation |> 
+      mutate(
+        .row = row_number()
+      ) |> 
+      select(
+        ".row",
+        "year"
+      )
+    
+  } else if (validation_type %in% c("cross_validation", "leave_group_out_validation")) {
+    validation_row_years <- data_train |> 
+      bind_rows(data_validation) |> 
+      mutate(
+        .row = row_number()
+      ) |> 
+      select(
+        ".row",
+        "year"
+      )
+    
+  }
   
   validation_predictions <- residuals |> 
     collect_predictions(parameters = best) |> 
@@ -1254,15 +1333,15 @@ pick_best_model <- function(modelling_outputs, evaluation_metric) {
       input_id = row_number()
     ) |> 
     filter(metric == min(metric)) |> 
-    pull(metric)
+    slice(1)
   
   best_model_id <- best_model |> 
-    slice(1) |> 
     pull(input_id)
   
   outputs <- modelling_outputs[[best_model_id]]
   
-  outputs[["best_metric"]] <- best_metric
+  outputs[["best_metric"]] <- best_model |> 
+    pull(metric)
   
   return(outputs)
 }
