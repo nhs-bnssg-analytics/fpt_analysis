@@ -1408,7 +1408,8 @@ tidy_nctr <- purrr::map(
 monthly_nctr <- purrr::map_dfr(
   tidy_nctr,
   aggregate_nctr_to_month
-)
+) |> 
+  apply_catchment_proportions()
 
 quarterly_nctr <- monthly_to_quarterly_sum(
   monthly_nctr

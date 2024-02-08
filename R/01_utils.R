@@ -292,7 +292,7 @@ tidy_nctr_file <- function(filepath) {
     ) |> 
     filter(
       metric != "Number of patients discharged",
-      grepl("^Q", org)
+      grepl("^R", org)
     ) |> 
     mutate(
       metric = case_when(
@@ -674,24 +674,6 @@ tidy_rtt <- function(filepath) {
         "headers"
       )
     ) |> 
-    # select(
-    #   "org",
-    #   "org_name",
-    #   "headers",
-    #   "chr"
-    # ) |> 
-    # mutate(
-    #   chr = gsub("-", "0", chr),
-    #   count = as.numeric(chr)
-    # ) |> 
-    # summarise(
-    #   count = sum(count, na.rm = TRUE),
-    #   .by = c(
-    #     org,
-    #     org_name,
-    #     type
-    #   )
-    # ) |> 
     tidyr::pivot_wider(
       names_from = headers,
       values_from = chr
