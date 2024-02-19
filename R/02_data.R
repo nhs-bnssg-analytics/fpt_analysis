@@ -1123,6 +1123,9 @@ write.csv(
 
 # Performance -------------------------------------------------------------
 
+# For interpretation, the performance metrics are calculated so the higher they
+# are the worse the metric
+
 
 # GP wait times these are help in zip files containing monthly of data (each zip
 # file contains multiple csvs, one for each month). The zip files are produced
@@ -1658,6 +1661,4 @@ bind_rows(
     "data/referral-to-treatment.csv",
     row.names = FALSE
   )
-
-
 

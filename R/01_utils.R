@@ -393,12 +393,10 @@ tidy_cancer_wait_times <- function(filepath) {
         values_from = numeric
       ) |> 
       mutate(
+        numerator = denominator - numerator, # forces high = bad
         value = numerator / denominator,
         frequency = "monthly",
-        metric = paste(
-          metric,
-          "(proportion within standard)"
-        )
+        metric = "62 day wait from suspected cancer or referral to first definitive treament (proportion outside of standard)"
       )
     
     return(tidied_sheet)
@@ -428,7 +426,7 @@ tidy_cancer_wait_times <- function(filepath) {
       ) |> 
       mutate(
         value = numerator / denominator,
-        metric = "62-DAY (proportion within standard)"
+        metric = "62 day wait from suspected cancer or referral to first definitive treament (proportion outside of standard)"
       )
   }
   
@@ -693,7 +691,7 @@ tidy_rtt <- function(filepath) {
           )
         )
       ),
-      numerator = denominator - numerator,
+      numerator = denominator - numerator, # forces bad = high
       value = numerator / denominator,
       metric = paste0(
         "Proportion of incomplete pathways greater than 18 weeks from referral (",
