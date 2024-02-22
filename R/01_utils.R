@@ -1415,11 +1415,12 @@ reformat_bed_availability_data <- function(filepath, bed_type) {
           year,
           year_from_financial_year
         ),
-        metric = paste(
-          "Bed availability",
-          bed_type,
+        metric = paste0(
+          "Proportion of available beds that are occupied (",
           category,
-          sep = " - "
+          " - ",
+          bed_type,
+          ")"
         ),
         availability_metric = case_when(
           availability_metric == "Available" ~ "denominator",
