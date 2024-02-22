@@ -3,14 +3,15 @@ source("R/01_utils.R")
 source("R/04_modelling_utils.R")
 
 
-# select fields -----------------------------------------------------------
+# configure modelling  -----------------------------------------------------------
 
-target_variable <- "Proportion of incomplete pathways greater than 18 weeks from referral (incomplete)"
+target_variable <- "62 day wait from suspected cancer or referral to first definitive treament (proportion outside of standard)"
 model_value_type <- "value"
 predict_year <- 2022
 val_type <- "leave_group_out_validation"
+# val_type <- "train_validation"
 
-ts_split <- FALSE #set whether to leave the latest year for testing (TRUE) or not (FALSE)
+ts_split <- FALSE#set whether to leave the latest year for testing (TRUE) or not (FALSE)
 if (ts_split) {
   chart_subtitle <- "Only previous years data used for training (without target variable), shuffled training data"
   figure_caption <- paste(
@@ -25,12 +26,22 @@ if (ts_split) {
   )
 }
 
-evaluation_metric <- "rmse"
+evaluation_metric <- "smape"
 
-# random forest -----------------------------------------------------------
+model_method <- "random_forest"
+
+if (model_method == "random_forest") {
+  numerator_remainder <- FALSE
+} else if (model_method == "logistic_regression") {
+  numerator_remainder <- TRUE
+}
+
+# modelling -----------------------------------------------------------
+
 dc_data <- load_data(
   target_variable,
-  value_type = model_value_type
+  value_type = model_value_type,
+  incl_numerator_remainder = numerator_remainder
 ) |> 
   dplyr::filter(
     # retain all rows where target variable is not na
@@ -49,21 +60,15 @@ dc_data <- load_data(
     year <= predict_year
   )
 
-if (model_value_type == "numerator") {
-  new_names <- names(dc_data) |> 
-    (\(x) ifelse(x %in% c("year", "org"), x, map_chr(.x = x, .f = metric_to_numerator)))()
-  
-  names(dc_data) <- new_names
-  
-  target_variable <- metric_to_numerator(target_variable)
-}
-
 inputs <- expand.grid(
   training_years = 2:6,
   lagged_years = 0:2
-)
+) |> 
+  mutate(
+    input_id = row_number()
+  )
 
-rf_modelling_outputs <- map2(
+modelling_outputs <- map2(
   .x = inputs$training_years,
   .y = inputs$lagged_years,
   ~ modelling_performance(
@@ -75,122 +80,31 @@ rf_modelling_outputs <- map2(
     remove_lag_target = TRUE,
     time_series_split = ts_split, 
     shuffle_training_records = TRUE,
-    model_type = "random_forest",
+    model_type = model_method,
     validation_type = val_type, 
     seed = 321,
     eval_metric = evaluation_metric
   )
 )
 
-table <- rf_modelling_outputs[[nrow(inputs)]]$inputs |> 
-  select(!c("Training years", "Lagged years"))
-  
-table_annotation <- ggplot(table) +
-  ggplot2::annotation_custom(
-    tableGrob(table, rows = NULL),
-    xmin = 0, 
-    xmax = 1, 
-    ymin = -0, 
-    ymax = 1
-  ) +
-  theme(
-    rect = element_blank()
-  )
-
-random_forest <- rf_modelling_outputs |> 
-  map_df(
-    ~ pluck(.x, "evaluation_metrics")
-  ) |> 
-  filter(
-    .metric == evaluation_metric
-  ) |> 
-  bind_cols(
-    inputs
-  ) |> 
-  mutate(
-    lagged_years = paste(
-      lagged_years,
-      "lagged years included in training data"
-    )
-  ) |> 
-  pivot_longer(
-    cols = c(
-      train,
-      validation, 
-      test
-    ),
-    names_to = "data_type",
-    values_to = evaluation_metric
-  ) |> 
-  ggplot(
-    aes(
-      x = training_years,
-      y = .data[[evaluation_metric]]
-    )
-  ) +
-  geom_hline(
-    yintercept = 0.5,
-    linetype = "dashed"
-  ) +
-  geom_line(
-    aes(
-      group = data_type,
-      colour = data_type
-    )
-  ) +
-  theme_bw() +
-  scale_colour_manual(
-    name = "Data type",
-    values = c(
-      test = "#33a02c",
-      validation = "#ff7f00",
-      train = "#1f78b4"
-    ),
-    labels = c(
-      test = "Test",
-      validation = "Validation",
-      train = "Train"
-    ),
-    breaks = c("train", "validation", "test"),
-    drop = TRUE
-  ) +
-  facet_wrap(
-    facets = vars(lagged_years),
-    ncol = 1
-  ) +
-  labs(
-    title = paste(
-      toupper(evaluation_metric),
-      "for random forest for different length years and different amounts of lagging in training data"
-      ),
-    caption = paste(
-      target_variable,
-      "in",
-      predict_year
-    ),
-    x = "Number of years in training data",
-    y = evaluation_metric
-  ) +
-  theme(
-    plot.title = element_text(size = 8),
-    plot.subtitle = element_text(size = 6),
-    plot.caption = element_text(size = 5),
-    axis.text = element_text(size = 5),
-    axis.title = element_text(size = 9),
-    legend.text = element_text(size = 7),
-    legend.title = element_text(size = 7)
-  ) 
-  
-p <- random_forest / table_annotation + 
-  plot_layout(
-    heights = c(6, 1)
-  )
+p <- plot_modelling_performance(
+  modelling_results = modelling_outputs,
+  inputs = inputs,
+  val_type = val_type,
+  evaluation_metric = evaluation_metric,
+  chart_subtitle = chart_subtitle,
+  figure_caption = figure_caption,
+  show_validation_variance = TRUE,
+  model_type = model_method
+)
 
 fname <- paste0(
   "tests/model_testing/",
+  model_method,
+  "/",
   gsub("[[:punct:]]", "", Sys.time()),
-  "_random_forest_rtt_admitted_", 
-  model_value_type, 
+  "_",
+  abbreviate(target_variable, 15), 
   "_predicting_", 
   predict_year, 
   "_using_",
@@ -201,228 +115,231 @@ fname <- paste0(
 ggsave(
   p,
   filename = fname,
-  width = 10,
-  height = 7,
-  units = "in",
-  bg = "white"
-)
-
-
-# logistic regression -----------------------------------------------------
-
-# modelling proportions
-dc_data <- load_data(
-  target_variable, 
-  incl_numerator_remainder = TRUE,
-  value_type = model_value_type
-  ) |> 
-  dplyr::filter(
-    # retain all rows where target variable is not na
-    # retain all rows where we have population age group information
-    if_all(
-      c(
-        all_of(c(target_variable)), 
-        contains("age band")
-      ), ~ !is.na(.)
-    )
-  ) |> 
-  arrange(
-    year, org
-  ) |> 
-  filter(
-    year <= predict_year
-  )
-
-inputs <- expand.grid(
-  lagged_years = 0:2,
-  training_years = 2:6
-)
-
-logistic <- map2(
-  .x = inputs$training_years,
-  .y = inputs$lagged_years,
-  ~ modelling_performance(
-    data = dc_data,
-    target_variable = target_variable,
-    lagged_years = .y, 
-    training_years = .x,
-    keep_current = FALSE,
-    remove_lag_target = TRUE,
-    time_series_split = ts_split, 
-    shuffle_training_records = TRUE,
-    model_type = "logistic_regression", 
-    seed = 321,
-    predict_proportions = TRUE,
-    validation_type = val_type,
-    eval_metric = evaluation_metric
-  )
-)
-
-table <- logistic[[nrow(inputs)]]$inputs |> 
-  select(!c("Training years", "Lagged years")) |> 
-  mutate(
-    `Validation method` = val_type
-  )
-
-table_annotation <- ggplot(table) +
-  ggplot2::annotation_custom(
-    tableGrob(table, rows = NULL, 
-              theme = ttheme_default(base_size = 5)),
-    xmin = 0, 
-    xmax = 1, 
-    ymin = -0, 
-    ymax = 1
-  ) +
-  theme(
-    rect = element_blank()
-  )
-
-logistic_results <- logistic |> 
-  map_df(
-    ~ pluck(.x, "evaluation_metrics")
-  ) |> 
-  filter(
-    .metric == evaluation_metric
-  ) |> 
-  bind_cols(inputs) |> 
-  mutate(
-    lagged_years = paste(
-      lagged_years,
-      "lagged years"
-    )
-  ) |> 
-  pivot_longer(
-    cols = c(train, validation, test),
-    names_to = "data_type",
-    values_to = evaluation_metric
-  ) |> 
-  ggplot(
-    aes(
-      x = training_years,
-      y = .data[[evaluation_metric]]
-    )
-  ) +
-  # geom_hline(
-  #   yintercept = 0.5,
-  #   linetype = "dashed"
-  # ) +
-  geom_line(
-    aes(
-      group = data_type,
-      colour = data_type
-    )
-  ) +
-  theme_bw() +
-  facet_wrap(
-    facets = vars(lagged_years),
-    ncol = 1
-  ) +
-  # ylim(0,NA) +
-  scale_colour_manual(
-    name = "Data type",
-    values = c(
-      test = "#33a02c",
-      validation = "#ff7f00",
-      train = "#1f78b4"
-    ),
-    labels = c(
-      test = "Test",
-      validation = "Validation",
-      train = "Train"
-    ),
-    breaks = c("train", "validation", "test"),
-    drop = TRUE
-  ) +
-  labs(
-    title = paste(
-      toupper(evaluation_metric),
-      "for logistic regression where different combinations of lagged years and training years were applied"
-      ),
-    subtitle = chart_subtitle,
-    caption = figure_caption,
-    x = "Number of training years",
-    y = evaluation_metric
-  ) +
-  theme(
-    plot.title = element_text(size = 8),
-    plot.subtitle = element_text(size = 6),
-    plot.caption = element_text(size = 5),
-    axis.text = element_text(size = 5),
-    axis.title = element_text(size = 9),
-    legend.text = element_text(size = 7),
-    legend.title = element_text(size = 7)
-  )
-
-p <- logistic_results / table_annotation + 
-  plot_layout(
-    heights = c(6, 1)
-  )
-
-
-
-fname <- paste0(
-  "tests/model_testing/",
-  gsub("[[:punct:]]", "", Sys.time()),
-  "_logistic_rtt_admitted_", 
-  model_value_type, 
-  "_with_final_year_", 
-  predict_year, 
-  "_using_",
-  val_type,
-  ".png"
-)
-
-ggsave(
-  plot = p,
-  filename = fname, 
   width = 6,
   height = 6,
   units = "in",
   bg = "white"
 )
 
+
 # prediction plot for best performing model
-best_pred_plot <- logistic |> 
-  map_df(
-    ~ pluck(.x, "evaluation_metrics")
-  ) |> 
-  filter(
-    .metric == evaluation_metric
-  ) |> 
-  select(
-    metric = "test"
-  ) |> 
-  bind_cols(
-    inputs
-  ) |> 
-  mutate(
-    id = row_number()
-  )
-
-if (evaluation_metric %in% c("rmse", "mae", "smape", "mape")) {
-  best_pred_plot <- best_pred_plot |> 
-    filter(metric == min(metric))
-} else if (evaluation_metric %in% c("rsq")) {
-  best_pred_plot <- best_pred_plot |> 
-    filter(metric == max(metric))
-}
-
-best_pred_plot <- best_pred_plot |> 
-  select(
-    "metric", "id"
-  ) |> 
-  slice(1) |> 
-  (\(x) logistic[[x$id]]$prediction_plot +
+best_pred_plot <- pick_model(
+  modelling_outputs = modelling_outputs, 
+  evaluation_metric = evaluation_metric
+) |> 
+  (\(x) x$prediction_plot +
      labs(
        title = paste(
-         logistic[[x$id]]$inputs$`Training years`,
+         x$inputs$`Training years`,
          "training years,",
-         logistic[[x$id]]$inputs$`Lagged years`,
+         x$inputs$`Lagged years`,
          "lagged years"
        ),
-       subtitle = paste0(evaluation_metric, ": ", x$metric),
+       subtitle = paste0(evaluation_metric, ": ", x$best_metric),
        caption = paste(
          "Predicting",
          predict_year
        )
      ))()
+
+ggsave(
+  plot = best_pred_plot,
+  filename = gsub(".png", "_best_model.png", fname),
+  width = 10,
+  height = 5,
+  units = "in",
+  bg = "white"
+)
+
+vi_plot <- pick_model(
+  modelling_outputs = modelling_outputs, 
+  evaluation_metric = evaluation_metric
+  ) |> 
+  pluck("ft") |> 
+  plot_variable_importance(
+    top_n = 15
+  )
+
+ggsave(
+  plot = vi_plot,
+  filename = gsub(".png", "_vi.png", fname),
+  width = 12,
+  height = 6,
+  units = "in",
+  bg = "white"
+)
+
+
+# predicting --------------------------------------------------------------
+prediction_configuration <- tibble(
+  yrs = rep(3:4, times = 2),
+  meth = rep(c("linear", "spline"), each = 2)
+) |> 
+  rowid_to_column(var = "scenario_id") |> 
+  mutate(
+    scenario_id = as.character(scenario_id)
+  )
+
+preds_baseline <- prediction_configuration %$%
+  map2_dfr(
+    .x = yrs,
+    .y = meth,
+    .f = ~ apply_model_to_scenario(
+      input_data = dc_data, 
+      number_year_to_extrapolate = .x,
+      area_code = "QUY", 
+      extrapolation_method = .y, 
+      model_fit = pick_model(
+        modelling_outputs = modelling_outputs,
+        evaluation_metric = evaluation_metric
+      ) |> 
+        pluck("ft"),
+      target_variable = target_variable
+    ),
+    .id = "scenario_id"
+  ) |> 
+  left_join(
+    prediction_configuration,
+    by = join_by(scenario_id)
+  ) |> 
+  mutate(
+    scenario_id = paste0(
+      str_to_sentence(meth),
+      " extrapolation based on ",
+      yrs,
+      " years"
+    )
+  ) |> 
+  rename(
+    baseline = all_of(target_variable)
+  )
+  
+
+# scenario 1 - make more general and acute beds available (5%)
+scenario <- tibble(
+  metric = "Proportion of available beds that are occupied (General & Acute - overnight)",
+  multiplier = 0.95
+)
+debug(apply_model_to_scenario)
+preds_scenario <- prediction_configuration %$%
+  map2_dfr(
+    .x = yrs,
+    .y = meth,
+    .f = ~ apply_model_to_scenario(
+      input_data = dc_data, 
+      number_year_to_extrapolate = .x,
+      area_code = "QUY", 
+      extrapolation_method = .y, 
+      model_fit = pick_model(
+        modelling_outputs = modelling_outputs,
+        evaluation_metric = evaluation_metric
+      ) |> 
+        pluck("ft"),
+      target_variable = target_variable,
+      scenario = scenario),
+    .id = "scenario_id"
+  ) |> 
+  left_join(
+    prediction_configuration,
+    by = join_by(scenario_id)
+  ) |> 
+  mutate(
+    scenario_id = paste0(
+      str_to_sentence(meth),
+      " extrapolation based on ",
+      yrs,
+      " years"
+    )
+  ) |> 
+  rename(
+    scenario = all_of(target_variable)
+  )
+
+plot_scenario <- preds_baseline |> 
+  left_join(
+    preds_scenario,
+    by = join_by(
+      scenario_id, 
+      year, 
+      org, 
+      nhs_region, 
+      type, 
+      yrs, 
+      meth)
+  ) |> 
+  mutate(
+    type = str_to_sentence(type)
+  ) |> 
+  pivot_longer(
+    cols = c(scenario, baseline),
+    names_to = "scenario",
+    values_to = "value"
+  ) |> 
+  mutate(
+    type = case_when(
+      type == "Observed" ~ type,
+      scenario == "baseline" ~ "Prediction based on historic trend",
+      .default = "Prediction based on decrease bed occupancy by 5% from trend"
+    ),
+    type = factor(type,
+                  levels = c("Observed", 
+                             "Prediction based on historic trend",
+                             "Prediction based on decrease bed occupancy by 5% from trend"))
+  ) |> 
+  ggplot(
+    aes(
+      x = year,
+      y = value
+    )
+  ) +
+  geom_line(
+    aes(
+      group = type,
+      linetype = type,
+      colour = type
+    )
+  ) +
+  theme_minimal() +
+  scale_linetype_manual(
+    name = "Scenario",
+    values = c(
+      Observed = "solid",
+      `Prediction based on historic trend` = "solid",
+      `Prediction based on decrease bed occupancy by 5% from trend` = "dashed"
+    )
+  ) +
+  scale_colour_manual(
+    name = "Scenario",
+    values = c(
+      Observed = "#0072b2",
+      `Prediction based on historic trend` = "#d55e00",
+      `Prediction based on decrease bed occupancy by 5% from trend` = "#d55e00"
+    )
+  ) +
+  labs(
+    x = "",
+    y = "Proportion outside of 62 day wait",
+    title = "62 day wait from suspected cancer or referral to first definitive treament (proportion outside of standard)",
+    subtitle = "Baseline and scenario"
+  ) +
+  theme(
+    legend.position = "bottom"
+  ) +
+  facet_wrap(
+    facets = vars(scenario_id)
+  )
+
+
+
+ggsave(
+  filename = gsub(
+    ".png",
+    "_baseline_scenario.png",
+    fname
+  ),
+  plot = plot_scenario,
+  width = 11, 
+  height = 7,
+  units = "in",
+  bg = "white"
+)
