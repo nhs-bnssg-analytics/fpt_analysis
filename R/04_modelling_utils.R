@@ -452,15 +452,28 @@ plot_variable_importance <- function(model_last_fit, top_n = 10) {
   
   if (grepl("random", model_type, ignore.case = TRUE)) {
     model_type <- "random_forest"
+    p <- model_last_fit |> 
+      extract_fit_parsnip() |> 
+      vi()
   } else if (grepl("glm", model_type, ignore.case = TRUE)) {
     model_type <- "logistic_regression"
+    lambda_penalty <- model_last_fit |> 
+      extract_fit_parsnip() |> 
+      pluck("spec", "args", "penalty")
+    p <- model_last_fit |> 
+      extract_fit_parsnip() |> 
+      vi(
+        lambda = lambda_penalty
+      ) |> 
+      mutate(
+        Sign = factor(Sign,
+                      levels = c("POS", "NEG"))
+      )
   } else {
     stop("unknown model type")
   }
   
-  p <- model_last_fit |> 
-    extract_fit_parsnip() |> 
-    vi() |> 
+  p <- p |> 
     filter(
       Importance != 0
     ) |> 
@@ -803,11 +816,10 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
     
     # create lag variables
     
+    not_lag_variables <- c("year", "org", "nhs_region", "pandemic_onwards")
     if (remove_lag_target) {
-      not_lag_variables <- c("year", "org", "nhs_region", target_variable)
-    } else {
-      not_lag_variables <- c("year", "org", "nhs_region")
-    }
+      not_lag_variables <- c(not_lag_variables, target_variable)
+    } 
     
     if (model_type == "logistic_regression") {
       not_lag_variables <- c(not_lag_variables, "total_cases")
@@ -1209,13 +1221,25 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
   } else if (model_type == "random_forest") {
     case_wts <- FALSE
   }
+  # browser()
+  # train_metrics <- calculate_train_metric(
+  #   final_fit = model_fit,
+  #   training_data = data_train,
+  #   target_variable = target_variable,
+  #   case_weights = case_wts
+  # )
   
-  train_metrics <- calculate_train_metric(
-    final_fit = model_fit,
-    training_data = data_train,
-    target_variable = target_variable,
-    case_weights = case_wts
-  )
+  train_metrics <- model_fit |> 
+    extract_workflow() |> 
+    augment(data_train) |> 
+    evaluation_metrics(
+      truth = all_of(target_variable), 
+      estimate = .pred
+    ) |> 
+    mutate(
+      data = "train",  
+    ) |> 
+    select(!c(".estimator"))
   
   evaluation_metrics <- bind_rows(
     train_metrics,
@@ -1317,31 +1341,237 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
 }
 
 # Modelling output functions ----------------------------------------------
-
-pick_best_model <- function(modelling_outputs, evaluation_metric) {
-  best_model <- modelling_outputs |> 
-    map_df(
-      ~ pluck(.x, "evaluation_metrics")
-    ) |> 
-    filter(
-      .metric == evaluation_metric
-    ) |> 
-    select(
-      metric = "test"
-    ) |> 
-    mutate(
-      input_id = row_number()
-    ) |> 
-    filter(metric == min(metric)) |> 
-    slice(1)
+#' @param id either "best" or a number representing the id of the model
+pick_model <- function(modelling_outputs, evaluation_metric, id = "best") {
   
-  best_model_id <- best_model |> 
-    pull(input_id)
+  if (id == "best") {
+    model_metric <- modelling_outputs |> 
+      map_df(
+        ~ pluck(.x, "evaluation_metrics")
+      ) |> 
+      filter(
+        .metric == evaluation_metric
+      ) |> 
+      select(
+        metric = "test"
+      ) |> 
+      mutate(
+        input_id = row_number()
+      ) |> 
+      filter(metric == min(metric)) |> 
+      slice(1)
+    
+    model_id <- model_metric |> 
+      pull(input_id)
+  } else {
+    model_id <- id
+    model_metric <- modelling_outputs[[model_id]] |> 
+      pluck("evaluation_metrics") |> 
+      filter(
+        .metric == evaluation_metric
+      ) |> 
+      select(
+        metric = "test"
+      )
+    
+  }
   
-  outputs <- modelling_outputs[[best_model_id]]
   
-  outputs[["best_metric"]] <- best_model |> 
+  outputs <- modelling_outputs[[model_id]]
+  
+  outputs[["best_metric"]] <- model_metric |> 
     pull(metric)
   
   return(outputs)
+}
+
+
+
+# applying model to scenarios ---------------------------------------------
+
+#' @param input_data tibble containing all of the fields that feed into the
+#'   workflow contained in the last_fit object
+#' @param number_year_to_extrapolate integer; the number of years to inform the
+#'   method of extrapolation (eg, if extrapolation_method is "linear", and this
+#'   value is 2, then the future years will be extrapolated based on the latest
+#'   2 years of data using a linear trend)
+#' @param area_code string; code for the area(s) of interest. Can take a vector
+#'   containing multiple area code
+#' @param extrapolation_method string; "linear", "average" or "spline". Linear
+#'   will extrapolate the last n points linearly. Average will take a rolling
+#'   average of the last n points. Spline will extend the last n points with a
+#'   natural spline.
+#' @param model_fit an object returned from the last_fit function
+#' @param target_variable string; name of target variable
+#' @param scenario tibble with two columns, metric and multiplier. The
+#'   extrapolated values for the metric will be multiplied by the multiplier
+#'   before being put through the model to predict the target variable
+#' @return a tibble with a columns for year, org, nhs_region and target variable
+#'   value
+apply_model_to_scenario <- function(input_data, number_year_to_extrapolate, 
+                                    area_code, extrapolation_method, model_fit,
+                                    target_variable, scenario = NULL) {
+  
+  extrapolation_method <- match.arg(
+    extrapolation_method,
+    c("linear", "spline", "average")
+  )
+  
+  # expand dataset to include future years by org and metric
+  predictions <- input_data |> 
+    filter(org %in% area_code) |> 
+    pivot_longer(
+      cols = !c(year, org, nhs_region),
+      names_to = "metric",
+      values_to = "value"
+    ) |> 
+    filter(
+      year > (max(year) - number_year_to_extrapolate)
+    ) |> 
+    complete(
+      year = seq(
+        from = min(year), 
+        to = max(year) + 5
+      ),
+      nesting(
+        org,
+        nhs_region
+      ),
+      metric
+    ) |> 
+    arrange(org, metric, year)
+  
+  if (extrapolation_method == "linear") {
+    # generate linear interpolations for the predictor variables
+    predictions <- predictions |> 
+      nest(
+        data = c(year, value)
+      ) |> 
+      mutate(
+        fit = map(data, ~ lm(value ~ year, data = .x, na.action = na.omit)),
+        data = map2(fit, data, ~ bind_cols(.y, tibble(prediction = predict(.x, newdata = .y))))
+      ) |> 
+      select(!c(fit)) |> 
+      unnest(data)
+  } else if (extrapolation_method == "spline") {
+    predictions <- predictions |> 
+      mutate(
+        prediction = stats::spline(
+          x = year, 
+          y = value,
+          xout = year,
+          method = "natural"
+        )$y,
+        .by = c(org, metric)
+      )
+  } else if (extrapolation_method == "average") {
+    browser()
+    predictions <- predictions |> 
+      mutate(
+        prediction = slider::slide_index_mean(
+          x = value,
+          i = year,
+          before = number_year_to_extrapolate,
+          
+        )
+      )
+      
+  }
+  
+  if (!is.null(scenario)) {
+    predictions <- predictions |> 
+      left_join(
+        scenario,
+        by = join_by(
+          metric
+        ),
+        relationship = "many-to-one"
+      ) |> 
+      mutate(
+        multiplier = replace_na(multiplier, 1),
+        prediction = prediction * multiplier
+      ) |> 
+      select(!c("multiplier"))
+  }
+  
+  predictions <- predictions |> 
+    mutate(
+      type = case_when(
+        is.na(value) ~ "prediction",
+        .default = "observed"
+      ),
+      value = case_when(
+        is.na(value) & metric != "pandemic_onwards" ~ prediction,
+        metric == "pandemic_onwards" & year >= 2020 ~ 1L,
+        metric == "pandemic_onwards" & year < 2020 ~ 0L,
+        .default = value
+      )
+    ) |> 
+    select(!c("prediction"))
+  
+  # visualiste the linear interpolations
+  
+  # dc_data_future |> 
+  #   filter(metric %in% names(input_data)[4:24]) |> 
+  #   ggplot(
+  #     aes(
+  #       x = year
+  #     )
+  #   ) +
+  #   geom_point(
+  #     aes(y = value,
+  #         colour = type)
+  #   ) +
+  #   facet_wrap(
+  #     facets = vars(metric),
+  #     scales = "free_y"
+  #   )
+  
+  # create predictor matrix
+  predictions <- predictions |> 
+    select(!c("type")) |> 
+    pivot_wider(
+      names_from = metric,
+      values_from = value
+    ) |> 
+    add_prediction_to_data(
+      final_fit = model_fit
+    ) |> 
+    select(
+      "year", "org", "nhs_region", ".pred"
+    ) |> 
+    filter(
+      year > max(input_data[["year"]])
+    ) |> 
+    rename_with(
+      ~ target_variable,
+      ".pred"
+    ) |> 
+    mutate(
+      type = paste0(
+        "Prediction based on ",
+        extrapolation_method, 
+        " extrapolation (",
+        number_year_to_extrapolate,
+        " years)"
+      )
+    )
+  
+  orig <- dc_data |> 
+    select(
+      "year", "org", "nhs_region", all_of(target_variable)
+    ) |> 
+    filter(
+      org == "QUY"
+    ) |> 
+    mutate(
+      type = "observed"
+    )
+  
+  predictions <- bind_rows(
+    orig,
+    predictions
+  )
+  
+  return(predictions)
 }
