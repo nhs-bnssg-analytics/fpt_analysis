@@ -1065,6 +1065,170 @@ tidy_admissions <- function(filepath) {
   return(admissions)
 }
 
+tidy_mh_file <- function(filename) {
+  
+  sh_nms <- excel_sheets(filename)
+  
+  sheet_data <- map(
+    sh_nms,
+    ~ readxl::read_excel(
+      filename,
+      sheet = .x,
+    )
+  ) |> 
+    set_names(
+      sh_nms
+    )
+  
+  file_spend_data <- sheet_data[grepl("\\(", names(sheet_data))] |> 
+    map_df(tidy_mh_sheets) |> 
+    filter(
+      grepl("spend", metric, ignore.case = TRUE),
+      !grepl("planned", time_period)
+    ) |> 
+    select(!c("To delete", "Parent code")) |> 
+    mutate(
+      time_period = gsub(paste0("Q", 1:4, " ", collapse = "|"), "", time_period),
+      value = as.numeric(value)
+    ) |> 
+    summarise(
+      across(
+        c(value),
+        sum
+      ),
+      .by = c(
+        `Org code`, 
+        `Org Type`,
+        metric,
+        time_period
+      )
+    ) |> 
+    rename(
+      year = "time_period"
+    ) |> 
+    filter(
+      `Org Type` == "STP"
+    ) |> 
+    mutate(
+      frequency = "annual financial",
+      year = as.integer(
+        substr(year, 1, 4)
+      ),
+      metric = case_when(
+        grepl("2015/16", metric) ~ gsub("\\(2015/16\\)", "", metric),
+        .default = paste(metric, "per 10,000 population")
+      ),
+      metric = stringr::str_replace(
+        metric,
+        "CYP",
+        "Children and Young People"
+      ),
+      metric = stringr::str_replace(
+        metric,
+        "EIP",
+        "Early Intervention in Psychosis"
+      ),
+      metric = stringr::str_replace(
+        metric,
+        "IAPT",
+        "Improving Access to Psychological Therapies"
+      ),
+      metric = stringr::str_replace(
+        metric,
+        "MH",
+        "Mental Health"
+      ),
+      metric = stringr::str_replace(
+        metric,
+        "\\(k\\)",
+        "(£k)"
+      ),
+      metric = stringr::str_remove(metric, " CCG"),
+      metric = stringr::str_squish(metric)
+    ) |> 
+    select(
+      org = "Org code",
+      "metric",
+      "year", 
+      numerator = "value",
+      "frequency"
+    )
+  
+  return(file_spend_data)
+}
+
+tidy_mh_sheets <- function(sheet_data) {
+  title <- names(sheet_data)[1] |> 
+    (\(x) gsub("Title: ", "", x))()
+  
+  if (title %in% c("Title:")) {
+    title <- names(sheet_data)[2] |> 
+      (\(x) gsub("Title: ", "", x))()
+  }
+  
+  first_row <- match(
+    "Region Code",
+    sheet_data[[1]]
+  )
+  
+  if (is.na(first_row)) {
+    first_row <- match(
+      "ONS Area Codes",
+      sheet_data[[1]]
+    )
+  }
+  
+  first_row_is_header <- function(df) {
+    
+    all_na_field_names <- (colSums(is.na(slice(df, 1))) == 1) |> 
+      (\(x) x[which(x)])() |> 
+      names()
+    
+    all_dot_field_names <- (colSums(slice(df, 1) == ".") == 1) |> 
+      (\(x) x[which(x)])() |> 
+      names()
+    
+    df <- df |> 
+      select(-any_of(c(
+        all_na_field_names,
+        all_dot_field_names)
+      )
+      )
+    
+    headers <- df[1, ] |> 
+      as.character()
+    
+    df <- df |> 
+      slice(-1) |> 
+      set_names(
+        headers
+      )
+    return(df)
+  }
+  
+  sheet_data <- sheet_data |> 
+    slice(first_row:nrow(sheet_data)) |> 
+    first_row_is_header() |> 
+    mutate(
+      metric = title,
+      .before = 1
+    ) |> 
+    pivot_longer(
+      cols = contains("2"),
+      names_to = "time_period",
+      values_to = "value"
+    ) |> 
+    rename(
+      `Region Code` = any_of("ONS Area Codes")
+    ) |> 
+    filter(
+      !is.na(value),
+      value != "N/A"
+    )
+  
+  return(sheet_data)
+}
+
 open_pops_file <- function(raw_pops_file) {
   
   yr <- stringr::str_extract(
@@ -1485,6 +1649,20 @@ aggregate_nctr_to_month <- function(daily_nctr) {
     )
   
   return(monthly_nctr)
+}
+
+calculate_lag_years_from_last_fit <- function(last_fit_object) {
+  lagged_years <- last_fit_object |> 
+    extract_workflow() |> 
+    pluck("pre", "actions", "recipe", "recipe", "var_info") |> 
+    pull(variable) |> 
+    (\(x) substr(x[grepl("^lag", x)], 1, 5))() |> 
+    unique() |> 
+    substr(x = _, 5, 5) |> 
+    (\(x) c(as.numeric(x), 0))() |> 
+    max()
+  
+  return(lagged_years)
 }
 
 # reformatting code -------------------------------------------------------

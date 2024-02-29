@@ -367,7 +367,7 @@ bind_rows(
     row.names = FALSE
   )
 
-# Covid hospital activity -------------------------------------------------
+# Covid hospital activity 
 
 url <- "https://www.england.nhs.uk/statistics/statistical-work-areas/covid-19-hospital-activity/"
 
@@ -1119,7 +1119,68 @@ write.csv(
   row.names = FALSE
 )
 
+# NHS payments to General Practices
+# https://digital.nhs.uk/data-and-information/publications/statistical/nhs-payments-to-general-practice
 
+
+# Mental health spend data
+
+url <- "https://www.england.nhs.uk/publication/nhs-mental-health-dashboard/"
+
+excel_link <- obtain_links(url) |> 
+  (\(x) x[grepl("xlsm$", x)])() |> 
+  as.character() |> 
+  head(1)
+
+list.files("data-raw/Mental Health Spend/",
+           full.names = TRUE) |> 
+  file.remove() |> 
+  invisible()
+
+xl_file <- check_and_download(
+  filepath = paste0("data-raw/Mental Health Spend/", basename(excel_link)),
+  url = excel_link
+)
+
+annual_mh_spend <- tidy_mh_file(xl_file)
+
+# annual health population denominators
+
+annual_health_pop_denominators <- quarterly_ics_populations() |> 
+  mutate(
+    year = case_when(
+      month == 1 ~ year - 1,
+      .default = year
+    )
+  ) |> 
+  summarise(
+    denominator = mean(denominator),
+    .by = c(
+      org, year
+    )
+  )
+
+annual_mh_spend_metrics <- annual_mh_spend |> 
+  inner_join(
+    annual_health_pop_denominators,
+    by = join_by(
+      org, year
+    ),
+    relationship = "many-to-one"
+  ) |> 
+  mutate(
+    denominator = case_when(
+      grepl("proportion", metric) ~ 1,
+      .default = denominator / 1e4
+    ),
+    value = numerator / denominator
+  )
+
+write.csv(
+  annual_mh_spend_metrics,
+  "data/mh_spend.csv",
+  row.names = FALSE
+)
 
 # Performance -------------------------------------------------------------
 
