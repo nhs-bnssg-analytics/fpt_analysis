@@ -108,12 +108,9 @@ rename_hospital_beds_xls <- function(filepath) {
   }
 }
 
-download_unzip_gp_wait_times <- function(zip_url) {
-  
-  new_directory <- "data-raw/GP wait times/"
-  
-  if (!isTRUE(file.info(new_directory)$isdir)) 
-    dir.create(new_directory, recursive = TRUE)
+download_unzip_files <- function(zip_url, directory, zip_file_pattern) {
+  if (!isTRUE(file.info(directory)$isdir)) 
+    dir.create(directory, recursive = TRUE)
   
   temp <- tempfile()
   
@@ -123,39 +120,53 @@ download_unzip_gp_wait_times <- function(zip_url) {
   zipped_files <- unzip(
     zipfile = temp, 
     list = TRUE
-    ) |> 
+  ) |> 
     filter(
-      grepl("[[:alpha:]]{3}_[0-9]{2}.csv", Name)
+      grepl(zip_file_pattern, Name)
     ) |> 
     pull(Name)
   
-  # remove files that already exist in the directory
-  existing_files <- list.files(new_directory)
-  if (length(existing_files) > 0) {
-    zipped_files <- zipped_files[!grepl(paste(existing_files, collapse = "|"), zipped_files)]
-  }
+  # remove files that already exist in the directory and are in the zip file
+  list.files(directory, full.names = TRUE) |> 
+    dplyr::intersect(zipped_files) |> 
+    file.remove() |> 
+    invisible()
   
-  # unzip the new csvs and summarise them to icb/stp geography before saving
-  # them in the data-raw folder
-  complete <- lapply(
-    zipped_files,
-    unzip_summarise_write_data,
-    temp_file = temp,
-    file_directory = new_directory
+  
+  zipped_files <- unzip(
+    zipfile = temp,
+    files = zipped_files,
+    exdir = directory
   )
   
   unlink(temp)
   
-  return(TRUE)
+  return(zipped_files)
 }
 
-unzip_summarise_write_data <- function(zipped_csv_file, temp_file, file_directory) {
+download_unzip_gp_wait_times <- function(zip_url) {
   
-  data <- read.csv(
-    unz(
-      temp_file, 
-      zipped_csv_file)
-    ) |> 
+  new_directory <- "data-raw/GP wait times/"
+  
+  zipped_files <- download_unzip_files(
+    zip_url = zip_url,
+    directory = new_directory,
+    zip_file_pattern = "[[:alpha:]]{3}_[0-9]{2}.csv"
+  )
+  
+  # unzip the new csvs and summarise them to icb/stp geography before saving
+  # them in the data-raw folder
+  files <- lapply(
+    zipped_files,
+    summarise_and_write_gp_wait_time_data
+  )
+  
+  return(files)
+}
+
+summarise_and_write_gp_wait_time_data <- function(csv_file) {
+  
+  data <- read.csv(csv_file) |> 
     rename(
       any_of(
         c(
@@ -180,20 +191,33 @@ unzip_summarise_write_data <- function(zipped_csv_file, temp_file, file_director
     )
   
   if (nrow(data) > 0) {
-    data |> 
-      write.csv(
-        paste0(
-          file_directory,
-          stringr::str_extract(
-            zipped_csv_file, 
-            "[[:alpha:]]{3}_[0-9]{2}.csv"
-          )
-        ),
-        row.names = FALSE
+    new_filename <- paste0(
+      dirname(csv_file),
+      "/",
+      stringr::str_extract(
+        csv_file, 
+        "[[:alpha:]]{3}_[0-9]{2}.csv"
       )
+    )
+      
+    new_filename <- gsub("/Daily", "", new_filename)
+    
+    if (!file.exists(new_filename)) {
+      data |> 
+        write.csv(
+          new_filename,
+          row.names = FALSE
+        )
+    }
+    
+  } else {
+    new_filename <- character()
   }
   
-  return(TRUE)
+  file.remove(csv_file) |> 
+    invisible()
+  
+  return(new_filename)
 }
 
 unzip_file <- function(zip_filepath, filename_pattern) {

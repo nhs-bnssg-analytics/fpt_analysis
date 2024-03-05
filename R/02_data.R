@@ -718,57 +718,144 @@ write.csv(
   row.names = FALSE
 )
 
-# General practice workforce
-quarterly_gps_per_population <- fingertipsR::fingertips_data(
-  IndicatorID = 93966,
-  AreaTypeID = 221
-) |>
-  filter(
-    AreaType == "ICBs"
-  ) |> 
-  mutate(
-    year = as.integer(
-      substr(
-        Timeperiod, 1, 4
-      )
-    ),
-    quarter = as.integer(
-      substr(
-        Timeperiod, 
-        nchar(Timeperiod),
-        nchar(Timeperiod)
-      )
-    ),
-    org = gsub("n", "", AreaCode),
-    frequency = "quarterly"
-  ) |> 
-  select(
-    "year",
-    "quarter",
-    "org",
-    org_name = "AreaName",
-    metric = "IndicatorName",
-    numerator = "Count",
-    denominator = "Denominator",
-    value = "Value",
-    "frequency"
-  ) |> 
-  convert_ons_to_health_code(
-    area_type = "icb",
-    latest_codes_used = TRUE
-  )
+# Primary care workforce
+url <- "https://digital.nhs.uk/data-and-information/publications/statistical/general-and-personal-medical-services"
 
-annual_gps_per_population <- quarterly_to_annual_mean(
-  quarterly_gps_per_population,
-  year_type = "financial"
+links <- obtain_links(url) |> 
+  (\(x) x[grepl(paste(2021:lubridate::year(Sys.Date()), collapse = "|"), x)])() |> 
+  (\(x) x[grepl("jun|december-2021", x)])() |> 
+  (\(x) x[grepl("data-and-information", x)])() |> 
+  (\(x) paste0("https://digital.nhs.uk", x))() |> 
+  map(
+    obtain_links
+  ) |> 
+  unlist() |> 
+  (\(x) x[grepl("xls$|xlsx$|zip$", x)])() |> 
+  (\(x) x[grepl("Individual", x)])()
+
+gp_workforce_directory <- "data-raw/GP workforce"
+
+files <- map(
+  links,
+  ~ download_unzip_files(
+    zip_url = .x,
+    directory = gp_workforce_directory,
+    zip_file_pattern = ".*Individual.*csv$"
+  )
 )
 
-bind_rows(
-  quarterly_gps_per_population,
-  annual_gps_per_population
-) |> 
+annual_gp_workforce <- tibble(
+  filepath = unlist(files)
+) |>
+  filter(
+    !grepl("December 2016|June 2017", filepath)
+  ) |> 
+  mutate(
+    month = str_extract(
+      filepath,
+      pattern = paste(month.name, collapse = "|")
+    ),
+    month_num = match(
+      month, month.name
+    ),
+    proximity_to_june = abs(month_num - 6),
+    year = str_extract(
+      filepath,
+      "[0-9]{4}"
+    )
+  ) |>
+  filter(
+    proximity_to_june == min(proximity_to_june),
+    .by = year
+  ) |> 
+  pull(filepath) |> 
+  map(
+    read.csv
+  ) |> 
+  map(
+    ~ mutate(
+      .x,
+      STAFF_GROUP = case_when(
+        STAFF_GROUP == "GP" ~ STAFF_GROUP,
+        .default = str_to_title(STAFF_GROUP)
+      )
+    )
+  ) |> 
+  map(
+    ~ summarise(
+      .x, 
+      numerator = sum(FTE),
+      .by = any_of(
+        c(
+          "YEAR",
+          "Month",
+          "ICB_CODE",
+          "STP_CODE",
+          "STAFF_GROUP",
+          "STAFF_ROLE"
+        )
+      )
+    )
+  ) |> 
+  map(
+    ~ summarise(
+      .x, 
+      numerator = mean(numerator),
+      .by = any_of(
+        c(
+          "YEAR",
+          "ICB_CODE",
+          "STP_CODE",
+          "STAFF_GROUP",
+          "STAFF_ROLE"
+        )
+      )
+    )
+  ) |> 
+  map_df(
+    ~ rename(
+      .x, 
+      org = any_of(
+        c("STP_CODE", "ICB_CODE")
+      )
+    )
+  ) |> 
+  rename(
+    year = "YEAR"
+  )
+
+health_populations <- quarterly_ics_populations() |> 
+  summarise(
+    denominator = mean(denominator),
+    .by = c(
+      org, 
+      year
+    )
+  )
+
+annual_gp_workforce_per_population <- annual_gp_workforce |> 
+  left_join(
+    health_populations,
+    by = join_by(
+      org, year
+    ),
+    relationship = "many-to-one"
+  ) |> 
+  mutate(
+    value = numerator / (denominator / 1e4),
+    metric = paste0(
+      "Primary care workforce (FTEs) per 10,000 population (",
+      STAFF_GROUP,
+      " - ", 
+      STAFF_ROLE,
+      ")"),
+    frequency = "annual calendar"
+  ) |> 
+  select(!c("STAFF_GROUP", "STAFF_ROLE"))
+
+annual_gp_workforce_per_population |> 
   write.csv(
-  "data/clinical-workforce-per-population.csv",
+  "data/primary-care-workforce-per-population.csv",
   row.names = FALSE
 )
 
@@ -1178,7 +1265,7 @@ annual_mh_spend_metrics <- annual_mh_spend |>
 
 write.csv(
   annual_mh_spend_metrics,
-  "data/mh_spend.csv",
+  "data/mh-spend.csv",
   row.names = FALSE
 )
 
@@ -1221,7 +1308,7 @@ list.files("data-raw/GP wait times/",
   file.remove() |> 
   invisible()
 
-files <- purrr::walk(
+files <- purrr::map(
   url_links,
   download_unzip_gp_wait_times
 )
