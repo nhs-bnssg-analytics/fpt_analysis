@@ -461,7 +461,7 @@ quarterly_covid_beds <- covid_numerators_by_trust |>
   mutate(
     numerator = replace_na(numerator, 0),
     metric = "Mean proportion of beds that contain a patient with confirmed COVID",
-    frequency = "quarter"
+    frequency = "quarterly"
   ) |> 
   apply_catchment_proportions()
 
@@ -791,8 +791,8 @@ annual_gp_workforce <- tibble(
           "Month",
           "ICB_CODE",
           "STP_CODE",
-          "STAFF_GROUP",
-          "STAFF_ROLE"
+          "STAFF_GROUP"#,
+          #"STAFF_ROLE"
         )
       )
     )
@@ -806,8 +806,8 @@ annual_gp_workforce <- tibble(
           "YEAR",
           "ICB_CODE",
           "STP_CODE",
-          "STAFF_GROUP",
-          "STAFF_ROLE"
+          "STAFF_GROUP"#,
+          #"STAFF_ROLE"
         )
       )
     )
@@ -846,12 +846,15 @@ annual_gp_workforce_per_population <- annual_gp_workforce |>
     metric = paste0(
       "Primary care workforce (FTEs) per 10,000 population (",
       STAFF_GROUP,
-      " - ", 
-      STAFF_ROLE,
+      # " - ", 
+      # STAFF_ROLE,
       ")"),
     frequency = "annual calendar"
   ) |> 
-  select(!c("STAFF_GROUP", "STAFF_ROLE"))
+  select(!c(
+    "STAFF_GROUP"#, 
+    # "STAFF_ROLE"
+    ))
 
 annual_gp_workforce_per_population |> 
   write.csv(
