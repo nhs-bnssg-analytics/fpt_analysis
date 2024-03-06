@@ -68,13 +68,13 @@ Where an organisation does not have a published catchment population, the two ge
 
 **Denominator:** Practice list size for patients aged 15 yrs and over.
 
-### Proportion of population by age band {#populations}
+### Proportion of resident population by age band {#populations}
 
 **Source:** [ONS Lower layer Super Output Area (LSOA) population estimates](https://www.ons.gov.uk/peoplepopulationandcommunity/populationandmigration/populationestimates/datasets/lowersuperoutputareamidyearpopulationestimates) for 2011 to 2020.
 
 **Source:** [ONS local authority population estimates](https://www.ons.gov.uk/peoplepopulationandcommunity/populationandmigration/populationestimates/datasets/estimatesofthepopulationforenglandandwales) for 2021 and 2022.
 
-\[DN - considering to update these to GP registered population because the time series is more current\]
+[DN - considering to update these to GP registered population because the time series is more current]
 
 **Calculation description:** For 2011 to 2020, the population mid-year estimates (based on the 2011 census) for LSOAs are summed to Integrated Care System (2022) using a lookup stored on the [ONS Geography Portal](https://www.arcgis.com/sharing/rest/content/items/1ac8547e9a8945478f0b5ea7ffe1a6b1/data).
 
@@ -84,15 +84,15 @@ For 2021 and 2022, the Local Authority District (LAD) populations are used for e
 
 **Denominator:** Total population.
 
-### Proportion of population within each deprivation quintile
+### Proportion of resident population within each deprivation quintile
 
 **Source:** [ONS Indices of Deprivation 2019 by LSOA](https://assets.publishing.service.gov.uk/media/5d8b3b51ed915d036a455aa6/File_5_-_IoD2019_Scores.xlsx)
 
 **Calculation description:** LSOAs are attributed to deprivation quintile based on the Index of Multiple Deprivation (IMD) Score. Populations are assigned to each LSOA using the method described in the [Populations by age band](#populations) section. Numerators and denominators are subsequently calculated from here using the [LSOA to ICS lookup](https://www.arcgis.com/sharing/rest/content/items/1ac8547e9a8945478f0b5ea7ffe1a6b1/data).
 
-**Numerator:** Total population within each deprivation quintile.
+**Numerator:** Total resident population within each deprivation quintile.
 
-**Denominator:** Total population.
+**Denominator:** Total resident population.
 
 ## Capacity data
 
@@ -216,7 +216,7 @@ Metrics are calculated for day and overnight beds separately.
 
 **Denominator:** Long Term Support during the year by Local Authority applied to ICSs.
 
-### Mental Health spending
+### Mental Health spending per 10,000 population
 
 **Numerator:** The numerators obtained from this source are:
 
@@ -236,7 +236,7 @@ Metrics are calculated for day and overnight beds separately.
 
 This denominator is used for all of the metrics described above except "mental health spend as a proportion of overall allocation", as this data are provided as a proportion already so it does not require a denominator.
 
-### Primary care workforce
+### Primary care workforce per 10,000 population
 
 **Numerator:** Total annual FTEs at the end of June (or the average of the two months nearest June if data for June are not published) for the following staff groups:
 

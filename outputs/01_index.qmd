@@ -9,7 +9,7 @@ Understanding system demand and capacity is essential for operational and strate
 
 ## Project scope
 
-This project aims to understand demand and capacity in a novel way. Using temporal data on demand (e.g., population in older age groups) and capacity (e.g., social care funding) for each ICS geography as model inputs, this project aims to predict performance metrics (e.g., No Criteria to Reside remaining in hospital) using modern spatio-temporal modelling techniques. The project uses publicly available data to generate predictions for each ICS. It also identifies which input metrics have the biggest influence on the performance metric being predicted.
+This project aims to understand demand and capacity in a novel way. Using temporal data on demand (e.g., population in older age groups) and capacity (e.g., workforce metrics) for each ICS geography as model inputs, this project aims to predict performance metrics (e.g., General Practice wait times above 4 weeks) using modern spatio-temporal modelling techniques. The project uses publicly available data to generate predictions for each ICS. It also identifies which input metrics have the biggest influence on the performance metric being predicted.
 
 ## Questions this work can support
 
