@@ -8,3 +8,5 @@
 data-raw/
 /.quarto/
 *.pdf
+
+/ad_hoc/

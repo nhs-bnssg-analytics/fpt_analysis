@@ -50,30 +50,43 @@ dc_data <- list.files(
 
 ### Data description
 
-The metrics collated for the project are described in the table below:
+The metrics collated for the project are described in the tabs below:
 
 ```{r}
 #| label: indicator-metadata
+#| results: 'asis'
 
 meta_table <- read.csv(here::here("data/configuration-table.csv"),
                        encoding = "latin1") |> 
   filter(
-    !(status %in% c("remove", "incorrect geography"))
+    status == "include" |
+      domain == "Performance"
   ) |> 
   select("domain", "metric") |> 
   arrange(domain, metric)
   
-demand_rows <- grep("Demand", meta_table$domain)
-capacity_rows <- grep("Capacity", meta_table$domain)
-performance_rows <- grep("Performance", meta_table$domain)
+cat("::: {.panel-tabset}\n\n")
 
-meta_table |> 
-  kbl() |> 
-  row_spec(demand_rows, color = "white", background = "#AC2572") |> 
-  row_spec(capacity_rows, color = "white", background = "#681C66") |> 
-  row_spec(performance_rows, color = "white", background = "#BD518F") |> 
-  row_spec(0, color = "black") |> 
-  scroll_box(height = "300px")
+for (dom in (sort(unique(meta_table$domain)))) {
+  cat(paste("##",
+          dom,
+          "\n\n"))
+  
+  tb <- meta_table |> 
+    filter(
+      domain == dom
+    ) |> 
+    knitr::kable(
+      format = "markdown",
+      col.names = c("Domain", "Metric")
+    )
+  
+  print(tb)
+  
+  cat("\n\n")
+}
+
+cat(":::")
 ```
 
 The frequencies these metrics have been collected at are displayed below:
@@ -171,9 +184,7 @@ all_data |>
   )
 ```
 
-### Sense check data
 
-The following plots help to understand the data distribution over the years to sense check each year is consistent with previous years.
 
 ```{r}
 #| label: box-plots
@@ -181,6 +192,7 @@ The following plots help to understand the data distribution over the years to s
 #| results: 'asis'
 #| fig-width: 12
 #| fig-height: 20
+#| include: false
 
 sense_check <- all_data |> 
   filter(
@@ -190,7 +202,7 @@ sense_check <- all_data |>
 boxplot_domains <- function(data) {
   p <- data |> 
     mutate(
-      metric = stringr::str_wrap(metric, 30)
+      metric = stringr::str_wrap(metric, 20)
     ) |>
     ggplot(
       aes(

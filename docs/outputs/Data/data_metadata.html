@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.3.450">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Spatio-temporal demand and capacity relationships with performance - Modelling inputs</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<link href="../../outputs/Modelling/modelling_preparation.html" rel="next">
+<link href="../../outputs/Data/data_description.html" rel="prev">
+<script src="../../site_libs/quarto-html/quarto.js"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 20,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+<link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="nav-sidebar docked nav-fixed">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg navbar-dark ">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">Spatio-temporal demand and capacity relationships with performance</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/nhs-bnssg-analytics/d_and_c" rel="" target=""><i class="bi bi-github" role="img" aria-label="GitHub">
+</i> 
+ <span class="menu-text"></span></a>
+  </li>  
+</ul>
+            <div class="quarto-navbar-tools">
+</div>
+          </div> <!-- /navcollapse -->
+      </div> <!-- /container-fluid -->
+    </nav>
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+      <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../outputs/Data/data_challenges.html">Data</a></li><li class="breadcrumb-item"><a href="../../outputs/Data/data_metadata.html">Modelling inputs</a></li></ol></nav>
+      <a class="flex-grow-1" role="button" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+      </a>
+      <button type="button" class="btn quarto-search-button" aria-label="" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal sidebar-navigation docked overflow-auto">
+    <div class="pt-lg-2 mt-2 text-left sidebar-header">
+      <a href="../../index.html" class="sidebar-logo-link">
+      <img src="../../outputs/logo.png" alt="" class="sidebar-logo py-0 d-lg-inline d-none">
+      </a>
+      </div>
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../outputs/01_index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Scope</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../outputs/introduction_introduction_and_aims.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Introduction</span></a>
+  </div>
+</li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" aria-expanded="true">
+ <span class="menu-text">Data</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-1" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../outputs/Data/data_challenges.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Challenges</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../outputs/Data/data_description.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Description</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../outputs/Data/data_metadata.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">Modelling inputs</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" aria-expanded="true">
+ <span class="menu-text">Modelling</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-2" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../outputs/Modelling/modelling_preparation.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Data preparation for modelling</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+        <li class="sidebar-item sidebar-item-section">
+      <div class="sidebar-item-container"> 
+            <a class="sidebar-item-text sidebar-link text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" aria-expanded="true">
+ <span class="menu-text">Results</span></a>
+          <a class="sidebar-item-toggle text-start" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar-section-3" aria-expanded="true" aria-label="Toggle section">
+            <i class="bi bi-chevron-right ms-2"></i>
+          </a> 
+      </div>
+      <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth1 show">  
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../outputs/Results/random_forest.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Random Forest</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../outputs/Results/logistic_regression.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Logistic regression</span></a>
+  </div>
+</li>
+      </ul>
+  </li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#geographical-estimation-methods" id="toc-geographical-estimation-methods" class="nav-link active" data-scroll-target="#geographical-estimation-methods">Geographical estimation methods</a>
+  <ul class="collapse">
+  <li><a href="#catchment-weighting" id="toc-catchment-weighting" class="nav-link" data-scroll-target="#catchment-weighting">Trust to ICS estimations</a></li>
+  </ul></li>
+  <li><a href="#demand-data" id="toc-demand-data" class="nav-link" data-scroll-target="#demand-data">Demand data</a>
+  <ul class="collapse">
+  <li><a href="#percentage-of-active-smokers" id="toc-percentage-of-active-smokers" class="nav-link" data-scroll-target="#percentage-of-active-smokers">Percentage of active smokers</a></li>
+  <li><a href="#percentage-of-former-smokers" id="toc-percentage-of-former-smokers" class="nav-link" data-scroll-target="#percentage-of-former-smokers">Percentage of former smokers</a></li>
+  <li><a href="#atrial-fibrillation-qof-prevalence" id="toc-atrial-fibrillation-qof-prevalence" class="nav-link" data-scroll-target="#atrial-fibrillation-qof-prevalence">Atrial fibrillation: QOF prevalence</a></li>
+  <li><a href="#depression-qof-prevalence-18-yrs" id="toc-depression-qof-prevalence-18-yrs" class="nav-link" data-scroll-target="#depression-qof-prevalence-18-yrs">Depression: QOF prevalence (18+ yrs)</a></li>
+  <li><a href="#obesity-qof-prevalence-18-yrs" id="toc-obesity-qof-prevalence-18-yrs" class="nav-link" data-scroll-target="#obesity-qof-prevalence-18-yrs">Obesity: QOF prevalence (18+ yrs)</a></li>
+  <li><a href="#smoking-qof-prevalence-15-yrs" id="toc-smoking-qof-prevalence-15-yrs" class="nav-link" data-scroll-target="#smoking-qof-prevalence-15-yrs">Smoking: QOF prevalence (15+ yrs)</a></li>
+  <li><a href="#populations" id="toc-populations" class="nav-link" data-scroll-target="#populations">Proportion of population by age band</a></li>
+  <li><a href="#proportion-of-population-within-each-deprivation-quintile" id="toc-proportion-of-population-within-each-deprivation-quintile" class="nav-link" data-scroll-target="#proportion-of-population-within-each-deprivation-quintile">Proportion of population within each deprivation quintile</a></li>
+  </ul></li>
+  <li><a href="#capacity-data" id="toc-capacity-data" class="nav-link" data-scroll-target="#capacity-data">Capacity data</a>
+  <ul class="collapse">
+  <li><a href="#workforce-full-time-equivalents-per-10000-population" id="toc-workforce-full-time-equivalents-per-10000-population" class="nav-link" data-scroll-target="#workforce-full-time-equivalents-per-10000-population">Workforce Full Time Equivalents per 10,000 population</a></li>
+  <li><a href="#full-time-equivalent-days-sick-per-10000-population" id="toc-full-time-equivalent-days-sick-per-10000-population" class="nav-link" data-scroll-target="#full-time-equivalent-days-sick-per-10000-population">Full Time Equivalent days sick per 10,000 population</a></li>
+  <li><a href="#full-time-equivalent-days-available-per-10000-population" id="toc-full-time-equivalent-days-available-per-10000-population" class="nav-link" data-scroll-target="#full-time-equivalent-days-available-per-10000-population">Full Time Equivalent days available per 10,000 population</a></li>
+  <li><a href="#number-of-clinical-workforce-fte-in-general-practice-per-10000-registered-patients" id="toc-number-of-clinical-workforce-fte-in-general-practice-per-10000-registered-patients" class="nav-link" data-scroll-target="#number-of-clinical-workforce-fte-in-general-practice-per-10000-registered-patients">Number of clinical workforce (FTE) in general practice per 10,000 registered patients</a></li>
+  <li><a href="#proportion-of-beds-available" id="toc-proportion-of-beds-available" class="nav-link" data-scroll-target="#proportion-of-beds-available">Proportion of beds available</a></li>
+  <li><a href="#total-beds-per-1000-population-60-years" id="toc-total-beds-per-1000-population-60-years" class="nav-link" data-scroll-target="#total-beds-per-1000-population-60-years">Total beds per 1,000 population (60+ years)</a></li>
+  <li><a href="#gross-total-expenditure-per-individual-with-long-term-support-during-the-year" id="toc-gross-total-expenditure-per-individual-with-long-term-support-during-the-year" class="nav-link" data-scroll-target="#gross-total-expenditure-per-individual-with-long-term-support-during-the-year">Gross Total Expenditure per individual with long term support during the year</a></li>
+  <li><a href="#mental-health-spending" id="toc-mental-health-spending" class="nav-link" data-scroll-target="#mental-health-spending">Mental Health spending</a></li>
+  <li><a href="#primary-care-workforce" id="toc-primary-care-workforce" class="nav-link" data-scroll-target="#primary-care-workforce">Primary care workforce</a></li>
+  <li><a href="#pandemic-onwards" id="toc-pandemic-onwards" class="nav-link" data-scroll-target="#pandemic-onwards">Pandemic onwards</a></li>
+  </ul></li>
+  <li><a href="#discontinued-covid-capacity-metrics" id="toc-discontinued-covid-capacity-metrics" class="nav-link" data-scroll-target="#discontinued-covid-capacity-metrics">Discontinued COVID capacity metrics</a>
+  <ul class="collapse">
+  <li><a href="#proportion-of-beds-that-contain-a-patient-with-confirmed-covid" id="toc-proportion-of-beds-that-contain-a-patient-with-confirmed-covid" class="nav-link" data-scroll-target="#proportion-of-beds-that-contain-a-patient-with-confirmed-covid">Proportion of beds that contain a patient with confirmed COVID</a></li>
+  <li><a href="#proportion-of-admissions-with-a-covid-diagnosis-in-the-last-24-hours" id="toc-proportion-of-admissions-with-a-covid-diagnosis-in-the-last-24-hours" class="nav-link" data-scroll-target="#proportion-of-admissions-with-a-covid-diagnosis-in-the-last-24-hours">Proportion of admissions with a COVID diagnosis in the last 24 hours</a></li>
+  <li><a href="#proportion-of-head-count-absent-in-a-provider-setting-due-to-covid" id="toc-proportion-of-head-count-absent-in-a-provider-setting-due-to-covid" class="nav-link" data-scroll-target="#proportion-of-head-count-absent-in-a-provider-setting-due-to-covid">Proportion of head count absent in a provider setting due to COVID</a></li>
+  </ul></li>
+  <li><a href="#performance" id="toc-performance" class="nav-link" data-scroll-target="#performance">Performance</a>
+  <ul class="collapse">
+  <li><a href="#day-wait-for-first-treatment-for-cancer" id="toc-day-wait-for-first-treatment-for-cancer" class="nav-link" data-scroll-target="#day-wait-for-first-treatment-for-cancer">62 Day Wait for First Treatment for Cancer</a></li>
+  <li><a href="#average-daily-proportion-of-patients-who-no-longer-meet-the-criteria-to-reside-that-remain-in-hospital" id="toc-average-daily-proportion-of-patients-who-no-longer-meet-the-criteria-to-reside-that-remain-in-hospital" class="nav-link" data-scroll-target="#average-daily-proportion-of-patients-who-no-longer-meet-the-criteria-to-reside-that-remain-in-hospital">Average daily proportion of patients who no longer meet the criteria to reside that remain in hospital</a></li>
+  <li><a href="#proportion-of-ae-attendances-that-are-greater-than-4-hours" id="toc-proportion-of-ae-attendances-that-are-greater-than-4-hours" class="nav-link" data-scroll-target="#proportion-of-ae-attendances-that-are-greater-than-4-hours">Proportion of A&amp;E attendances that are greater than 4 hours</a></li>
+  <li><a href="#proportion-of-attended-gp-appointments-within-specified-timescale" id="toc-proportion-of-attended-gp-appointments-within-specified-timescale" class="nav-link" data-scroll-target="#proportion-of-attended-gp-appointments-within-specified-timescale">Proportion of attended GP appointments within specified timescale</a></li>
+  <li><a href="#proportion-of-incomplete-referral-to-treatment-pathways-greater-than-18-weeks-from-referral" id="toc-proportion-of-incomplete-referral-to-treatment-pathways-greater-than-18-weeks-from-referral" class="nav-link" data-scroll-target="#proportion-of-incomplete-referral-to-treatment-pathways-greater-than-18-weeks-from-referral">Proportion of Incomplete Referral to Treatment Pathways greater than 18 weeks from Referral</a></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Modelling inputs</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+</header>
+
+<section id="geographical-estimation-methods" class="level2">
+<h2 class="anchored" data-anchor-id="geographical-estimation-methods">Geographical estimation methods</h2>
+<section id="catchment-weighting" class="level3">
+<h3 class="anchored" data-anchor-id="catchment-weighting">Trust to ICS estimations</h3>
+<p>Many of the publicly available statistics are published for the Trust.</p>
+<p>A population weighting method is applied to these statistics based on the published <a href="https://app.box.com/s/qh8gzpzeo1firv1ezfxx2e6c4tgtrudl">Acute Trust Catchment Populations</a> from the Office for Health Improvement and Disparities. These data provide an understanding of the proportion of patients that are admitted to each acute trust (by year) from each Middle layer Super Output Area (MSOA) for all types of admissions.</p>
+<p>Where an organisation in this dataset has a catchment population published, its values are distributed among the MSOAs in the proportions described by the Trust’s catchment populations.</p>
+<p>Where an organisation does not have a published catchment population, the two geographically nearest Trusts that do have published catchment populations within each year are identified. The catchments from these trusts are then applied to the unknown organisation’s value using a distance weighting (for example, if one trust is twice as near as the other trust, its catchment is weighted twice as strongly compared with the other trust when calculating the catchment for the unknown organisation).</p>
+</section>
+</section>
+<section id="demand-data" class="level2">
+<h2 class="anchored" data-anchor-id="demand-data">Demand data</h2>
+<section id="percentage-of-active-smokers" class="level3">
+<h3 class="anchored" data-anchor-id="percentage-of-active-smokers">Percentage of active smokers</h3>
+<p><strong>Source:</strong> <a href="https://fingertips.phe.org.uk/search/gpps#page/4/gid/1/pat/223/ati/221/are/nE54000039/iid/90452/age/164/sex/4/cat/-1/ctp/-1/yrr/1/cid/4/tbm/1">Fingertips</a></p>
+<p><strong>Numerator:</strong> Self-reported active smokers in the GP Patient Survey (GPPS).</p>
+<p><strong>Denominator:</strong> Total number of GPPS respondents.</p>
+</section>
+<section id="percentage-of-former-smokers" class="level3">
+<h3 class="anchored" data-anchor-id="percentage-of-former-smokers">Percentage of former smokers</h3>
+<p><strong>Source:</strong> <a href="https://fingertips.phe.org.uk/search/gpps#page/4/gid/3000010/pat/223/par/E40000006/ati/221/are/nE54000039/iid/90453/age/164/sex/4/cat/-1/ctp/-1/yrr/1/cid/4/tbm/1">Fingertips</a></p>
+<p><strong>Numerator:</strong> Self-reported former smokers in the GP Patient Survey (GPPS).</p>
+<p><strong>Denominator:</strong> Total number of GPPS respondents.</p>
+</section>
+<section id="atrial-fibrillation-qof-prevalence" class="level3">
+<h3 class="anchored" data-anchor-id="atrial-fibrillation-qof-prevalence">Atrial fibrillation: QOF prevalence</h3>
+<p><strong>Source:</strong> <a href="https://fingertips.phe.org.uk/search/qof#page/4/gid/1/pat/159/par/K02000001/ati/15/are/E92000001/iid/280/age/1/sex/4/cat/-1/ctp/-1/yrr/1/cid/4/tbm/1">Fingertips</a></p>
+<p><strong>Numerator:</strong> Patients with atrial fibrillation, as recorded on practice disease registers (Quality and Outcomes Framework).</p>
+<p><strong>Denominator:</strong> Total practice list size.</p>
+</section>
+<section id="depression-qof-prevalence-18-yrs" class="level3">
+<h3 class="anchored" data-anchor-id="depression-qof-prevalence-18-yrs">Depression: QOF prevalence (18+ yrs)</h3>
+<p><strong>Source:</strong> <a href="https://fingertips.phe.org.uk/search/qof#page/4/gid/1/pat/159/par/K02000001/ati/15/are/E92000001/iid/848/age/168/sex/4/cat/-1/ctp/-1/yrr/1/cid/4/tbm/1">Fingertips</a></p>
+<p><strong>Numerator:</strong> All patients aged 18 or over, diagnosed on or after 1 April 2006, who have an unresolved record of depression in their patient record.</p>
+<p><strong>Denominator:</strong> Total number of patients aged 18 or over registered with the practice.</p>
+</section>
+<section id="obesity-qof-prevalence-18-yrs" class="level3">
+<h3 class="anchored" data-anchor-id="obesity-qof-prevalence-18-yrs">Obesity: QOF prevalence (18+ yrs)</h3>
+<p><strong>Source:</strong> <a href="https://fingertips.phe.org.uk/search/qof#page/4/gid/1/pat/159/par/K02000001/ati/15/are/E92000001/iid/92588/age/168/sex/4/cat/-1/ctp/-1/yrr/1/cid/4/tbm/1">Fingertips</a></p>
+<p><strong>Numerator:</strong> Patients aged 18 and over with a BMI of 30 or above.</p>
+<p><strong>Denominator:</strong> Total number of patients aged 18 or over registered with the practice.</p>
+</section>
+<section id="smoking-qof-prevalence-15-yrs" class="level3">
+<h3 class="anchored" data-anchor-id="smoking-qof-prevalence-15-yrs">Smoking: QOF prevalence (15+ yrs)</h3>
+<p><strong>Source:</strong> <a href="https://fingertips.phe.org.uk/search/qof#page/4/gid/1/pat/159/par/K02000001/ati/15/are/E92000001/iid/91280/age/188/sex/4/cat/-1/ctp/-1/yrr/1/cid/4/tbm/1">Fingertips</a></p>
+<p><strong>Numerator:</strong> The number of patients aged 15+ yrs who are recorded as current smokers.</p>
+<p><strong>Denominator:</strong> Practice list size for patients aged 15 yrs and over.</p>
+</section>
+<section id="populations" class="level3">
+<h3 class="anchored" data-anchor-id="populations">Proportion of population by age band</h3>
+<p><strong>Source:</strong> <a href="https://www.ons.gov.uk/peoplepopulationandcommunity/populationandmigration/populationestimates/datasets/lowersuperoutputareamidyearpopulationestimates">ONS Lower layer Super Output Area (LSOA) population estimates</a> for 2011 to 2020.</p>
+<p><strong>Source:</strong> <a href="https://www.ons.gov.uk/peoplepopulationandcommunity/populationandmigration/populationestimates/datasets/estimatesofthepopulationforenglandandwales">ONS local authority population estimates</a> for 2021 and 2022.</p>
+<p>[DN - considering to update these to GP registered population because the time series is more current]</p>
+<p><strong>Calculation description:</strong> For 2011 to 2020, the population mid-year estimates (based on the 2011 census) for LSOAs are summed to Integrated Care System (2022) using a lookup stored on the <a href="https://www.arcgis.com/sharing/rest/content/items/1ac8547e9a8945478f0b5ea7ffe1a6b1/data">ONS Geography Portal</a>.</p>
+<p>For 2021 and 2022, the Local Authority District (LAD) populations are used for each of the two years. For each age band within each LAD, the proportion of the population within each LSOA is calculated using the 2020 mid-year estimates, and these proportions are applied to the 2021 and 2022 LAD populations. The populations are then summed to ICS geographies using the lookup above.</p>
+<p><strong>Numerator:</strong> Sum of population into 10 year age bands (0-9 years up to 90+ years) or into 3 broader age bands (0-29 years, 30-59 years, and 60+ years).</p>
+<p><strong>Denominator:</strong> Total population.</p>
+</section>
+<section id="proportion-of-population-within-each-deprivation-quintile" class="level3">
+<h3 class="anchored" data-anchor-id="proportion-of-population-within-each-deprivation-quintile">Proportion of population within each deprivation quintile</h3>
+<p><strong>Source:</strong> <a href="https://assets.publishing.service.gov.uk/media/5d8b3b51ed915d036a455aa6/File_5_-_IoD2019_Scores.xlsx">ONS Indices of Deprivation 2019 by LSOA</a></p>
+<p><strong>Calculation description:</strong> LSOAs are attributed to deprivation quintile based on the Index of Multiple Deprivation (IMD) Score. Populations are assigned to each LSOA using the method described in the <a href="#populations">Populations by age band</a> section. Numerators and denominators are subsequently calculated from here using the <a href="https://www.arcgis.com/sharing/rest/content/items/1ac8547e9a8945478f0b5ea7ffe1a6b1/data">LSOA to ICS lookup</a>.</p>
+<p><strong>Numerator:</strong> Total population within each deprivation quintile.</p>
+<p><strong>Denominator:</strong> Total population.</p>
+</section>
+</section>
+<section id="capacity-data" class="level2">
+<h2 class="anchored" data-anchor-id="capacity-data">Capacity data</h2>
+<section id="workforce-full-time-equivalents-per-10000-population" class="level3">
+<h3 class="anchored" data-anchor-id="workforce-full-time-equivalents-per-10000-population">Workforce Full Time Equivalents per 10,000 population</h3>
+<p>These metrics are only calculated for an acute setting. They care calculated for the following Staff Groups:</p>
+<ul>
+<li>Associate Specialist</li>
+<li>Central functions</li>
+<li>Consultant</li>
+<li>Core Training</li>
+<li>Foundation Doctor Year 1</li>
+<li>Foundation Doctor Year 2</li>
+<li>HCHS Doctors</li>
+<li>Hospital Practitioner/Clinical Assistant</li>
+<li>Hotel, property &amp; estates</li>
+<li>Managers</li>
+<li>Midwives</li>
+<li>NHS infrastructure support</li>
+<li>Nurses &amp; health visitors</li>
+<li>Other and Local HCHS Doctor grades</li>
+<li>Other staff or those with unknown classification</li>
+<li>Professionally qualified clinical staff</li>
+<li>Scientific, therapeutic &amp; technical staff</li>
+<li>Senior managers</li>
+<li>Specialty Doctor</li>
+<li>Specialty Registrar</li>
+<li>Staff Grade</li>
+<li>Support to ambulance staff</li>
+<li>Support to clinical staff</li>
+<li>Support to doctors, nurses &amp; midwives</li>
+<li>Support to ST&amp;T staff</li>
+</ul>
+<p><strong>Numerator:</strong> Estimated FTEs for each ICS in the month nearest July each year.</p>
+<p><strong>Numerator source:</strong> <a href="https://digital.nhs.uk/data-and-information/publications/statistical/nhs-workforce-statistics">NHS Worforce Statistics</a>.</p>
+<p><strong>Calculation details:</strong> The latest month’s file csv files are downloaded, and the csv file with the Staff Group and Organisation information is used. From this file, the FTEs are used for the calculation. Only the “Acute” Cluster Group is used, along with each Staff Grade except Total. Other Cluster Groups are removed because the data quality are less reliable (for example, Ambulance Cluster Group attribute all FTEs to where the regional headquarters of the Ambulatory Service is located - this appears to be the case for Mental Health and Community Services Cluster Group too).</p>
+<p>Each organisations FTE value is applied to an ICS using the trust to ICS estimation method described <a href="#catchment-weighting">above</a>.</p>
+<p><strong>Denominator:</strong> Total registered population within General Practices at July each year.</p>
+<p><strong>Denominator source:</strong> <a href="https://digital.nhs.uk/data-and-information/publications/statistical/patients-registered-at-a-gp-practice">NHS Patients registered at a GP Practice</a></p>
+</section>
+<section id="full-time-equivalent-days-sick-per-10000-population" class="level3">
+<h3 class="anchored" data-anchor-id="full-time-equivalent-days-sick-per-10000-population">Full Time Equivalent days sick per 10,000 population</h3>
+<p>These indicators are calculated for acute and mental health settings.</p>
+<p><strong>Numerator:</strong> Full-time equivalent sick days.</p>
+<p><strong>Numerator source:</strong> <a href="https://files.digital.nhs.uk/A6/67E0C1/ESR_ABSENCE_CSV_NHSE.csv">NHS ESR Sickness Absensce</a> for April 2009 to March 2022.</p>
+<p><strong>Numerator source:</strong> For April 2022 onwards, the monthly text files in the <a href="https://digital.nhs.uk/data-and-information/publications/statistical/nhs-sickness-absence-rates">NHS Sickness absence rates</a> publication are used.</p>
+<p><strong>Calculation details:</strong> The catchment-weighting process described <a href="#catchment-weighting">above</a> is applied to organisations classified as one of the following by the Organisation Data Service:</p>
+<ul>
+<li>Care trusts</li>
+<li>Independent providers</li>
+<li>Independent Sector Healthcare providers</li>
+<li>NHS Trust</li>
+</ul>
+<p>The proportions described are applied to each month and summed to each quarter to provide a quarterly value. Each quarter is then averaged to calculate an annual value.</p>
+<p><strong>Denominator:</strong> Total registered population within General Practices for each quarter in a year, which is averaged to calculate an annual value.</p>
+</section>
+<section id="full-time-equivalent-days-available-per-10000-population" class="level3">
+<h3 class="anchored" data-anchor-id="full-time-equivalent-days-available-per-10000-population">Full Time Equivalent days available per 10,000 population</h3>
+<p><strong>Numerator:</strong> See <a href="#sickness-absence-numerator">Sickness Absence numerator details</a> for information on the numerator for available days.</p>
+<p><strong>Denominator:</strong> See <a href="#sickness-absence-denominator">Sickness Absence denominator details</a> for information on the denominator for available days.</p>
+</section>
+<section id="number-of-clinical-workforce-fte-in-general-practice-per-10000-registered-patients" class="level3">
+<h3 class="anchored" data-anchor-id="number-of-clinical-workforce-fte-in-general-practice-per-10000-registered-patients">Number of clinical workforce (FTE) in general practice per 10,000 registered patients</h3>
+<p><strong>Source:</strong> <a href="https://fingertips.phe.org.uk/search/clinical%20workforce#page/4/gid/1/pat/159/par/K02000001/ati/15/are/E92000001/iid/93966/age/-1/sex/-1/cat/-1/ctp/-1/yrr/1/cid/4/tbm/1">Fingertips</a></p>
+<p><strong>Numerator:</strong> Total direct patient care staff (FTE) at PCN-level, plus GPs and nurses (FTE) from the practices within the PCN.</p>
+<p><strong>Denominator:</strong> Total patients from the practice-level General Practice Workforce dataset, updated monthly. This counts all patients registered at the practice on the count date (last day of the month).</p>
+</section>
+<section id="proportion-of-beds-available" class="level3">
+<h3 class="anchored" data-anchor-id="proportion-of-beds-available">Proportion of beds available</h3>
+<p><strong>Source:</strong> <a href="https://www.england.nhs.uk/statistics/statistical-work-areas/bed-availability-and-occupancy/">NHS Bed Availability and Occupancy Statistics</a></p>
+<p>Metrics calculated for the following bed types:</p>
+<ul>
+<li>General and Acute</li>
+<li>Learning Disabilities</li>
+<li>Maternity</li>
+<li>Mental Illness</li>
+</ul>
+<p>Metrics are calculated for day and overnight beds separately.</p>
+<p><strong>Calculation details:</strong> The catchment-weighting process described <a href="#catchment-weighting">above</a> is applied to the data published at Trust level to estimate more representative ICS values for these metrics.</p>
+<p><strong>Numerator:</strong> Number of beds occupied.</p>
+<p><strong>Denominator:</strong> Number of beds available.</p>
+</section>
+<section id="total-beds-per-1000-population-60-years" class="level3">
+<h3 class="anchored" data-anchor-id="total-beds-per-1000-population-60-years">Total beds per 1,000 population (60+ years)</h3>
+<p><strong>Calculation details:</strong> The catchment-weighting process described <a href="#catchment-weighting">above</a> is applied to the data published at Trust level to estimate more representative ICS values for these metrics.</p>
+<p><strong>Numerator:</strong> Count of available day and night beds combined.</p>
+<p><strong>Numerator source:</strong> <a href="https://www.england.nhs.uk/statistics/statistical-work-areas/bed-availability-and-occupancy/">NHS Bed Availability and Occupancy Statistics</a></p>
+<p><strong>Denominator:</strong> Estimated resident population of the ICS that are 60 years old and over.</p>
+<p><strong>Denominator source:</strong> <a href="https://www.ons.gov.uk/peoplepopulationandcommunity/populationandmigration/populationestimates/datasets/lowersuperoutputareamidyearpopulationestimates">ONS Lower layer Super Output Area (LSOA) population estimates</a> for 2011 to 2020.</p>
+<p><strong>Denominator source:</strong> <a href="https://www.ons.gov.uk/peoplepopulationandcommunity/populationandmigration/populationestimates/datasets/estimatesofthepopulationforenglandandwales">ONS local authority population estimates</a> for 2021 and 2022.</p>
+</section>
+<section id="gross-total-expenditure-per-individual-with-long-term-support-during-the-year" class="level3">
+<h3 class="anchored" data-anchor-id="gross-total-expenditure-per-individual-with-long-term-support-during-the-year">Gross Total Expenditure per individual with long term support during the year</h3>
+<p><strong>Source:</strong> <a href="https://digital.nhs.uk/data-and-information/publications/statistical/adult-social-care-activity-and-finance-report">NHS Adulst Social Care Activity and Finance Report</a></p>
+<p><strong>Calculation details:</strong> Data are published at District Local Authority level. The figures are transformed by calculating a population-weighted LSOA value, and then aggregating up to ICSs geography.</p>
+<p><strong>Numerator:</strong> Gross Total Expenditure by Local Authority applied to ICSs.</p>
+<p><strong>Denominator:</strong> Long Term Support during the year by Local Authority applied to ICSs.</p>
+</section>
+<section id="mental-health-spending" class="level3">
+<h3 class="anchored" data-anchor-id="mental-health-spending">Mental Health spending</h3>
+<p><strong>Numerator:</strong> The numerators obtained from this source are:</p>
+<ul>
+<li>Children and Young People Mental Health spend - excluding learning disabilities and eating disorders</li>
+<li>Children and Young People Mental Health spend - eating disorders (£k)</li>
+<li>Improving Access to Psychological Therapies spend (£k)</li>
+<li>Early Intervention in Psychosis spend (£k)</li>
+<li>Adult community crisis care spend (£k)</li>
+<li>Out of Area Placements - Reported Spend (£k)</li>
+<li>A and E and Ward Liaison mental health services spend (£k)</li>
+<li>Mental health spend as a proportion of overall allocation</li>
+<li>Mental Health total spend (£k)</li>
+</ul>
+<p><strong>Numerator source:</strong> <a href="https://www.england.nhs.uk/publication/nhs-mental-health-dashboard/">NHS mental health dashboard</a></p>
+<p><strong>Denominator:</strong> Quarterly registered population within General Practices averaged to calculate an annual figure. This figure is multiplied by 10,000 for ease of understanding the calculated metric.</p>
+<p>This denominator is used for all of the metrics described above except “mental health spend as a proportion of overall allocation”, as this data are provided as a proportion already so it does not require a denominator.</p>
+</section>
+<section id="primary-care-workforce" class="level3">
+<h3 class="anchored" data-anchor-id="primary-care-workforce">Primary care workforce</h3>
+<p><strong>Numerator:</strong> Total annual FTEs at the end of June (or the average of the two months nearest June if data for June are not published) for the following staff groups:</p>
+<ul>
+<li>Admin/Non-Clinical</li>
+<li>Direct Patient Care</li>
+<li>GP</li>
+<li>Nurses</li>
+</ul>
+<p><strong>Numerator source:</strong> <a href="https://digital.nhs.uk/data-and-information/publications/statistical/general-and-personal-medical-services">General Practice Workforce</a></p>
+<p><strong>Denominator:</strong> Quarterly registered population within General Practices averaged to calculate an annual figure. This figure is multiplied by 10,000 for ease of understanding the calculated metric.</p>
+</section>
+<section id="pandemic-onwards" class="level3">
+<h3 class="anchored" data-anchor-id="pandemic-onwards">Pandemic onwards</h3>
+<p>A binary variable, providing a 1 for years from 2020, and a 0 for years prior to 2020.</p>
+</section>
+</section>
+<section id="discontinued-covid-capacity-metrics" class="level2">
+<h2 class="anchored" data-anchor-id="discontinued-covid-capacity-metrics">Discontinued COVID capacity metrics</h2>
+<p>[DN - these variables have now been excluded from the models because often they are the most important variables, obscuring the effect of the other variables. They may have some use though?]</p>
+<section id="proportion-of-beds-that-contain-a-patient-with-confirmed-covid" class="level3">
+<h3 class="anchored" data-anchor-id="proportion-of-beds-that-contain-a-patient-with-confirmed-covid">Proportion of beds that contain a patient with confirmed COVID</h3>
+<p><strong>Calculation details:</strong> The same catchment-weighting process as described <a href="#catchment-weighting">above</a> is applied to the data published at Trust level to estimate more representative ICS values for these metrics.</p>
+<p><strong>Numerator:</strong> Average number of beds occupied over the year containing a patient with a confirmed diagnosis of COVID19.</p>
+<p><strong>Numerator source:</strong> <a href="https://www.england.nhs.uk/statistics/statistical-work-areas/covid-19-hospital-activity/">NHS COVID-19 Hospital Activity</a></p>
+<p><strong>Denominator:</strong> Average number of beds occupied over a year.</p>
+<p><strong>Denominator source:</strong> <a href="https://www.england.nhs.uk/statistics/statistical-work-areas/bed-availability-and-occupancy/">NHS Bed Availability and Occupancy Statistics</a></p>
+</section>
+<section id="proportion-of-admissions-with-a-covid-diagnosis-in-the-last-24-hours" class="level3">
+<h3 class="anchored" data-anchor-id="proportion-of-admissions-with-a-covid-diagnosis-in-the-last-24-hours">Proportion of admissions with a COVID diagnosis in the last 24 hours</h3>
+<p><strong>Calculation details:</strong> The same catchment-weighting process as described <a href="#catchment-weighting">above</a> is applied to the data published at Trust level to estimate more representative ICS values for these metrics.</p>
+<p><strong>Numerator:</strong> Average number of admissions over a year with a confirmed diagnosis of COVID19 in the last 24 hours.</p>
+<p><strong>Numerator source:</strong> <a href="https://www.england.nhs.uk/statistics/statistical-work-areas/covid-19-hospital-activity/">NHS COVID-19 Hospital Activity</a></p>
+<p><strong>Denominator:</strong> Total admissions.</p>
+<p><strong>Denominator source:</strong> <a href="https://digital.nhs.uk/data-and-information/publications/statistical/hospital-admitted-patient-care-activity">NHS Admitted Patient Care Activity</a></p>
+</section>
+<section id="proportion-of-head-count-absent-in-a-provider-setting-due-to-covid" class="level3">
+<h3 class="anchored" data-anchor-id="proportion-of-head-count-absent-in-a-provider-setting-due-to-covid">Proportion of head count absent in a provider setting due to COVID</h3>
+<p><strong>Calculation details:</strong> The same catchment-weighting process as described <a href="#catchment-weighting">above</a> is applied to the data published at Trust level to estimate more representative ICS values for these metrics.</p>
+<p><strong>Numerator:</strong> The average number of COVID-19 related absences of staff, either through sickness or self-isolation.</p>
+<p><strong>Numerator source:</strong> <a href="https://www.england.nhs.uk/statistics/statistical-work-areas/covid-19-hospital-activity/">NHS COVID-19 Hospital Activity</a></p>
+<p><strong>Denominator:</strong> The average total head count.</p>
+<p><strong>Denominator source:</strong> <a href="https://digital.nhs.uk/data-and-information/publications/statistical/nhs-workforce-statistics">NHS Worforce Statistics</a>.</p>
+</section>
+</section>
+<section id="performance" class="level2">
+<h2 class="anchored" data-anchor-id="performance">Performance</h2>
+<section id="day-wait-for-first-treatment-for-cancer" class="level3">
+<h3 class="anchored" data-anchor-id="day-wait-for-first-treatment-for-cancer">62 Day Wait for First Treatment for Cancer</h3>
+<p><strong>Source:</strong> <a href="https://www.england.nhs.uk/statistics/statistical-work-areas/cancer-waiting-times/">NHS Cancer Wait Times</a></p>
+<p>This metric considers patients’ First Definitive Treatment for Cancer following an Urgent Suspected Cancer or Breast Symptomatic Referral, or Urgent Screening Referral, or Consultant Upgrade.</p>
+<p><strong>Numerator:</strong> Number of patients treated with the time frame.</p>
+<p><strong>Denominator:</strong> Total number of patients treated.</p>
+</section>
+<section id="average-daily-proportion-of-patients-who-no-longer-meet-the-criteria-to-reside-that-remain-in-hospital" class="level3">
+<h3 class="anchored" data-anchor-id="average-daily-proportion-of-patients-who-no-longer-meet-the-criteria-to-reside-that-remain-in-hospital">Average daily proportion of patients who no longer meet the criteria to reside that remain in hospital</h3>
+<p><strong>Source:</strong> <a href="https://www.england.nhs.uk/statistics/statistical-work-areas/discharge-delays-acute-data/">NHS Discharge Delays Acute data</a></p>
+<p><strong>Calculation details:</strong> The same catchment-weighting process as described <a href="#catchment-weighting">above</a> is applied to the data published at Trust level to estimate more representative ICS values for these metrics.</p>
+<p><strong>Numerator:</strong> Number of patients remaining in hospital who no longer meet the criteria to reside.</p>
+<p><strong>Denominator:</strong> Number of patients who no longer meet the criteria to reside.</p>
+</section>
+<section id="proportion-of-ae-attendances-that-are-greater-than-4-hours" class="level3">
+<h3 class="anchored" data-anchor-id="proportion-of-ae-attendances-that-are-greater-than-4-hours">Proportion of A&amp;E attendances that are greater than 4 hours</h3>
+<p><strong>Source:</strong> <a href="https://www.england.nhs.uk/statistics/statistical-work-areas/ae-waiting-times-and-activity/">NHS A&amp;E Wait Times and Activity</a></p>
+<p>This metric is only collated for Type 1 Departments - Major A&amp;E attendances.</p>
+<p><strong>Calculation details:</strong> The same catchment-weighting process as described <a href="#catchment-weighting">above</a> is applied to the data published at Trust level to estimate more representative ICS values for these metrics.</p>
+<p><strong>Numerator:</strong> A&amp;E attendances greater than 4 hours from arrival to admission, transfer or discharge.</p>
+<p><strong>Denominator:</strong> Total A&amp;E attendances.</p>
+</section>
+<section id="proportion-of-attended-gp-appointments-within-specified-timescale" class="level3">
+<h3 class="anchored" data-anchor-id="proportion-of-attended-gp-appointments-within-specified-timescale">Proportion of attended GP appointments within specified timescale</h3>
+<p><strong>Source:</strong> <a href="https://digital.nhs.uk/data-and-information/publications/statistical/appointments-in-general-practice/">NHS Appointments in General Practice</a></p>
+<p>This metric can be divided into:</p>
+<ul>
+<li>0 to 1 weeks wait time</li>
+<li>1 to 2 weeks wait time</li>
+<li>2 to 3 weeks wait time</li>
+<li>3 to 4 weeks wait time</li>
+<li>Over 4 weeks wait time</li>
+</ul>
+<p><strong>Numerator:</strong> Total appointments within timeframe.</p>
+<p><strong>Denominator:</strong> Total appointments.</p>
+</section>
+<section id="proportion-of-incomplete-referral-to-treatment-pathways-greater-than-18-weeks-from-referral" class="level3">
+<h3 class="anchored" data-anchor-id="proportion-of-incomplete-referral-to-treatment-pathways-greater-than-18-weeks-from-referral">Proportion of Incomplete Referral to Treatment Pathways greater than 18 weeks from Referral</h3>
+<p><strong>Source:</strong> <a href="https://www.england.nhs.uk/statistics/statistical-work-areas/rtt-waiting-times/">NHS Referral to Treatment Waiting Times</a></p>
+<p><strong>Numerator:</strong> Total incomplete pathways that are 18 weeks or greater at the end of the reporting month, aggregated to year.</p>
+<p><strong>Denominator:</strong> Total incomplete pathways at the end of the reporting month, aggregated to year.</p>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+      <a href="../../outputs/Data/data_description.html" class="pagination-link">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">Description</span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+      <a href="../../outputs/Modelling/modelling_preparation.html" class="pagination-link">
+        <span class="nav-page-text">Data preparation for modelling</span> <i class="bi bi-arrow-right-short"></i>
+      </a>
+  </div>
+</nav>
+</div> <!-- /content -->
+
+
+
+</body></html>

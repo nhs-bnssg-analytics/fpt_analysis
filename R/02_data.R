@@ -798,30 +798,26 @@ annual_gp_workforce <- tibble(
     )
   ) |> 
   map(
-    ~ summarise(
-      .x, 
-      numerator = mean(numerator),
-      .by = any_of(
-        c(
-          "YEAR",
-          "ICB_CODE",
-          "STP_CODE",
-          "STAFF_GROUP"#,
-          #"STAFF_ROLE"
-        )
-      )
-    )
-  ) |> 
-  map_df(
     ~ rename(
-      .x, 
+      .x,
       org = any_of(
         c("STP_CODE", "ICB_CODE")
-      )
+      ),
+      year = "YEAR"
     )
   ) |> 
-  rename(
-    year = "YEAR"
+  bind_rows() |> 
+  summarise(
+    numerator = mean(numerator),
+    .by = any_of(
+      c(
+        "year",
+        "org",
+        "STAFF_GROUP"#,
+        #"STAFF_ROLE"
+        
+      )
+    )
   )
 
 health_populations <- quarterly_ics_populations() |> 

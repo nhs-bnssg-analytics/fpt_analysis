@@ -3,81 +3,95 @@ title: "Data preparation for modelling"
 order: 1
 ---
 
-## Introduction
+## Conceptualisation
 
-The aim of the modelling process is to predict "next year's" target variable from information that has occurred in previous years. 
-In the modelling process, the "target variable" is the variable, or performance metric, that the modelling process is attempting to predict. Each performance metric will have a different model that creates the best predictions, but the process to identify the best model will be the same.
-
-The models are all evaluated using the R^2^ metric (coefficient of determination), which is the proportion of the variance of the target variable that is explained by the predictor variable. 
-
-## Data definitons
-
-Each metric (performance, demand and capacity) has been collated with a numerator, a denominator and a calculated value, which is either a proportion or a rate. 
-
-By its nature, a proportion is always between 0 and 1. All other values can only take a positive number. 
-
-For modelling, the data used could be either the "value" (e.g., the calculated proportion or rate) or the numerator. The performance of the modelling process could be dependent on the modelling technique used.
+The aim of the modelling process is to predict a performance metrics at Integrated Care System geography from metrics that describe demand and capacity. 
 
 ## Data structure
 
-For modelling, the data are structured as a record for each Integrated Care System (ICS) for each year.
-The fields will contain the target variable (the metric that the model is trying to predict) alongside lagged values of the predictor variables. The number of years to lag the predictor variables needs to be determined and could potentially be model specific.
+A table of metrics is created from the prepared data. Each row in the table represents a unique combination of Integrated Care System and year. The columns in the table consist of the target variable (the variable that is being predicted), taking a value between 0 and 1, the number of cases for that target variable (see [frequency weights](#frequency-weights)) and the predictor variables (the demand and capacity metrics).
 
-## Splitting dataset
+In order to identify which is the best model for predicting each metric different sizes of input data are tested. Here, we test for different lengths of input data (e.g., testing whether by including more years of data in the model development process it improve its predictive capability). This results in a longer dataset. We also test for whether including lagged values of the predictor variables improves the models predictive capability. This results in a wider dataset.
 
-Data need to be split before training model. Some considerations are:
+## Modelling approaches {#modelling-approaches}
 
-* Should the data be ordered prior to splitting (eg, should models be trained on earlier years, and tested on later years) - on occasion there won't be very long time series
-  + try mixing the data up before splitting
-* Train, validation and test set? Is there enough data to do this?
+Two modelling approaches were attempted. 
 
-## Missing data
+### Generalised linear model
 
-* How to accommodate independent providers in the metrics
-* The input data has missing values. The data needs more investigation as to why it is missing (it could be really missing, eg, data not submitted, or it could be a zero, eg, a zero numerator for that metric). 
+This approach attributes the target variable into two groups; "successful" and "unsuccessful". The "successful" group is the count of cases for each ICS that achieved the performance metrics within the criteria specified. The "unsuccessful" group are the remaining cases. This allows for binomial regression using a generalised linear model using a logit link function.
 
-  - Some timeseries data for Trusts (eg beds available) stop being reported and it is difficult to understand why (eg RT5 stops being reported in Q1 2015 even though the trust still exists)
-  - Some "Independent Sector Healthcare providers" stop reporting Sickness data mid-timeseries
+Due to the generalised dataset having a large number of predictor variables, regularisation was performed for variable selection. Elastic net regularisation occurred (described in the [hyperparameter tuning](#tuning)) section), and the important variables were identified.
 
-* Need to investigate different imputation methods for different features
+Important variables are determine by the absolute value of the coefficients for the final model. 
 
-## Modelling
+### Random Forest
 
-* Try out different ML methods?
-* Should demand and capacity variables be modelled separately (like [Charlotte's ED modelling](https://charlottejames.github.io/ed-forecast/index.html))
-* Look at adjusted R2 value?
-* Are there other measures (from R2) that might be useful for this to capture the noise? (can we hold back some ICSs before training the model to determine whether predictions are useful for them?)
+This non-parametric approach allows the full dataset to be randomly sub-sampled (with replacement), along with taking random samples of the predictor variables, to build multiple decision trees. These decision trees get aggregated up to provide a model to use on unseen data. 
 
-## Other questions
+Important variables are determined by [DN - must finish but the following text is taken from the help pages from `vip::vi_model`]
 
-* What to do with IMD? It is published by LSOA for a single year. Should the information for each ICS be applied for each year? Should it relate to the population variables? How else to integrate deprivation into the analysis?
-* accuracy measure? Is Rsq appropriate? Need to pick a measure that suits the question we have...we're most interested in trends for each ICS (MDA? or SMAPE?)
+> The first measure is computed from permuting out-of-bag (OOB) data: for each tree, the prediction error on the OOB portion of the data is recorded (error rate for classification and MSE for regression). Then the same is done after permuting each predictor variable. The difference between the two are then averaged over all trees in the forest, and normalized by the standard deviation of the differences. If the standard deviation of the differences is equal to 0 for a variable, the division is not done (but the average is almost always equal to 0 in that case).
 
-## Next steps
+> The second measure is the total decrease in node impurities from splitting on the variable, averaged over all trees. For classification, the node impurity is measured by the Gini index. For regression, it is measured by residual sum of squares.
 
-* try running other performance metrics through the modelling process to see if others come out better
-* improve hyperparameter tuning for RF
-* check whether missing data are missing or zero (values could be zero but come through as missing because the numerator is zero)
-* Stepwise modelling for linear/logistic (step aic - more popular at the moment; step bic)
-* How to keep the predictions between 0 and 1? Does it mean the model should be a logistic regression?
-* collect more data
-* demonstrate proof of concept to stakeholders
-  + identify other metrics that would be useful to predict
-* demonstrate scenario modelling
+## Pre-processing
 
-### Improve data
+### Frequency weights {#frequency-weights}
 
-* Unfilled posts
-* Proportion of beds occupied by elective/non-elective
-* Are there more primary care statistics available? Primary care capacity? GP availability?
-* COVID prevalence? Flu admissions? (https://www.england.nhs.uk/statistics/statistical-work-areas/covid-19-hospital-activity/)
-* Theatre capacity?
-* are there any publications from the mental health minimum dataset or the community services minimum dataset
-* can any of the performance metrics be used as predictors
+A column for frequency weighting is used for the logistic regression only. This column is the total number of cases included in the target variable calculation. For example, if the target variable is the proportion of incomplete referral to treatment pathways that are greater than 18 weeks, the frequency weighting column is the total number of incomplete pathways. The purpose of this column is to ensure downstream processes consider the different weighting of each record in the dataset. Some records account for a much higher volume of cases than others, so they should have more weighting on processes like normalisation than others. These weights impact the pre-processing, the model estimation, and the performance estimation steps.
 
+### Lagging data
 
+Models were tested with lagged predictor variables. Both one and two year lagging was testing. Conceptually, this was done to determine whether the value of a predictor value for a previous year has an influence on the target variable for the current year. Where lagged data were included, the lagged values for the target variables were also included. This was done to allow for more accurate predictions to improve model utility for the end user [DN - including the lagged target variable is still up in the air; it significantly improves the model performance but the impact of the other variables that can be influenced by management decisions reduces].  
 
+### Pandemic impact
 
-### Notes
+The impact fo the pandemic was accommodated for by introducing a binary variable which is 0 prior to 2020, and 1 from 2020 onwards.
 
-Parametric modelling should have more thought on the input features, whereas ML potentially can throw them all in and see what happens
+### Splitting dataset
+
+Both of the [modelling approaches](#modelling-approaches) described have unknown hyperparameters. These can be tuned to optimise the performance of the model. The optimisation process was done by splitting the input dataset into two parts: 80% of the data were selected into a training set and 20% were selected into a test set. This split was done at random, so all ICSs and all years have equal chance of appearing in each set. 
+
+### Variable removal
+
+Variables are removed manually in three circumstances:
+
+1. where more than 40% of the training set are missing
+2. where more than 95% of the training set are 0
+3. Where more than 95% of the test set are missing
+
+### Imputing missing variables
+
+Missing values are imputed for the remaining variables by applying the median value for the variable from the training data. [DN - should I consider different imputation methods for different variables? Other off-the-shelf imputation methods are "bag", "knn", "linear", "lower", "mean", "model", "roll"]
+
+### Normalisation
+
+For the logistic regression model, the data are centred and scaled to a range of 0 and 1. This range aligns with the binary pandemic variable.
+
+### Hyperparameter tuning {#tuning}
+
+The training set was split into 7 folds to perform "leave-group-out" cross validation to enable the hyperparameter tuning. Each fold was defined by NHS region and only contained the ICSs in those NHS regions. Models were then trained on 6 of the 7 folds using a variety of hyperparameters, and then validated on the remaining fold to identify the parameters that provided the best performance. The purpose of doing leave-group-out cross validation was to reduce the likelihood that the hyperparameters for the model were tuned on data that is similar in the training and validation sets due to being consecutive years for one ICS (e.g., a specific ICS could have similar inputs in two adjacent years, which, if one year was used for training and the subsequent year used for validation, it could lead to overfitting and promote a model that performs poorly on the test dataset). 
+
+## Model specification
+
+### Logistic regression with elastic net regularisation
+
+Using the R package `glmnet`, a quasibinomial model was selected with a logit link transformation. The number of lambda values that determine the lambda path was selected as 150, which is higher than the default value of 100, to increase the likelihood of model convergence. Standardisation of the input data was performed as a separate pre-processing step, as described above, rather than within the `glmnet` function.
+
+The two hyperparameters that were tuned were; the penalty parameter (lambda), which defines the amount of regularisation (e.g., the amount of explanatory variable penalisation that occurs), and the mixture parameter, where a value of 1 is a pure lasso model, and 0 is a pure ridge regression model. 
+
+### Random forest
+
+The random forest model was also specified with the `randomForest` package. The three hyperparameters that were tuned were; the number of randomly selected predictors in each tree, the number of trees, and the minimum node size allowed before permitting another branch to grow.
+
+## Model evaluation
+
+The models are evaluated using the mean absolute error (MAE) [DN - at the moment]. The error metric is on the same scale as the target variable, which provides users with an simpler interpretation. Additionally, the metric is not affected by the size of the values for the target variable, like the percentage error metrics, so it allows comparability between models. Other metrics considered were:
+
+* R^2^ - this was ruled out for two reasons; firstly, it is quite difficult for the user to interpret how well the model is performing relative to the variable that is being predicted (e.g., it is not in the same units as the target variable). Secondly, it does not optimise on the difference between the observed and the expected, meaning that some ICSs may see greater errors than others. 
+* Root mean squared error (RMSE) - [DN - I think this is still an option]
+* Symmetric mean absolute percentage error (SMAPE) - this was rejected because it made the comparison between models difficult. This occurred because, even though the target variables are all on a scale between 0 and 1, the percentage error value is influence by how large the target variable values are. A smaller SMAPE value therefore could be because the target variable is a smaller value.
+* Mean absolute percentage error (MAPE) - this is rejected for the same reason as SMAPE
+
+The MAE is calculated for each of the seven validation sets as described in the [Hyperparameter tuning]{#tuning} section, and an average is taken to calculate the summary validation MAE metric. The optimal model hyperparameters are selected based on this metric and are used to calculate the MAE value for the test dataset. The best model is then identified as the one with the lowest MAE on the test dataset. This identifies the number of years of data in the model, and also whether to include lagged data in the model and if so, the number of years of lagged data to include.

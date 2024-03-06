@@ -5,13 +5,13 @@ source("R/04_modelling_utils.R")
 
 # configure modelling  -----------------------------------------------------------
 
-target_variable <- "62 day wait from suspected cancer or referral to first definitive treament (proportion outside of standard)"
+target_variable <- "Proportion of attended appointments (Over 4 weeks wait time)"
 model_value_type <- "value"
 predict_year <- 2022
 val_type <- "leave_group_out_validation"
 # val_type <- "train_validation"
 
-ts_split <- FALSE#set whether to leave the latest year for testing (TRUE) or not (FALSE)
+ts_split <- FALSE #set whether to leave the latest year for testing (TRUE) or not (FALSE)
 if (ts_split) {
   chart_subtitle <- "Only previous years data used for training (without target variable), shuffled training data"
   figure_caption <- paste(
@@ -26,9 +26,9 @@ if (ts_split) {
   )
 }
 
-evaluation_metric <- "smape"
+evaluation_metric <- "mae"
 
-model_method <- "random_forest"
+model_method <- "logistic_regression"
 
 if (model_method == "random_forest") {
   numerator_remainder <- FALSE
@@ -60,8 +60,19 @@ dc_data <- load_data(
     year <= predict_year
   )
 
+dc_data_1 <- dc_data |> 
+  select(
+    "year",
+    "org",
+    "nhs_region",
+    "numerator",
+    "remainder",
+    starts_with("Primary care"),
+    all_of(target_variable)
+  )
+
 inputs <- expand.grid(
-  training_years = 2:6,
+  training_years = 2:3,
   lagged_years = 0:2
 ) |> 
   mutate(
@@ -72,12 +83,12 @@ modelling_outputs <- map2(
   .x = inputs$training_years,
   .y = inputs$lagged_years,
   ~ modelling_performance(
-    data = dc_data,
+    data = dc_data_1,
     target_variable = target_variable,
     lagged_years = .y, 
     training_years = .x,
     keep_current = FALSE,
-    remove_lag_target = TRUE,
+    lag_target = 1,
     time_series_split = ts_split, 
     shuffle_training_records = TRUE,
     model_type = model_method,
@@ -179,7 +190,7 @@ prediction_configuration <- tibble(
   mutate(
     scenario_id = as.character(scenario_id)
   )
-
+debugonce(apply_model_to_scenario)
 preds_baseline <- prediction_configuration %$%
   map2_dfr(
     .x = yrs,

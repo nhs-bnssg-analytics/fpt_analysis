@@ -1,0 +1,353 @@
+---
+title: "Modelling inputs"
+format: html
+order: 3
+execute: 
+  echo: false
+---
+
+## Geographical estimation methods
+
+### Trust to ICS estimations {#catchment-weighting}
+
+Many of the publicly available statistics are published for the Trust.
+
+A population weighting method is applied to these statistics based on the published [Acute Trust Catchment Populations](https://app.box.com/s/qh8gzpzeo1firv1ezfxx2e6c4tgtrudl) from the Office for Health Improvement and Disparities. These data provide an understanding of the proportion of patients that are admitted to each acute trust (by year) from each Middle layer Super Output Area (MSOA) for all types of admissions.
+
+Where an organisation in this dataset has a catchment population published, its values are distributed among the MSOAs in the proportions described by the Trust's catchment populations.
+
+Where an organisation does not have a published catchment population, the two geographically nearest Trusts that do have published catchment populations within each year are identified. The catchments from these trusts are then applied to the unknown organisation's value using a distance weighting (for example, if one trust is twice as near as the other trust, its catchment is weighted twice as strongly compared with the other trust when calculating the catchment for the unknown organisation).
+
+## Demand data
+
+### Percentage of active smokers
+
+**Source:** [Fingertips](https://fingertips.phe.org.uk/search/gpps#page/4/gid/1/pat/223/ati/221/are/nE54000039/iid/90452/age/164/sex/4/cat/-1/ctp/-1/yrr/1/cid/4/tbm/1)
+
+**Numerator:** Self-reported active smokers in the GP Patient Survey (GPPS).
+
+**Denominator:** Total number of GPPS respondents.
+
+### Percentage of former smokers
+
+**Source:** [Fingertips](https://fingertips.phe.org.uk/search/gpps#page/4/gid/3000010/pat/223/par/E40000006/ati/221/are/nE54000039/iid/90453/age/164/sex/4/cat/-1/ctp/-1/yrr/1/cid/4/tbm/1)
+
+**Numerator:** Self-reported former smokers in the GP Patient Survey (GPPS).
+
+**Denominator:** Total number of GPPS respondents.
+
+### Atrial fibrillation: QOF prevalence
+
+**Source:** [Fingertips](https://fingertips.phe.org.uk/search/qof#page/4/gid/1/pat/159/par/K02000001/ati/15/are/E92000001/iid/280/age/1/sex/4/cat/-1/ctp/-1/yrr/1/cid/4/tbm/1)
+
+**Numerator:** Patients with atrial fibrillation, as recorded on practice disease registers (Quality and Outcomes Framework).
+
+**Denominator:** Total practice list size.
+
+### Depression: QOF prevalence (18+ yrs)
+
+**Source:** [Fingertips](https://fingertips.phe.org.uk/search/qof#page/4/gid/1/pat/159/par/K02000001/ati/15/are/E92000001/iid/848/age/168/sex/4/cat/-1/ctp/-1/yrr/1/cid/4/tbm/1)
+
+**Numerator:** All patients aged 18 or over, diagnosed on or after 1 April 2006, who have an unresolved record of depression in their patient record.
+
+**Denominator:** Total number of patients aged 18 or over registered with the practice.
+
+### Obesity: QOF prevalence (18+ yrs)
+
+**Source:** [Fingertips](https://fingertips.phe.org.uk/search/qof#page/4/gid/1/pat/159/par/K02000001/ati/15/are/E92000001/iid/92588/age/168/sex/4/cat/-1/ctp/-1/yrr/1/cid/4/tbm/1)
+
+**Numerator:** Patients aged 18 and over with a BMI of 30 or above.
+
+**Denominator:** Total number of patients aged 18 or over registered with the practice.
+
+### Smoking: QOF prevalence (15+ yrs)
+
+**Source:** [Fingertips](https://fingertips.phe.org.uk/search/qof#page/4/gid/1/pat/159/par/K02000001/ati/15/are/E92000001/iid/91280/age/188/sex/4/cat/-1/ctp/-1/yrr/1/cid/4/tbm/1)
+
+**Numerator:** The number of patients aged 15+ yrs who are recorded as current smokers.
+
+**Denominator:** Practice list size for patients aged 15 yrs and over.
+
+### Proportion of population by age band {#populations}
+
+**Source:** [ONS Lower layer Super Output Area (LSOA) population estimates](https://www.ons.gov.uk/peoplepopulationandcommunity/populationandmigration/populationestimates/datasets/lowersuperoutputareamidyearpopulationestimates) for 2011 to 2020.
+
+**Source:** [ONS local authority population estimates](https://www.ons.gov.uk/peoplepopulationandcommunity/populationandmigration/populationestimates/datasets/estimatesofthepopulationforenglandandwales) for 2021 and 2022.
+
+\[DN - considering to update these to GP registered population because the time series is more current\]
+
+**Calculation description:** For 2011 to 2020, the population mid-year estimates (based on the 2011 census) for LSOAs are summed to Integrated Care System (2022) using a lookup stored on the [ONS Geography Portal](https://www.arcgis.com/sharing/rest/content/items/1ac8547e9a8945478f0b5ea7ffe1a6b1/data).
+
+For 2021 and 2022, the Local Authority District (LAD) populations are used for each of the two years. For each age band within each LAD, the proportion of the population within each LSOA is calculated using the 2020 mid-year estimates, and these proportions are applied to the 2021 and 2022 LAD populations. The populations are then summed to ICS geographies using the lookup above.
+
+**Numerator:** Sum of population into 10 year age bands (0-9 years up to 90+ years) or into 3 broader age bands (0-29 years, 30-59 years, and 60+ years).
+
+**Denominator:** Total population.
+
+### Proportion of population within each deprivation quintile
+
+**Source:** [ONS Indices of Deprivation 2019 by LSOA](https://assets.publishing.service.gov.uk/media/5d8b3b51ed915d036a455aa6/File_5_-_IoD2019_Scores.xlsx)
+
+**Calculation description:** LSOAs are attributed to deprivation quintile based on the Index of Multiple Deprivation (IMD) Score. Populations are assigned to each LSOA using the method described in the [Populations by age band](#populations) section. Numerators and denominators are subsequently calculated from here using the [LSOA to ICS lookup](https://www.arcgis.com/sharing/rest/content/items/1ac8547e9a8945478f0b5ea7ffe1a6b1/data).
+
+**Numerator:** Total population within each deprivation quintile.
+
+**Denominator:** Total population.
+
+## Capacity data
+
+### Workforce Full Time Equivalents per 10,000 population
+
+These metrics are only calculated for an acute setting. They care calculated for the following Staff Groups:
+
+-   Associate Specialist
+-   Central functions
+-   Consultant
+-   Core Training
+-   Foundation Doctor Year 1
+-   Foundation Doctor Year 2
+-   HCHS Doctors
+-   Hospital Practitioner/Clinical Assistant
+-   Hotel, property & estates
+-   Managers
+-   Midwives
+-   NHS infrastructure support
+-   Nurses & health visitors
+-   Other and Local HCHS Doctor grades
+-   Other staff or those with unknown classification
+-   Professionally qualified clinical staff
+-   Scientific, therapeutic & technical staff
+-   Senior managers
+-   Specialty Doctor
+-   Specialty Registrar
+-   Staff Grade
+-   Support to ambulance staff
+-   Support to clinical staff
+-   Support to doctors, nurses & midwives
+-   Support to ST&T staff
+
+**Numerator:** Estimated FTEs for each ICS in the month nearest July each year.
+
+**Numerator source:** [NHS Worforce Statistics](https://digital.nhs.uk/data-and-information/publications/statistical/nhs-workforce-statistics).
+
+**Calculation details:** The latest month's file csv files are downloaded, and the csv file with the Staff Group and Organisation information is used. From this file, the FTEs are used for the calculation. Only the "Acute" Cluster Group is used, along with each Staff Grade except Total. Other Cluster Groups are removed because the data quality are less reliable (for example, Ambulance Cluster Group attribute all FTEs to where the regional headquarters of the Ambulatory Service is located - this appears to be the case for Mental Health and Community Services Cluster Group too).
+
+Each organisations FTE value is applied to an ICS using the trust to ICS estimation method described [above](#catchment-weighting).
+
+**Denominator:** Total registered population within General Practices at July each year.
+
+**Denominator source:** [NHS Patients registered at a GP Practice](https://digital.nhs.uk/data-and-information/publications/statistical/patients-registered-at-a-gp-practice)
+
+### Full Time Equivalent days sick per 10,000 population
+
+These indicators are calculated for acute and mental health settings.
+
+**Numerator:** Full-time equivalent sick days.
+
+**Numerator source:** [NHS ESR Sickness Absensce](https://files.digital.nhs.uk/A6/67E0C1/ESR_ABSENCE_CSV_NHSE.csv) for April 2009 to March 2022.
+
+**Numerator source:** For April 2022 onwards, the monthly text files in the [NHS Sickness absence rates](https://digital.nhs.uk/data-and-information/publications/statistical/nhs-sickness-absence-rates) publication are used.
+
+**Calculation details:** The catchment-weighting process described [above](#catchment-weighting) is applied to organisations classified as one of the following by the Organisation Data Service:
+
+-   Care trusts
+-   Independent providers
+-   Independent Sector Healthcare providers
+-   NHS Trust
+
+The proportions described are applied to each month and summed to each quarter to provide a quarterly value. Each quarter is then averaged to calculate an annual value.
+
+**Denominator:** Total registered population within General Practices for each quarter in a year, which is averaged to calculate an annual value.
+
+### Full Time Equivalent days available per 10,000 population
+
+**Numerator:** See [Sickness Absence numerator details](#sickness-absence-numerator) for information on the numerator for available days.
+
+**Denominator:** See [Sickness Absence denominator details](#sickness-absence-denominator) for information on the denominator for available days.
+
+### Number of clinical workforce (FTE) in general practice per 10,000 registered patients
+
+**Source:** [Fingertips](https://fingertips.phe.org.uk/search/clinical%20workforce#page/4/gid/1/pat/159/par/K02000001/ati/15/are/E92000001/iid/93966/age/-1/sex/-1/cat/-1/ctp/-1/yrr/1/cid/4/tbm/1)
+
+**Numerator:** Total direct patient care staff (FTE) at PCN-level, plus GPs and nurses (FTE) from the practices within the PCN.
+
+**Denominator:** Total patients from the practice-level General Practice Workforce dataset, updated monthly. This counts all patients registered at the practice on the count date (last day of the month).
+
+### Proportion of beds available
+
+**Source:** [NHS Bed Availability and Occupancy Statistics](https://www.england.nhs.uk/statistics/statistical-work-areas/bed-availability-and-occupancy/)
+
+Metrics calculated for the following bed types:
+
+-   General and Acute
+-   Learning Disabilities
+-   Maternity
+-   Mental Illness
+
+Metrics are calculated for day and overnight beds separately.
+
+**Calculation details:** The catchment-weighting process described [above](#catchment-weighting) is applied to the data published at Trust level to estimate more representative ICS values for these metrics.
+
+**Numerator:** Number of beds occupied.
+
+**Denominator:** Number of beds available.
+
+### Total beds per 1,000 population (60+ years)
+
+**Calculation details:** The catchment-weighting process described [above](#catchment-weighting) is applied to the data published at Trust level to estimate more representative ICS values for these metrics.
+
+**Numerator:** Count of available day and night beds combined.
+
+**Numerator source:** [NHS Bed Availability and Occupancy Statistics](https://www.england.nhs.uk/statistics/statistical-work-areas/bed-availability-and-occupancy/)
+
+**Denominator:** Estimated resident population of the ICS that are 60 years old and over.
+
+**Denominator source:** [ONS Lower layer Super Output Area (LSOA) population estimates](https://www.ons.gov.uk/peoplepopulationandcommunity/populationandmigration/populationestimates/datasets/lowersuperoutputareamidyearpopulationestimates) for 2011 to 2020.
+
+**Denominator source:** [ONS local authority population estimates](https://www.ons.gov.uk/peoplepopulationandcommunity/populationandmigration/populationestimates/datasets/estimatesofthepopulationforenglandandwales) for 2021 and 2022.
+
+### Gross Total Expenditure per individual with long term support during the year
+
+**Source:** [NHS Adulst Social Care Activity and Finance Report](https://digital.nhs.uk/data-and-information/publications/statistical/adult-social-care-activity-and-finance-report)
+
+**Calculation details:** Data are published at District Local Authority level. The figures are transformed by calculating a population-weighted LSOA value, and then aggregating up to ICSs geography.
+
+**Numerator:** Gross Total Expenditure by Local Authority applied to ICSs.
+
+**Denominator:** Long Term Support during the year by Local Authority applied to ICSs.
+
+### Mental Health spending
+
+**Numerator:** The numerators obtained from this source are:
+
+-   Children and Young People Mental Health spend - excluding learning disabilities and eating disorders
+-   Children and Young People Mental Health spend - eating disorders (£k)
+-   Improving Access to Psychological Therapies spend (£k)
+-   Early Intervention in Psychosis spend (£k)
+-   Adult community crisis care spend (£k)
+-   Out of Area Placements - Reported Spend (£k)
+-   A and E and Ward Liaison mental health services spend (£k)
+-   Mental health spend as a proportion of overall allocation
+-   Mental Health total spend (£k)
+
+**Numerator source:** [NHS mental health dashboard](https://www.england.nhs.uk/publication/nhs-mental-health-dashboard/)
+
+**Denominator:** Quarterly registered population within General Practices averaged to calculate an annual figure. This figure is multiplied by 10,000 for ease of understanding the calculated metric.
+
+This denominator is used for all of the metrics described above except "mental health spend as a proportion of overall allocation", as this data are provided as a proportion already so it does not require a denominator.
+
+### Primary care workforce
+
+**Numerator:** Total annual FTEs at the end of June (or the average of the two months nearest June if data for June are not published) for the following staff groups:
+
+* Admin/Non-Clinical
+* Direct Patient Care
+* GP
+* Nurses
+
+**Numerator source:** [General Practice Workforce](https://digital.nhs.uk/data-and-information/publications/statistical/general-and-personal-medical-services)
+
+**Denominator:** Quarterly registered population within General Practices averaged to calculate an annual figure. This figure is multiplied by 10,000 for ease of understanding the calculated metric.
+
+### Pandemic onwards
+
+A binary variable, providing a 1 for years from 2020, and a 0 for years prior to 2020.
+
+## Discontinued COVID capacity metrics
+
+[DN - these variables have now been excluded from the models because often they are the most important variables, obscuring the effect of the other variables. They may have some use though?]
+
+### Proportion of beds that contain a patient with confirmed COVID
+
+**Calculation details:** The same catchment-weighting process as described [above](#catchment-weighting) is applied to the data published at Trust level to estimate more representative ICS values for these metrics.
+
+**Numerator:** Average number of beds occupied over the year containing a patient with a confirmed diagnosis of COVID19.
+
+**Numerator source:** [NHS COVID-19 Hospital Activity](https://www.england.nhs.uk/statistics/statistical-work-areas/covid-19-hospital-activity/)
+
+**Denominator:** Average number of beds occupied over a year.
+
+**Denominator source:** [NHS Bed Availability and Occupancy Statistics](https://www.england.nhs.uk/statistics/statistical-work-areas/bed-availability-and-occupancy/)
+
+### Proportion of admissions with a COVID diagnosis in the last 24 hours
+
+**Calculation details:** The same catchment-weighting process as described [above](#catchment-weighting) is applied to the data published at Trust level to estimate more representative ICS values for these metrics.
+
+**Numerator:** Average number of admissions over a year with a confirmed diagnosis of COVID19 in the last 24 hours.
+
+**Numerator source:** [NHS COVID-19 Hospital Activity](https://www.england.nhs.uk/statistics/statistical-work-areas/covid-19-hospital-activity/)
+
+**Denominator:** Total admissions.
+
+**Denominator source:** [NHS Admitted Patient Care Activity](https://digital.nhs.uk/data-and-information/publications/statistical/hospital-admitted-patient-care-activity)
+
+### Proportion of head count absent in a provider setting due to COVID
+
+**Calculation details:** The same catchment-weighting process as described [above](#catchment-weighting) is applied to the data published at Trust level to estimate more representative ICS values for these metrics.
+
+**Numerator:** The average number of COVID-19 related absences of staff, either through sickness or self-isolation.
+
+**Numerator source:** [NHS COVID-19 Hospital Activity](https://www.england.nhs.uk/statistics/statistical-work-areas/covid-19-hospital-activity/)
+
+**Denominator:** The average total head count.
+
+**Denominator source:** [NHS Worforce Statistics](https://digital.nhs.uk/data-and-information/publications/statistical/nhs-workforce-statistics).
+
+
+## Performance
+
+### 62 Day Wait for First Treatment for Cancer
+
+**Source:** [NHS Cancer Wait Times](https://www.england.nhs.uk/statistics/statistical-work-areas/cancer-waiting-times/)
+
+This metric considers patients' First Definitive Treatment for Cancer following an Urgent Suspected Cancer or Breast Symptomatic Referral, or Urgent Screening Referral, or Consultant Upgrade.
+
+**Numerator:** Number of patients treated with the time frame.
+
+**Denominator:** Total number of patients treated.
+
+### Average daily proportion of patients who no longer meet the criteria to reside that remain in hospital
+
+**Source:** [NHS Discharge Delays Acute data](https://www.england.nhs.uk/statistics/statistical-work-areas/discharge-delays-acute-data/)
+
+**Calculation details:** The same catchment-weighting process as described [above](#catchment-weighting) is applied to the data published at Trust level to estimate more representative ICS values for these metrics.
+
+**Numerator:** Number of patients remaining in hospital who no longer meet the criteria to reside.
+
+**Denominator:** Number of patients who no longer meet the criteria to reside.
+
+### Proportion of A&E attendances that are greater than 4 hours
+
+**Source:** [NHS A&E Wait Times and Activity](https://www.england.nhs.uk/statistics/statistical-work-areas/ae-waiting-times-and-activity/)
+
+This metric is only collated for Type 1 Departments - Major A&E attendances.
+
+**Calculation details:** The same catchment-weighting process as described [above](#catchment-weighting) is applied to the data published at Trust level to estimate more representative ICS values for these metrics.
+
+**Numerator:** A&E attendances greater than 4 hours from arrival to admission, transfer or discharge.
+
+**Denominator:** Total A&E attendances.
+
+### Proportion of attended GP appointments within specified timescale
+
+**Source:** [NHS Appointments in General Practice](https://digital.nhs.uk/data-and-information/publications/statistical/appointments-in-general-practice/)
+
+This metric can be divided into:
+
+-   0 to 1 weeks wait time
+-   1 to 2 weeks wait time
+-   2 to 3 weeks wait time
+-   3 to 4 weeks wait time
+-   Over 4 weeks wait time
+
+**Numerator:** Total appointments within timeframe.
+
+**Denominator:** Total appointments.
+
+### Proportion of Incomplete Referral to Treatment Pathways greater than 18 weeks from Referral
+
+**Source:** [NHS Referral to Treatment Waiting Times](https://www.england.nhs.uk/statistics/statistical-work-areas/rtt-waiting-times/)
+
+**Numerator:** Total incomplete pathways that are 18 weeks or greater at the end of the reporting month, aggregated to year.
+
+**Denominator:** Total incomplete pathways at the end of the reporting month, aggregated to year.

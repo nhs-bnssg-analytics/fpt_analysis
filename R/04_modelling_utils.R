@@ -212,6 +212,35 @@ identify_missing_vars <- function(data_train, data_validation, data_test, model_
   return(vars)
 }
 
+create_lag_variables <- function(data, lagged_years, lag_variables) {
+  map_lag <- set_names(
+    seq_len(lagged_years),
+    nm = paste("lag", seq_len(lagged_years), sep = "_")
+  ) |> 
+    map(
+      ~ purrr::partial(lag, n = .x)
+    )
+  
+  data <- data |> 
+    arrange(
+      year, org
+    ) |>
+    group_by(org) |> 
+    group_split() |> 
+    purrr::map_df(
+      ~ mutate(
+        .x,
+        across(
+          all_of(lag_variables),
+          .fn = map_lag,
+          .names = "{.fn}_{.col}"
+        ),
+      )
+    )
+  
+  return(data)
+}
+
 
 # plotting functions ------------------------------------------------------
 
@@ -713,8 +742,11 @@ load_data <- function(target_variable, value_type = "value", incl_numerator_rema
 #'   time_series_split is TRUE, set this to FALSE to remove data from the
 #'   predictor variables where they occur in the same year as the target
 #'   variable that is being predicted
-#' @param remove_lag_target logical; if including lagged data, whether to
-#'   include the lagged target variable or not
+#' @param lag_target integer; number of new fields for lagged version of the
+#'   target variable to include (each new field with be an extra lagged year).
+#'   E.g., 2 will create 2 new fields (prefixed lag_1 and lag_2) which will
+#'   contain data with a 1 year lag and data with a 2 year lage for the target
+#'   variable
 #' @param time_series_split logical; order the data by year prior to splitting,
 #'   so training data is before validation data, which is before test data
 #' @param training_years integer; number of years to use for training the model.
@@ -741,7 +773,7 @@ load_data <- function(target_variable, value_type = "value", incl_numerator_rema
 #'   https://www.tidyverse.org/blog/2022/05/case-weights/
 #' 
 modelling_performance <- function(data, target_variable, lagged_years = 0, 
-                                  keep_current = TRUE, remove_lag_target = TRUE,
+                                  keep_current = TRUE, lag_target = 0,
                                   time_series_split = TRUE, training_years = NULL,
                                   remove_years = NULL,
                                   shuffle_training_records = FALSE,
@@ -799,48 +831,46 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
       ) {
     data <- data |> 
       mutate(
+        across(
+          c(numerator, remainder),
+          ~ as.integer(
+            round(
+              .x, 0
+            )
+          )
+        ),
         total_cases = frequency_weights(numerator + remainder)
       ) |> 
       select(!c("numerator", "remainder"))
   }
   
+  if (lag_target > 0) {
+    data <- create_lag_variables(
+      data = data,
+      lagged_years = lag_target,
+      lag_variables = target_variable
+    )
+  }
+  
   if (lagged_years > 0) {
-    
-    map_lag <- set_names(
-      seq_len(lagged_years),
-      nm = paste("lag", seq_len(lagged_years), sep = "_")
-    ) |> 
-      map(
-        ~ purrr::partial(lag, n = .x)
-      )
-    
     # create lag variables
     
-    not_lag_variables <- c("year", "org", "nhs_region", "pandemic_onwards")
-    if (remove_lag_target) {
-      not_lag_variables <- c(not_lag_variables, target_variable)
-    } 
-    
+    not_lag_variables <- c("year", "org", "nhs_region", "pandemic_onwards", target_variable)
+
     if (model_type == "logistic_regression") {
       not_lag_variables <- c(not_lag_variables, "total_cases")
     }
     
-    data <- data |> 
-      arrange(
-        year, org
-      ) |>
-      group_by(org) |> 
-      group_split() |> 
-      purrr::map_df(
-        ~ mutate(
-          .x,
-          across(
-            !all_of(not_lag_variables),
-            .fn = map_lag,
-            .names = "{.fn}_{.col}"
-          ),
-        )
-      )
+    lag_variables <- setdiff(
+      names(data),
+      not_lag_variables
+    )
+    
+    data <- create_lag_variables(
+      data = data,
+      lagged_years = lagged_years,
+      lag_variables = lag_variables
+    )
     
     if (time_series_split) {
       data <- data |> 
@@ -1044,9 +1074,6 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
   
   if (model_type %in% c("logistic_regression")) {
     model_recipe <- model_recipe |> 
-      step_zv(
-        all_of(predictor_variables)
-      ) |>
       step_range(
         all_numeric_predictors(),
         clipping = FALSE
@@ -1090,6 +1117,7 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
           by = 10
         ) * 10
       )
+      tuning_grid <- 30
     }
     
     extract_input <- NULL
@@ -1221,13 +1249,6 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
   } else if (model_type == "random_forest") {
     case_wts <- FALSE
   }
-  # browser()
-  # train_metrics <- calculate_train_metric(
-  #   final_fit = model_fit,
-  #   training_data = data_train,
-  #   target_variable = target_variable,
-  #   case_weights = case_wts
-  # )
   
   train_metrics <- model_fit |> 
     extract_workflow() |> 
@@ -1322,7 +1343,7 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
     `Training years` = training_years,
     `Lagged years` = lagged_years,
     `Current year included` = ifelse(lagged_years > 0, keep_current, NA),
-    `Lagged target variable` = ifelse(lagged_years > 0, !remove_lag_target, NA)
+    `Lagged target variable` = paste(lag_target, "lagged years")
   )
   
   output <- list(
@@ -1397,10 +1418,9 @@ pick_model <- function(modelling_outputs, evaluation_metric, id = "best") {
 #'   2 years of data using a linear trend)
 #' @param area_code string; code for the area(s) of interest. Can take a vector
 #'   containing multiple area code
-#' @param extrapolation_method string; "linear", "average" or "spline". Linear
-#'   will extrapolate the last n points linearly. Average will take a rolling
-#'   average of the last n points. Spline will extend the last n points with a
-#'   natural spline.
+#' @param extrapolation_method string; "linear" or "spline". Linear will
+#'   extrapolate the last n points linearly. Spline will extend the last n
+#'   points with a natural spline.
 #' @param model_fit an object returned from the last_fit function
 #' @param target_variable string; name of target variable
 #' @param scenario tibble with two columns, metric and multiplier. The
@@ -1414,7 +1434,7 @@ apply_model_to_scenario <- function(input_data, number_year_to_extrapolate,
   
   extrapolation_method <- match.arg(
     extrapolation_method,
-    c("linear", "spline", "average")
+    c("linear", "spline")
   )
   
   # expand dataset to include future years by org and metric
@@ -1464,19 +1484,7 @@ apply_model_to_scenario <- function(input_data, number_year_to_extrapolate,
         )$y,
         .by = c(org, metric)
       )
-  } else if (extrapolation_method == "average") {
-    browser()
-    predictions <- predictions |> 
-      mutate(
-        prediction = slider::slide_index_mean(
-          x = value,
-          i = year,
-          before = number_year_to_extrapolate,
-          
-        )
-      )
-      
-  }
+  } 
   
   if (!is.null(scenario)) {
     predictions <- predictions |> 
@@ -1507,41 +1515,32 @@ apply_model_to_scenario <- function(input_data, number_year_to_extrapolate,
         .default = value
       )
     ) |> 
-    select(!c("prediction"))
-  
-  # visualiste the linear interpolations
-  
-  # dc_data_future |> 
-  #   filter(metric %in% names(input_data)[4:24]) |> 
-  #   ggplot(
-  #     aes(
-  #       x = year
-  #     )
-  #   ) +
-  #   geom_point(
-  #     aes(y = value,
-  #         colour = type)
-  #   ) +
-  #   facet_wrap(
-  #     facets = vars(metric),
-  #     scales = "free_y"
-  #   )
-  
-  # create predictor matrix
-  predictions <- predictions |> 
+    select(!c("prediction", "type")) |> 
     select(!c("type")) |> 
     pivot_wider(
       names_from = metric,
       values_from = value
+    )
+  
+  # are there lagged years in the modelling
+  lagged_years <- calculate_lag_years_from_last_fit(model_fit)
+  if (lagged_years > 0) {
+    # calculate lagged values for input variables
+    predictions <- create_lag_variables(
+      data = predictions,
+      lagged_years = lagged_years,
+      lag_variables = c("ENTER FIELDS HERE")
+    )
+  }
+  
+    filter(
+      year > max(input_data[["year"]])
     ) |> 
     add_prediction_to_data(
       final_fit = model_fit
     ) |> 
     select(
       "year", "org", "nhs_region", ".pred"
-    ) |> 
-    filter(
-      year > max(input_data[["year"]])
     ) |> 
     rename_with(
       ~ target_variable,
