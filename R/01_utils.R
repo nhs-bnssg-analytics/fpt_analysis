@@ -1985,31 +1985,7 @@ clean_names <- function(data) {
 }
 
 
-summarise_health_pop_files <- function(filepath) {
-  if (grepl("csv$", filepath)) {
-    pops <- read.csv(filepath)
-    
-    if ("ORG_TYPE" %in% names(pops)) {
-      pops <- pops |> 
-        filter(
-          ORG_TYPE %in% c("CCG", "ICB"),
-          AGE == "ALL",
-          SEX == "ALL"
-        )
-      
-    }
-  } else if (grepl("zip$", filepath)) {
-    pops <- unzip_file(
-      filepath,
-      "prac"
-    ) |> 
-      filter(
-        ORG_TYPE %in% c("CCG", "ICB"),
-        AGE == "ALL",
-        SEX == "ALL"
-      )
-  }
-  
+summarise_health_pop_files <- function(filepath, incl_agebands) {
   possible_ccg_subicb_fields <- c(
     "CCG_CODE",
     "NHSE_CCG_CODE",
@@ -2020,6 +1996,59 @@ summarise_health_pop_files <- function(filepath) {
     "NUMBER_OF_PATIENTS",
     "TOTAL_ALL"
   )
+  
+  if (grepl("csv$", filepath)) {
+    pops <- read.csv(filepath)
+  } else if (grepl("zip$", filepath)) {
+    pops <- unzip_file(
+      filepath,
+      "prac"
+    )
+  }
+  datatype <- ifelse("ORG_TYPE" %in% names(pops), "long", "wide")
+  
+  if (incl_agebands == FALSE) {
+    sum_groupings <- "health_org_code"
+    if (datatype == "long") {
+      pops <- pops |> 
+        filter(
+          ORG_TYPE %in% c("CCG", "ICB"),
+          AGE == "ALL",
+          SEX == "ALL"
+        )
+      
+    }
+  } else {
+    sum_groupings <- c("health_org_code", "AGE")
+    if (datatype == "long") {
+      pops <- pops |> 
+        filter(
+          ORG_TYPE %in% c("CCG", "ICB"),
+          AGE != "ALL",
+          SEX != "ALL"
+        ) |> 
+        mutate(
+          AGE = as.integer(str_extract(AGE, "[0-9]{1,2}")),
+          AGE = floor(AGE / 5) * 5
+        )
+        
+    } else if (datatype == "wide") {
+      pops <- pops |> 
+        select(
+          starts_with(c("MALE", "FEMALE", possible_ccg_subicb_fields))
+        ) |> 
+        pivot_longer(
+          cols = !any_of(possible_ccg_subicb_fields),
+          names_to = c("SEX", "AGE"),
+          names_sep = "_",
+          values_to = "NUMBER_OF_PATIENTS"
+        ) |> 
+        mutate(
+          AGE = as.integer(str_extract(AGE, "[0-9]{1,2}"))
+        )
+    }
+  }
+  
   pops <- pops |> 
     rename(
       health_org_code = any_of(possible_ccg_subicb_fields),
@@ -2027,7 +2056,7 @@ summarise_health_pop_files <- function(filepath) {
     ) |> 
     summarise(
       denominator = sum(denominator),
-      .by = health_org_code
+      .by = c(all_of(sum_groupings))
     ) |> 
     mutate(
       year = as.integer(
@@ -2895,8 +2924,16 @@ get_lsoa21_pops_with_lsoa11_codes <- function() {
 }
 
 
-quarterly_ics_populations <- function() {
-  summary_filepath <- "data-raw/Health populations/quarterly_population_summary.csv"
+quarterly_ics_populations <- function(incl_agebands = FALSE) {
+  
+  summary_groupings <- c("icb_code", "year", "month")
+  
+  if (incl_agebands == TRUE) {
+    summary_groupings <- c(summary_groupings, "age_band")
+    summary_filepath <- "data-raw/Health populations/quarterly_population_summary_age_bands.csv"
+  } else {
+    summary_filepath <- "data-raw/Health populations/quarterly_population_summary.csv"
+  }
   
   # gp population file urls from NHS website
   url <- "https://digital.nhs.uk/data-and-information/publications/statistical/patients-registered-at-a-gp-practice"
@@ -2955,7 +2992,7 @@ quarterly_ics_populations <- function() {
     select(c("name", "value")) |> 
     tibble::deframe()
   
-  obtain_and_download_ics_populations <- function(links) {
+  obtain_and_download_ics_populations <- function(links, incl_agebands) {
     files <- purrr::lmap(
       links,
       ~ as.list(
@@ -2972,9 +3009,23 @@ quarterly_ics_populations <- function() {
     
     health_pop_denominators <- purrr::map_df(
       files,
-      summarise_health_pop_files
+       ~ summarise_health_pop_files(
+         .x, 
+         incl_agebands = incl_agebands
+       )
     ) |> 
       filter(health_org_code != "UNKNOWN")
+    
+    if (incl_agebands) {
+      health_pop_denominators <- health_pop_denominators |> 
+        mutate(
+          age_band = floor(AGE / 10) * 10,
+          age_band = case_when(
+            age_band >= 80 ~ "80+",
+            .default = paste0(age_band, "-", (age_band + 9))
+          )
+        )
+    }
     
     
     org_lkp <- unique(health_pop_denominators$health_org_code) |> 
@@ -2989,9 +3040,7 @@ quarterly_ics_populations <- function() {
       ) |> 
       summarise(
         denominator = sum(denominator),
-        .by = c(
-          icb_code, year, month
-        )
+        .by = all_of(summary_groupings)
       ) |> 
       rename(
         org = "icb_code"
@@ -3026,7 +3075,9 @@ quarterly_ics_populations <- function() {
     if (identical(latest_available_month_year, latest_recorded_month_year)) {
       quarterly_health_pop_denominators <- read.csv(summary_filepath)
     } else {
-      quarterly_health_pop_denominators <- obtain_and_download_ics_populations(links)
+      quarterly_health_pop_denominators <- obtain_and_download_ics_populations(
+        links, 
+        incl_agebands = incl_agebands)
       
       write.csv(
         quarterly_health_pop_denominators,
@@ -3035,7 +3086,9 @@ quarterly_ics_populations <- function() {
       )
     }
   } else {
-    quarterly_health_pop_denominators <- obtain_and_download_ics_populations(links)
+    quarterly_health_pop_denominators <- obtain_and_download_ics_populations(
+      links, 
+      incl_agebands = incl_agebands)
     
     write.csv(
       quarterly_health_pop_denominators,

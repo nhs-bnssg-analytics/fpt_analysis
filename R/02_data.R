@@ -6,46 +6,50 @@ source("R/01_utils.R")
 
 # population
 
-url <- "https://www.ons.gov.uk/peoplepopulationandcommunity/populationandmigration/populationestimates/datasets/lowersuperoutputareamidyearpopulationestimates"
-zip_files <- obtain_links(url) |> 
-  (\(x) x[grepl("zip$|xlsx$", x)])() |> 
-  (\(x) x[!grepl("2018on20", x)])() |> 
-  (\(x) x[grepl("unformatted", x)])() |> 
-  (\(x) x[!grepl("^rft-lsoa", basename(x))])() |> 
-  (\(x) x[!grepl("males.zip$", x)])() |> 
-  (\(x) x[!grepl("sape19|sape18", x)])() |> 
-  (\(x) x[!grepl("^rft", basename(x))])()
-
-files <- purrr::map_chr(
-  paste0(
-    "https://www.ons.gov.uk/",
-    zip_files
-  ),
-  ~ check_and_download(
-    url = .x,
-    filepath = paste0("data-raw/Population/", basename(.x))
+quarterly_population_by_age_band <- quarterly_ics_populations(
+  incl_agebands = TRUE
+) |> 
+  mutate(
+    metric = paste0("Proportion of population in age band (", 
+                    age_band,
+                    ")"),
+    frequency = "quarterly",
+    quarter = case_when(
+      month == 4 ~ 1L,
+      month == 7 ~ 2L,
+      month == 10 ~ 3L,
+      month == 1 ~ 4L,
+      .default = NA_integer_
+    )
+  ) |> 
+  rename(
+    numerator = "denominator"
+  ) |> 
+  select(!c("age_band", "month")) |> 
+  mutate(
+    denominator = sum(numerator),
+    .by = c(
+      org, year, quarter, frequency
+    )
+  ) |> 
+  mutate(
+    value = numerator / denominator
   )
-)
-
-population_by_age_band <- purrr::map_dfr(
-  files,
-  calculate_icb_populations
-)
-
-if (max(population_by_age_band$year) < 2021) {
-  population_by_age_band_21_22 <- estimate_21_22_populations()
   
-  population_by_age_band <- bind_rows(
-    population_by_age_band,
-    population_by_age_band_21_22
-  )
-}
-
-write.csv(
-  population_by_age_band,
-  "data/population.csv",
-  row.names = FALSE
+annual_population_by_age_band <- quarterly_to_annual_mean(
+  quarterly_population_by_age_band,
+  year_type = "financial"
 )
+
+
+bind_rows(
+  annual_population_by_age_band,
+  quarterly_population_by_age_band
+) |> 
+  write.csv(
+    "data/population.csv",
+    row.names = FALSE
+    )
 
 # risk factors
 
