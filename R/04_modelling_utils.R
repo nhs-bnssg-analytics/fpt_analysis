@@ -471,7 +471,7 @@ plot_modelling_performance <- function(modelling_results, inputs, val_type,
   return(p)
 }
 
-plot_variable_importance <- function(model_last_fit, top_n = 10) {
+plot_variable_importance <- function(model_last_fit, top_n = 10, table_output = FALSE) {
   
   model_type <- model_last_fit |> 
     extract_fit_engine() |> 
@@ -481,7 +481,7 @@ plot_variable_importance <- function(model_last_fit, top_n = 10) {
   
   if (grepl("random", model_type, ignore.case = TRUE)) {
     model_type <- "random_forest"
-    p <- model_last_fit |> 
+    table <- model_last_fit |> 
       extract_fit_parsnip() |> 
       vi()
   } else if (grepl("glm", model_type, ignore.case = TRUE)) {
@@ -489,7 +489,7 @@ plot_variable_importance <- function(model_last_fit, top_n = 10) {
     lambda_penalty <- model_last_fit |> 
       extract_fit_parsnip() |> 
       pluck("spec", "args", "penalty")
-    p <- model_last_fit |> 
+    table <- model_last_fit |> 
       extract_fit_parsnip() |> 
       vi(
         lambda = lambda_penalty
@@ -502,11 +502,13 @@ plot_variable_importance <- function(model_last_fit, top_n = 10) {
     stop("unknown model type")
   }
   
-  p <- p |> 
+  table <- table |> 
     filter(
       Importance != 0
     ) |> 
-    head(top_n) |>
+    head(top_n)
+  
+  p <- table |>
     arrange(
       Importance
     ) |> 
@@ -545,7 +547,12 @@ plot_variable_importance <- function(model_last_fit, top_n = 10) {
       geom_col() 
   }
   
-  return(p)
+  
+  if (table_output) {
+    return(table)
+  } else {
+    return(p)
+  }
 }
 
 #load data --------------------------------------------------------------- '
@@ -630,6 +637,7 @@ load_data <- function(target_variable, value_type = "value", incl_numerator_rema
             "60-69" = "60+",
             "70-79" = "60+",
             "80-89" = "60+",
+            "80\\+" = "60+",
             "90\\+" = "60+")
         )
       ) |> 
@@ -763,8 +771,8 @@ load_data <- function(target_variable, value_type = "value", incl_numerator_rema
 #' @param tuning_grid data.frame with numeric columns for mtry, min_n and trees
 #'   (if using random_forest) or a signle column named threshold (if performing
 #'   logistic_regression). Can also take the value "auto", which is the default.
-#' @param predict_proportions logical; should proportions be the predicted value
-#'   (TRUE) or a count (FALSE)
+#' @param target_type string; one of "proportion", "difference from previous",
+#'   "absolute"
 #' @param validation_type string; either "cross_validation",
 #'   "leave_group_out_validation" or "train_validation"
 #' @param seed numeric; seed number
@@ -779,7 +787,7 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
                                   shuffle_training_records = FALSE,
                                   model_type = "logistic_regression", 
                                   tuning_grid = "auto",
-                                  predict_proportions = TRUE,
+                                  target_type = "proportion",
                                   validation_type,
                                   eval_metric,
                                   seed = 321) {
@@ -787,6 +795,13 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
   model_type <- match.arg(
     model_type,
     c("random_forest", "logistic_regression")
+  )
+  
+  target_type <- match.arg(
+    target_type,
+    c("proportion", 
+      "difference from previous",
+      "absolute")
   )
   
   validation_type <- match.arg(
@@ -855,7 +870,17 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
   if (lagged_years > 0) {
     # create lag variables
     
-    not_lag_variables <- c("year", "org", "nhs_region", "pandemic_onwards", target_variable)
+    not_lag_variables <- c("year", "org", "nhs_region", 
+                           "pandemic_onwards", target_variable)
+    
+    extra_not_lag_vars <- names(data)[grepl("covid|^lag", 
+                                            names(data), 
+                                            ignore.case = TRUE)]
+    
+    not_lag_variables <- c(
+      not_lag_variables,
+      extra_not_lag_vars
+    )
 
     if (model_type == "logistic_regression") {
       not_lag_variables <- c(not_lag_variables, "total_cases")
@@ -1073,7 +1098,10 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
     )
   
   if (model_type %in% c("logistic_regression")) {
-    model_recipe <- model_recipe |> 
+    model_recipe <- model_recipe |>
+      step_zv(
+        all_numeric_predictors()
+      ) |> 
       step_range(
         all_numeric_predictors(),
         clipping = FALSE
@@ -1406,7 +1434,90 @@ pick_model <- function(modelling_outputs, evaluation_metric, id = "best") {
   return(outputs)
 }
 
-
+record_model_outputs <- function(best_model_outputs, eval_metric, 
+                                 validation_type, target_type) {
+  
+  inputs <- best_model_outputs |> 
+    pluck("ft") |> 
+    extract_recipe() |> 
+    summary()
+  
+  target <- inputs |> 
+    filter(
+      role == "outcome"
+    ) |> 
+    pull(variable)
+  
+  predictors <- inputs |> 
+    filter(
+      role == "predictor"
+    ) |> 
+    pull(variable)
+  
+  important_predictors <- best_model_outputs |> 
+    pluck("ft") |> 
+    plot_variable_importance(
+      top_n = 20,
+      table_output = TRUE
+    )
+  
+  pre_processing <- best_model_outputs |> 
+    pluck("ft") |> 
+    extract_recipe() |> 
+    tidy() |> 
+    pull(type)
+  
+  model_type <- pluck(best_model_outputs, "inputs", "Model type")
+  split_method <- pluck(best_model_outputs, "inputs", "Split type")
+  shuffled_training_years <- pluck(best_model_outputs, "inputs", "Shuffled training years")
+  training_years <- pluck(best_model_outputs, "inputs", "Training years")
+  lagged_years <- pluck(best_model_outputs, "inputs", "Lagged years")
+  lagged_target_years <- pluck(best_model_outputs, "inputs", "Lagged target variable")
+  
+  test_statistic <- pluck(
+    best_model_outputs,
+    "evaluation_metrics"
+  ) |> 
+    filter(
+      .metric == eval_metric
+    ) |> 
+    pull(test)
+  
+  summary_record <- tibble(
+    Date = Sys.time(),
+    `Target variable` = target,
+    `Predictor variables` = list(predictors),
+    `Important predictors` = list(important_predictors),
+    `Pre-processing steps` = list(pre_processing),
+    `Model type` = model_type,
+    `Splitting method` = split_method,
+    `Validation method` = validation_type,
+    `Target variable type` = target_type,
+    `Shuffled training years` = shuffled_training_years,
+    `Number training years` = training_years,
+    `Number lagged years` = lagged_years,
+    `Number lagged target years` = lagged_target_years,
+    `Tuning objective` = evaluation_metric,
+    `Test set value` = test_statistic
+  )
+  
+  output_file <- "tests/model_testing/model_summary_information.rds"
+  
+  if (!file.exists(output_file)) {
+    saveRDS(
+      summary_record,
+      output_file
+    )
+  } else {
+    combined_record <- readRDS(output_file) |> 
+      bind_rows(
+        summary_record
+      ) |> 
+      saveRDS(output_file)
+  }
+  
+  return(summary_record)
+}
 
 # applying model to scenarios ---------------------------------------------
 

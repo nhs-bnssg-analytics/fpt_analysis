@@ -7,9 +7,9 @@ source("R/04_modelling_utils.R")
 
 target_variable <- "Proportion of attended appointments (Over 4 weeks wait time)"
 model_value_type <- "value"
-predict_year <- 2022
+predict_year <- 2023
 val_type <- "leave_group_out_validation"
-# val_type <- "train_validation"
+target_type <- "proportion"
 
 ts_split <- FALSE #set whether to leave the latest year for testing (TRUE) or not (FALSE)
 if (ts_split) {
@@ -60,19 +60,8 @@ dc_data <- load_data(
     year <= predict_year
   )
 
-dc_data_1 <- dc_data |> 
-  select(
-    "year",
-    "org",
-    "nhs_region",
-    "numerator",
-    "remainder",
-    starts_with("Primary care"),
-    all_of(target_variable)
-  )
-
 inputs <- expand.grid(
-  training_years = 2:3,
+  training_years = 2:4,
   lagged_years = 0:2
 ) |> 
   mutate(
@@ -83,7 +72,7 @@ modelling_outputs <- map2(
   .x = inputs$training_years,
   .y = inputs$lagged_years,
   ~ modelling_performance(
-    data = dc_data_1,
+    data = dc_data,
     target_variable = target_variable,
     lagged_years = .y, 
     training_years = .x,
@@ -95,6 +84,16 @@ modelling_outputs <- map2(
     validation_type = val_type, 
     seed = 321,
     eval_metric = evaluation_metric
+  )
+)
+
+model_summary <- map_df(
+  modelling_outputs,
+  ~ record_model_outputs(
+    best_model_outputs = .x,
+    eval_metric = evaluation_metric,
+    validation_type = val_type,
+    target_type = target_type
   )
 )
 
