@@ -46,92 +46,6 @@ add_prediction_to_data <- function(data, final_fit) {
   return(data)
 }
 
-calculate_train_metric <- function(final_fit, training_data, target_variable, case_weights = FALSE) {
-  
-  training_metric <- add_prediction_to_data(
-    data = training_data,
-    final_fit = final_fit
-  ) |> 
-    rename(
-      observed = all_of(target_variable)
-    )
-  
-  
-  if (case_weights) {
-    # rsq <- training_metric  |> 
-    #   yardstick::rsq(
-    #     truth = observed,
-    #     estimate = .pred,
-    #     case_weights = total_cases
-    #   )
-    rmse <- training_metric  |> 
-      yardstick::rmse(
-        truth = observed,
-        estimate = .pred,
-        case_weights = total_cases
-      )
-    mae <- training_metric  |> 
-      yardstick::mae(
-        truth = observed,
-        estimate = .pred,
-        case_weights = total_cases
-      )
-    mape <- training_metric  |> 
-      yardstick::mape(
-        truth = observed,
-        estimate = .pred,
-        case_weights = total_cases
-      )
-    smape <- training_metric  |> 
-      yardstick::smape(
-        truth = observed,
-        estimate = .pred,
-        case_weights = total_cases
-      )
-  } else {
-    # rsq <- training_metric  |> 
-    #   yardstick::rsq(
-    #     truth = observed,
-    #     estimate = .pred
-    #   )
-    rmse <- training_metric  |> 
-      yardstick::rmse(
-        truth = observed,
-        estimate = .pred
-      )
-    mae <- training_metric  |> 
-      yardstick::mae(
-        truth = observed,
-        estimate = .pred
-      )
-    mape <- training_metric  |> 
-      yardstick::mape(
-        truth = observed,
-        estimate = .pred
-      )
-    smape <- training_metric  |> 
-      yardstick::smape(
-        truth = observed,
-        estimate = .pred
-      )
-  }
-  
-  training_metric <- bind_rows(
-    # rsq,
-    rmse,
-    mae,
-    mape,
-    smape
-  ) |> 
-    mutate(
-      data = "train",  
-    ) |> 
-    select(!c(".estimator"))
-  
-  return(training_metric)
-}
-
-
 metric_to_numerator <- function(metric_name) {
   numerator_description <- read.csv("data/configuration-table.csv") |> 
     filter(
@@ -1501,6 +1415,41 @@ record_model_outputs <- function(best_model_outputs, eval_metric,
     `Test set value` = test_statistic
   )
   
+  # calculate baseline scores
+  
+  baseline_score <- c(
+    "same as last year", "linear"
+  ) |> 
+    map_df(
+      ~ calculate_baseline_score(
+        pluck(
+          best_model_outputs, "ft"
+        ),
+        target_variable = target_variable,
+        projection_method = .x,
+        n_years = 3
+      )
+    ) |> 
+    mutate(
+      method = paste0(
+        "Baseline (",
+        tolower(method),
+        ")"
+      )
+    ) |> 
+    pivot_wider(
+      names_from = method,
+      values_from = Baseline
+    )
+    
+  
+  # attach baseline to summary data
+  summary_record <- summary_record |> 
+    left_join(
+      baseline_score,
+      by = join_by(`Tuning objective`)
+    )
+  
   output_file <- "tests/model_testing/model_summary_information.rds"
   
   if (!file.exists(output_file)) {
@@ -1684,4 +1633,155 @@ apply_model_to_scenario <- function(input_data, number_year_to_extrapolate,
   )
   
   return(predictions)
+}
+
+
+calculate_baseline_score <- function(last_fit,
+                                     target_variable, 
+                                     projection_method,
+                                     n_years) {
+ 
+  
+  projection_method <- match.arg(
+    projection_method,
+    c("linear", "same as last year")
+  )
+  
+  # select required data
+  test_set_rows <- last_fit |> 
+    collect_predictions() |> 
+    pull(.row)
+    
+  data <- last_fit |> 
+    pluck("splits", 1, "data") |> 
+    select(
+      "org", "year",
+      value = all_of(target_variable)
+    )
+  
+  observed_predicted <- data |> 
+    slice(test_set_rows) |> 
+    rename(
+      observed = "value"
+    )
+  
+  if (projection_method == "linear") {
+    projection_method_described <- paste0(str_to_sentence(projection_method),
+                                          " (",
+                                          n_years,
+                                          " years)")
+    
+    observed_predicted <- observed_predicted |> 
+      group_by(
+        org, year
+      ) |> 
+      group_split() |> 
+      map_df(
+        ~ complete(
+          .x,
+          org,
+          year = seq(
+            from = max(year) - (n_years + 1),
+            to = max(year),
+            by = 1
+          )
+        ),
+        .id = "prediction_group"
+      ) |> 
+      left_join(
+        data,
+        by = join_by(
+          year, org
+        )
+      ) |> 
+      mutate(
+        value = case_when(
+          !is.na(observed) ~ NA_real_,
+          .default = value
+        )
+      ) |> 
+      # remove groups where no previous year data exists
+      filter(
+        n() != sum(is.na(value)),
+        .by = prediction_group
+      ) |> 
+      nest(
+        data = !c(prediction_group, org)
+      ) |> 
+      mutate(
+        fit = map(data, ~ lm(value ~ year, data = .x, na.action = na.omit)),
+        data = map2(fit, data, ~ bind_cols(.y, tibble(predicted = predict(.x, newdata = .y))))
+      ) |> 
+      select(!c(fit)) |> 
+      unnest(data) |> 
+      filter(
+        !is.na(observed)
+      ) |> 
+      select(
+        "org",
+        "year",
+        "observed",
+        "predicted"
+      )
+  } else if (projection_method == "same as last year") {
+    projection_method_described <- projection_method
+    
+    observed_predicted <- observed_predicted |> 
+      mutate(
+        last_year = year - 1
+      ) |> 
+      left_join(
+        data,
+        by = join_by(
+          org, 
+          last_year == year
+        )
+      ) |> 
+      select(
+        "org",
+        "year",
+        "observed",
+        "predicted" = "value"
+      )
+  }
+    
+  rmse <- observed_predicted  |> 
+    yardstick::rmse(
+      truth = observed,
+      estimate = predicted
+    )
+  mae <- observed_predicted  |> 
+    yardstick::mae(
+      truth = observed,
+      estimate = predicted
+    )
+  mape <- observed_predicted  |> 
+    yardstick::mape(
+      truth = observed,
+      estimate = predicted
+    )
+  smape <- observed_predicted  |> 
+    yardstick::smape(
+      truth = observed,
+      estimate = predicted
+    )
+  
+  
+  metrics <- bind_rows(
+    rmse,
+    mae,
+    mape,
+    smape
+  ) |> 
+    select(!c(".estimator")) |> 
+    rename(
+      `Tuning objective` = ".metric",
+      Baseline = ".estimate"
+    ) |> 
+    mutate(
+      method = projection_method_described
+    )
+  
+  return(metrics)
+   
 }

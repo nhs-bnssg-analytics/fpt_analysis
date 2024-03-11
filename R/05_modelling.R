@@ -5,7 +5,7 @@ source("R/04_modelling_utils.R")
 
 # configure modelling  -----------------------------------------------------------
 
-target_variable <- "Proportion of attended appointments (Over 4 weeks wait time)"
+target_variable <- "Proportion of incomplete pathways greater than 18 weeks from referral (incomplete)"
 model_value_type <- "value"
 predict_year <- 2023
 val_type <- "leave_group_out_validation"
@@ -28,7 +28,7 @@ if (ts_split) {
 
 evaluation_metric <- "mae"
 
-model_method <- "logistic_regression"
+model_method <- "random_forest"
 
 if (model_method == "random_forest") {
   numerator_remainder <- FALSE
@@ -61,7 +61,7 @@ dc_data <- load_data(
   )
 
 inputs <- expand.grid(
-  training_years = 2:4,
+  training_years = 2:6,
   lagged_years = 0:2
 ) |> 
   mutate(
@@ -96,6 +96,7 @@ model_summary <- map_df(
     target_type = target_type
   )
 )
+
 
 p <- plot_modelling_performance(
   modelling_results = modelling_outputs,
