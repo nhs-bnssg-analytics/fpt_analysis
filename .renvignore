@@ -9,10 +9,10 @@
 *.docx
 *.Rproj
 
+/ad-hoc/
 /data/
 /data-raw/
-/.quarto/
 /docs/
-/ad-hoc/
+/outputs/
+/.quarto/
 /tests/
-
