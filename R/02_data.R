@@ -152,6 +152,27 @@ lsoa_icb_lkp <- check_and_download(
     "ICB22CDH"
   )
 
+url <- "https://www.ons.gov.uk/peoplepopulationandcommunity/populationandmigration/populationestimates/datasets/lowersuperoutputareamidyearpopulationestimates"
+zip_files <- obtain_links(url) |> 
+  (\(x) x[grepl("zip$|xlsx$", x)])() |> 
+  (\(x) x[!grepl("2018on20", x)])() |> 
+  (\(x) x[grepl("unformatted", x)])() |> 
+  (\(x) x[!grepl("^rft-lsoa", basename(x))])() |> 
+  (\(x) x[!grepl("males.zip$", x)])() |> 
+  (\(x) x[!grepl("sape19|sape18", x)])() |> 
+  (\(x) x[!grepl("^rft", basename(x))])()
+
+files <- purrr::map_chr(
+  paste0(
+    "https://www.ons.gov.uk/",
+    zip_files
+  ),
+  ~ check_and_download(
+    url = .x,
+    filepath = paste0("data-raw/Population/", basename(.x))
+  )
+)
+
 pops_files <- list.files("data-raw/Population/",
                          full.names = TRUE)
 
@@ -1323,6 +1344,7 @@ monthly_gp_wait_times <- setNames(
   nm = gsub(".csv", "", list.files(
     "data-raw/GP wait times/"
   ))) |> 
+  (\(x) x[!grepl("Daily", x)])() %>% 
   purrr::map_dfr(
     ~ read.csv(
       paste0(
