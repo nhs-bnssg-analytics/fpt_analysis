@@ -736,7 +736,10 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
     } else if (tuning_grid != "auto") {
       stop("tuning_grid is incorrect")
     }
-  } 
+  } else if (model_type == "logistic_regression") {
+    if (target_type == "diference from previous") 
+      stop("logistic regression model cannot be used for a target of 'difference from previous'")
+  }
   
   if (!is.null(training_years)) {
     if (training_years < 2) stop("training years must be NULL or greater than 1")
@@ -771,6 +774,24 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
         total_cases = frequency_weights(numerator + remainder)
       ) |> 
       select(!c("numerator", "remainder"))
+  }
+  
+  if (target_type == "difference from previous") {
+    data <- data |> 
+      arrange(org, year) |> 
+      mutate(
+        across(
+          !any_of(c("year", "org", "nhs_region", "pandemic_onwards")),
+          function(x) x - lag(x)
+        ),
+        .by = c(
+          org
+        )
+      ) |> 
+      filter(
+        # remove all the rows that will have NAs
+        year != min(year)
+      )
   }
   
   if (lag_target > 0) {
@@ -1022,8 +1043,8 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
       )
   }
   
-  model_recipe <- model_recipe |> 
-    prep(training = data_train, retain = TRUE)
+  # model_recipe <- model_recipe |> 
+  #   prep(training = data_train, retain = TRUE)
   
   # start workflow
   modelling_workflow <- workflow() |> 
