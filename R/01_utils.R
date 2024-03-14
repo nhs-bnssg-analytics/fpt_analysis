@@ -2614,7 +2614,7 @@ lsoa_utla_icb_weighted_pops <- function() {
       ~ list(
         download_url_to_directory(
           url = .x,
-          new_directory = "data-raw/Lookups",
+          new_directory = "data-raw/Lookups/",
           filename = paste0(
             "LSOA11_UTLA",
             names(.x),
@@ -3120,6 +3120,8 @@ trust_to_ics_proportions <- function(final_year = 2020) {
       org = "ICB22CDH"
     )
   
+  # now create MSOA to ICB, with a count of ICBs in an MSOA (eg, if an MSOA goes
+  # over an ICB boundary, then it will allow us to divide the final metric by 2)
   url <- "https://opendata.arcgis.com/api/v3/datasets/d382604321554ed49cc15dbc1edb3de3_0/downloads/data?format=csv&spatialRefId=4326&where=1%3D1"
   msoa_to_icb <- check_and_download(
     filepath = "data-raw/Lookups/lsoa_to_msoa.csv",
@@ -3143,7 +3145,7 @@ trust_to_ics_proportions <- function(final_year = 2020) {
   
   # this link changes because it is generated with php
   # the file can be found here: https://app.box.com/s/qh8gzpzeo1firv1ezfxx2e6c4tgtrudl
-  url <- "https://public.boxcloud.com/d/1/b1!YZG4t3HtCRXlwsDZvbc7sbxLexd4SZVMBzsPZEbtJ7V-xwSsWR8zZ9lg5y6Et1a-l6TEyowsuLrT4Ti0ligSRkSeppawMxn-7KiJQ-kgcWQ3VYaLhjDgbrONXuT0pa5A6gFDO_bvl5INHGt2z673uexhm5DXQLx8Bpytbm-fD6mEB-yxbZQwBULG_kzEhRB7J3h8pAi6iiAp4PUcqQaI0O7l9xGeIh2ueg0GioarFd7CqVvm8qpc5f_GqpNz23jN5_y2JkaNmDpSBu8PgDGQXTdSdPeLL_hyrr-7VSS6ltGsmM6WYDI_CCkOIdk5k2oQAekq1n2_pqosIwQw1HsihFUdj8WTQd4tV8rIKKK_PKJxHWykx7kL0Sv6ZAQ1q0tYIXhMsscKFuzO3q0FLux7Bpjq3Nvm_6crlnmbZF8cWUvR05LNjTI2qk_B4Gea8we_IO-NJlFep2BGz19B2ETkPcryXGI_wJHty5CDgffmcxssY0ixjzqWLzqnyf754rkiytx0kgnHdWgj1C8lmBAb5q8E4-0NFKQbEG92WA_ipIyGvdczHSRI0kWiH_MvxKDOG8L80VEISnDGdQDreA0p0-WE63AgeB63tbMbmdnvNK_z0tiTCT2ZuN6uAYY6tCk-gdMnpDHRkfgQ_WBVwyBRoUxJZVB5c-w_TVT2vQ6len1-FT3BKB7W7y3k8P4GrpOR3rKgWm7P81f0ZWE6ynxnXRkICfRWjDJVb3AQvMb3SIe2dsfXUIosjaUEY6Qufk3gx07OaHv4bfLQ7NFkZPq8MkSYULnO_hGQ2V-9yGlvIi4RgRa-jrngSQke2doXY1KxskhYoXig4IPx1eklYJp5EBJdG0_v8bshNEU3U5MJ43icDFjQad7eVGISkMNqpH68_bSMSgs0OsXBwZ-T5WpT26LPohtnUP-HaXCN3YwgWkfrvzlWpUTozQLDeJ1--VlYfiWMmeJVejEbWkU4ItFiejNbXEFCybVykOT8dBBlRTbiVCBINpvSJotvOS9-XYKmFTEb4hsUFrIR6HBbY4VZE07kzHz2GWGUPf7ssIK2N2fpZMpv7EVXMqCicKnFmJ2WPeVIHN-h8PTmTho6KRjXMdV779nuU66F8wdToz_Wf_fD__73kTYmtO-gQPPrnzCUFkL__dvJfd7r38ndDUrtPSZ84iHCZVOabnMKGE1-qqbid92rAwrdmQ7daZUOuue-l7lmWU-NzZ0EO3rM-sOgc0wX2WBqbpT6EP2vgImAmgGGnLkskUGicdm6iWwAmZhfaPH3TptSuHEF5BqV_NU1nw-UU_1YLTkDlLEo-FZJU_JqjBgFuy36b82VMzyWXxoZQOsEUV0S8X0jYAXpALvqz1pyvkmdgYfAtUgXENsiQ6HDDi4LV8ONuiw1/download"
+  url <- "https://public.boxcloud.com/d/1/b1!_if4KZ-UlX6Fdqz-M5OQ-8Y6ZRDyIlXfPY9wSrdbBAAOKF27MZM1CfnXKFNdBKMN1blXwHiGsosjEvyMoVvelzX_fyx4EM9lGtjkWNeENiyVAlwKAtE3U62msLnU4jl0Ydkn9HcEHgoPYr5TjddsDXG02DD8GZArAj3s1LK5QO4pFBvUjczfVMXFGxomoEqBQ9hsGBGljY70GpTL4CfSx6P0l_UtE-8zsKFXlWOfGpBNzHFGj1-XkeV5ZVFahJP7zz3vvs7cMDYbsmKr_osn6ICqMrWi3re4ISic3gtsOrRUS9DAXoXC0ra2ODaswc94tFLeg1Faldz15dxFZaRGhirsmfeTYzoQt_AgzifZcLcp9RXHUah6G_bmoHIQYHnG2YPLkNYdUvYJ-rMkgMDmx3v3QS1tYtvZUXFQAmMo1x7dmLn_VMp8v8P5-lr1xOwyClHwCf9X6gOi1dc4bS9ld9K3MfdXzBXumHdx84HYgryrT6fH7gzk5j7dt37V20DNDOfUzDeJBonAfdCe9u08NtjsxXHokjvGvvZWJgwVwhamywpvyYgjoY11KvYBIC3PWTBMkjDd8oA8d04xItkbFD1hIokffSfWm6UkVFyz1tjP3UWcHaxvPiJ6C0FVY0HN0RxmHMyoKKxUL6BE0Fv_W9zEhkMuBG1ehKAgko0BWZsb6k1X4ID0zdavgMvCunA6_g803kNW4x3RCw6woRjLkoIrhsYyuB_XqMvpx4rdmtkhS2IgwFwqzap0BgvIZ88sjCoeq3709Xq1SwzoiTnhPpIl2wM6TQb1HdiK3kb1kQB-H3ckh1F-_MEOXIqKOUypr8aO4S8VkehoX0tYnMkKSnMqSe2lYsOszpyRYJCG2V_-P9ZivTXZx-wMKrvY0Hy_dQwa_E7dw4yWQ7CPM7PkQgi7-A_2q_jjsOnro8FAn_6U38-CVsVE9nTQafwfCDAIbISC3VsLX2U9vPBZwO8UaHdORIsj4VYJ5WRpQIkwiP_ryKJmsu20I6MMWAQg5-Mo-L9ezGXfgM9X3DztUQktXejvaRFd-MT4ytNPwA911fNA5pSWdrjm5Oy8qggppZepK6wLBWpQeqV27AWaKk1Cg0eAP9Jl-KewxiwSwHjjILSHLLPsz2MHC9zoAFH0JGcJA67ZEdqB-aJbtEoEQQ1yVNDBftf7VZJIX49BBL0IgePUYv7n_aeYOLVQbsO8P2Mo1TQFnpZVwBt5HRqGLZyNz9XVmspRxbn1oHfZVRGlGWJxKTZmy7XiTuXIhSfE8rbQeyWqqrSdcSyd63Ekb5csu3CM1AWwckWBEptT9mKSG1AoOfggv0MAJpq7kPXsB-5730VaLymLrpRNUAKBs3Bv9pCQ1emCYyKbbx4VdYAQyPALgHc./download"
   
   file <- check_and_download(
     filepath = "data-raw/Catchment populations/catchment-populations.xlsx",
@@ -3161,6 +3163,7 @@ trust_to_ics_proportions <- function(final_year = 2020) {
         sheet = .x
       )
     ) |> 
+    # create table of number of patients that attend each trust by msoa and year
     select(
       year = "CatchmentYear",
       # type = "AdmissionType",
@@ -3170,14 +3173,17 @@ trust_to_ics_proportions <- function(final_year = 2020) {
     )
   
   trust_to_ics_proportions <- msoas_in_catchments |> 
+    # add ICB to patient count data
     left_join(
       msoa_to_icb,
       by = join_by(MSOA11CD),
       relationship = "many-to-many"
     ) |> 
+    # divide number of patients between icbs where msoa crosses icb boundary
     mutate(
       patients = patients / divisor
     ) |> 
+    # count patients for each trust that come from each icb by year
     summarise(
       patients = sum(patients),
       .by = c(
@@ -3187,6 +3193,8 @@ trust_to_ics_proportions <- function(final_year = 2020) {
         org
       )
     ) |> 
+    # for each year, calculate the proportion of patients that attend each trust
+    # from the feeding icbs
     mutate(
       proportion = patients / sum(patients),
       .by = c(
@@ -3208,6 +3216,9 @@ trust_to_ics_proportions <- function(final_year = 2020) {
         year <= final_year
       )
   } else {
+    # the if metric contains years beyond the acute trust catchment analysis,
+    # then use the final year of known catchment data to provide the icb
+    # proportions for future years
     additional_years <- seq(
       from = max(trust_to_ics_proportions$year) + 1,
       to = final_year,
@@ -3368,53 +3379,58 @@ apply_catchment_proportions <- function(data) {
       unique(trust_ics_lkp$health_org_code)
     )
   
-  # table of which known health orgs existed in which years
-  health_orgs_by_year <- trust_ics_lkp |> 
-    distinct(
-      year, health_org_code
-    )
+  if (length(orgs) > 0) {
+    # table of which known health orgs existed in which years
+    health_orgs_by_year <- trust_ics_lkp |> 
+      distinct(
+        year, health_org_code
+      )
+    
+    org_lkp <- nearest_health_orgs(
+      missing_orgs = orgs,
+      known_orgs = unique(trust_ics_lkp$health_org_code),
+      n = 2
+    ) |> 
+      left_join(
+        health_orgs_by_year,
+        by = join_by(known_org == health_org_code),
+        relationship = "many-to-many"
+      ) |> 
+      mutate(
+        n_trusts = n(),
+        .by = c(missing_org, year)
+      ) |> 
+      mutate(
+        known_org_proportion = case_when(
+          n_trusts == 1 ~ 1,
+          .default = 1 - (distance / sum(distance))
+        ),
+        .by = c(missing_org, year)
+      ) |> 
+      left_join(
+        trust_ics_lkp,
+        by = join_by(
+          year,
+          known_org == health_org_code
+        ),
+        relationship = "many-to-many"
+      ) |> 
+      mutate(
+        proportion = proportion * known_org_proportion
+      ) |> 
+      select(
+        "year",
+        health_org_code = "missing_org",
+        "icb_code",
+        "proportion"
+      ) |> 
+      bind_rows(
+        trust_ics_lkp
+      )
+  } else {
+    org_lkp <- trust_ics_lkp
+  }
   
-  org_lkp <- nearest_health_orgs(
-    missing_orgs = orgs,
-    known_orgs = unique(trust_ics_lkp$health_org_code),
-    n = 2
-  ) |> 
-    left_join(
-      health_orgs_by_year,
-      by = join_by(known_org == health_org_code),
-      relationship = "many-to-many"
-    ) |> 
-    mutate(
-      n_trusts = n(),
-      .by = c(missing_org, year)
-    ) |> 
-    mutate(
-      known_org_proportion = case_when(
-        n_trusts == 1 ~ 1,
-        .default = 1 - (distance / sum(distance))
-      ),
-      .by = c(missing_org, year)
-    ) |> 
-    left_join(
-      trust_ics_lkp,
-      by = join_by(
-        year,
-        known_org == health_org_code
-      ),
-      relationship = "many-to-many"
-    ) |> 
-    mutate(
-      proportion = proportion * known_org_proportion
-    ) |> 
-    select(
-      "year",
-      health_org_code = "missing_org",
-      "icb_code",
-      "proportion"
-    ) |> 
-    bind_rows(
-      trust_ics_lkp
-    )
   
   data <- data |> 
     left_join(
