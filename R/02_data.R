@@ -691,7 +691,7 @@ beds_per_60plus <- c(
   ) |> 
   mutate(
     metric = gsub(
-      "Bed availability",
+      "Proportion of available beds that are occupied",
       "Total beds per 1,000 60+ yrs",
       metric
     ),
