@@ -1,13 +1,24 @@
 # url processing ----------------------------------------------------------
 
-obtain_links <- function(url) {
-  links <- httr::GET(url) %>% 
-    XML::htmlParse() %>% 
-    XML::xpathSApply(
-      path = "//a",
-      xmlGetAttr,
-      "href"
+obtain_links <- function(url, include_link_text = FALSE) {
+  url_html <- xml2::read_html(url)
+  
+  links <- url_html |> 
+    rvest::html_nodes("a") |> 
+    rvest::html_attr("href")
+  
+  if (include_link_text) {
+    link_text <- url_html |> 
+      rvest::html_nodes("a") %>%
+      rvest::html_text() |> 
+      str_squish()
+    
+    links <- set_names(
+      links,
+      nm = link_text
     )
+  }
+  
   return(links)
 }
 
