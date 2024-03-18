@@ -5,97 +5,117 @@ source("R/04_modelling_utils.R")
 
 # configure modelling  -----------------------------------------------------------
 
-target_variable <- "Proportion of incomplete pathways greater than 18 weeks from referral (incomplete)"
-model_value_type <- "value"
-predict_year <- 2023
-val_type <- "leave_group_out_validation"
-target_type <- "proportion"
-
-ts_split <- FALSE #set whether to leave the latest year for testing (TRUE) or not (FALSE)
-if (ts_split) {
-  chart_subtitle <- "Only previous years data used for training (without target variable), shuffled training data"
-  figure_caption <- paste(
-    target_variable,
-    "in",
-    predict_year
-  )
-} else {
-  chart_subtitle <- "Observations are randomly selected for training, validating and testing models"
-  figure_caption <- paste(
-    target_variable
-  )
-}
-
-evaluation_metric <- "mae"
-
-model_method <- "random_forest"
-
-if (model_method == "random_forest") {
-  numerator_remainder <- FALSE
-} else if (model_method == "logistic_regression") {
-  numerator_remainder <- TRUE
-}
-
-# modelling -----------------------------------------------------------
-
-dc_data <- load_data(
-  target_variable,
-  value_type = model_value_type,
-  incl_numerator_remainder = numerator_remainder
-) |> 
-  dplyr::filter(
-    # retain all rows where target variable is not na
-    # retain all rows where we have population age group information
-    if_all(
-      c(
-        all_of(c(target_variable)), 
-        contains("age band")
-      ), ~ !is.na(.)
+for (target_variable in c(
+  "Proportion of incomplete pathways greater than 18 weeks from referral (incomplete)",
+  "62 day wait from suspected cancer or referral to first definitive treament (proportion outside of standard)",
+  "Proportion of A&E attendances greater than 4 hours (Type 1 Departments - Major A&E)",
+  "Proportion of attended appointments (Over 4 weeks wait time)"
+  )) {
+  
+  # target_variable <- "Proportion of incomplete pathways greater than 18 weeks from referral (incomplete)"
+  
+  model_value_type <- "value"
+  predict_year <- 2023
+  val_type <- "leave_group_out_validation"
+  
+  
+  ts_split <- FALSE #set whether to leave the latest year for testing (TRUE) or not (FALSE)
+  if (ts_split) {
+    chart_subtitle <- "Only previous years data used for training (without target variable), shuffled training data"
+    figure_caption <- paste(
+      target_variable,
+      "in",
+      predict_year
     )
-  ) |> 
-  arrange(
-    year, org
-  ) |> 
-  filter(
-    year <= predict_year
-  )
-
-inputs <- expand.grid(
-  training_years = 2:6,
-  lagged_years = 0:2
-) |> 
-  mutate(
-    input_id = row_number()
-  )
-
-modelling_outputs <- map2(
-  .x = inputs$training_years,
-  .y = inputs$lagged_years,
-  ~ modelling_performance(
-    data = dc_data,
-    target_variable = target_variable,
-    lagged_years = .y, 
-    training_years = .x,
-    keep_current = FALSE,
-    lag_target = 1,
-    time_series_split = ts_split, 
-    shuffle_training_records = TRUE,
-    model_type = model_method,
-    validation_type = val_type, 
-    seed = 321,
-    eval_metric = evaluation_metric
-  )
-)
-
-model_summary <- map_df(
-  modelling_outputs,
-  ~ record_model_outputs(
-    best_model_outputs = .x,
-    eval_metric = evaluation_metric,
-    validation_type = val_type,
-    target_type = target_type
-  )
-)
+  } else {
+    chart_subtitle <- "Observations are randomly selected for training, validating and testing models"
+    figure_caption <- paste(
+      target_variable
+    )
+  }
+  
+  evaluation_metric <- "mae"
+  
+  for (model_method in c("logistic_regression", "random_forest")) {
+    # model_method <- "random_forest"
+    
+    
+    if (model_method == "random_forest") {
+      numerator_remainder <- FALSE
+      target_type <- c("proportion", "difference from previous")
+    } else if (model_method == "logistic_regression") {
+      numerator_remainder <- TRUE
+      target_type <- "proportion"
+    }
+    
+    for (tt in target_type) {
+      # modelling -----------------------------------------------------------
+      
+      dc_data <- load_data(
+        target_variable,
+        value_type = model_value_type,
+        incl_numerator_remainder = numerator_remainder
+      ) |> 
+        dplyr::filter(
+          # retain all rows where target variable is not na
+          # retain all rows where we have population age group information
+          if_all(
+            c(
+              all_of(c(target_variable)), 
+              contains("age band")
+            ), ~ !is.na(.)
+          )
+        ) |> 
+        arrange(
+          year, org
+        ) |> 
+        filter(
+          year <= predict_year
+        )
+      
+      inputs <- expand.grid(
+        training_years = 2:6,
+        lagged_years = 0:2
+      ) |> 
+        mutate(
+          input_id = row_number()
+        )
+      
+      for (target_lag in 0:1) {
+        modelling_outputs <- map2(
+          .x = inputs$training_years,
+          .y = inputs$lagged_years,
+          ~ modelling_performance(
+            data = dc_data,
+            target_variable = target_variable,
+            lagged_years = .y, 
+            training_years = .x,
+            keep_current = FALSE,
+            lag_target = target_lag,
+            time_series_split = ts_split, 
+            shuffle_training_records = TRUE,
+            model_type = model_method,
+            validation_type = val_type,
+            target_type = tt,
+            seed = 321,
+            eval_metric = evaluation_metric
+          )
+        )
+        
+        model_summary <- map_df(
+          modelling_outputs,
+          ~ record_model_outputs(
+            best_model_outputs = .x,
+            eval_metric = evaluation_metric,
+            validation_type = val_type,
+            target_type = tt
+          )
+        )
+      }
+    }
+    
+  }
+}
 
 
 p <- plot_modelling_performance(
