@@ -743,6 +743,112 @@ write.csv(
   row.names = FALSE
 )
 
+# a&e workforce
+url <- "https://digital.nhs.uk/data-and-information/publications/statistical/hospital-accident--emergency-activity/"
+
+links <- obtain_links(
+  url,
+  include_link_text = TRUE
+) |> 
+  (\(x) x[grepl("[0-9]{4}-[0-9]{2}", names(x))])() |> 
+  (\(x) paste0("https://digital.nhs.uk", x))() |> 
+  map(
+    ~ obtain_links(
+      .x,
+      include_link_text = TRUE
+    )
+  ) |> 
+  unlist() |> 
+  (\(x) x[grepl("workforce|provider", names(x), ignore.case = TRUE)])() |>
+  enframe(
+    name = "link_text",
+    value = "hyperlink"
+  ) |> 
+  mutate(
+    yr = str_extract(
+      string = link_text,
+      pattern = "[0-9]{4}-[0-9]{2}"
+    ),
+    filetype = tools::file_ext(hyperlink)
+  ) |> 
+  filter(
+    filetype %in% c("xlsx", "xls", "csv"),
+    !grepl("ECDS|DQ", link_text),
+    as.numeric(substr(yr, 1, 4)) > 2016
+  ) |> 
+  mutate(
+    cnt = n(),
+    .by = yr
+  ) |> 
+  mutate(
+    type = case_when(
+      grepl("Workforce", link_text) ~ "Workforce",
+      .default = "Provider"
+    )
+  ) |> 
+  filter(
+    cnt == 1 |
+      type == "Workforce"
+  ) |> 
+  pull(hyperlink)
+
+
+files <- purrr::map_chr(
+  links,
+  ~ check_and_download(
+    url = .x,
+    filepath = paste0("data-raw/A and E workforce/", basename(.x))
+  )
+) 
+
+a_and_e_workforce_quarterly <- files |> 
+  map_df(
+    tidy_a_and_e_workforce, type = "fte"
+  ) |> 
+  apply_catchment_proportions()
+
+# collecting the denominator (populations by health areas)
+quarterly_health_pop_denominators <- quarterly_ics_populations() |> 
+  mutate(
+    quarter = case_when(
+      month == 4 ~ 1L,
+      month == 7 ~ 2L,
+      month == 10 ~ 3L,
+      month == 1 ~ 4L,
+      .default = NA_integer_
+    ),
+    year = case_when(
+      quarter == 4L ~ year - 1,
+      .default = year
+    )
+  ) |> 
+  select(!c("month"))
+
+a_and_e_workforce_quarterly_per_population <- a_and_e_workforce_quarterly |> 
+  left_join(
+    quarterly_health_pop_denominators,
+    by = join_by(
+      year, org, quarter
+    )
+  ) |> 
+  mutate(
+    value = numerator / (denominator / 1e4),
+    metric = paste0(metric, " (per 10,000 population)")
+  )
+
+a_and_e_workforce_annual_per_population <- quarterly_to_annual_mean(
+  a_and_e_workforce_quarterly_per_population,
+  year_type = "financial"
+)
+
+bind_rows(
+  a_and_e_workforce_quarterly_per_population,
+  a_and_e_workforce_annual_per_population
+) |> 
+  write.csv(
+    "data/a-and-e-workforce.csv"
+  )
+
 # Primary care workforce
 url <- "https://digital.nhs.uk/data-and-information/publications/statistical/general-and-personal-medical-services"
 
