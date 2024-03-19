@@ -1264,6 +1264,179 @@ tidy_mh_sheets <- function(sheet_data) {
   return(sheet_data)
 }
 
+#' @param filepath string; filespath to a&E workforce file
+#' @param type string; "fte" or "stability"
+tidy_a_and_e_workforce <- function(filepath, type) {
+  
+  type <- match.arg(type,
+                    c("fte", "stability"))
+  
+  a_and_e_workforce_quarterly <- tidyxl::xlsx_cells(
+    path = filepath,
+    include_blank_cells = FALSE
+    ) |> 
+    mutate(
+      year = 2000 + as.numeric(
+        substr(str_extract(filepath, "[0-9]{4}"), 1, 2))
+    ) |> 
+    filter(
+      grepl("^Table_1|^Table_2", sheet)
+    )
+  
+  ae_workforce_metrics <- a_and_e_workforce_quarterly |> 
+    filter(grepl("^Table", character)) |> 
+    mutate(
+      year = as.numeric(
+        str_extract(
+          character,
+          "[0-9]{4}"
+        )
+      ),
+      character = str_remove_all(
+        character,
+        ", [0-9]{4}-[0-9]{2}$"
+      )
+    ) |> 
+    distinct(year, character) |> 
+    separate(
+      col = character,
+      into = c("sheet", "metric"),
+      sep = ": "
+    ) |> 
+    filter(
+      grepl("^Full Time|^Stability", metric)
+    ) |> 
+    mutate(
+      sheet = gsub(" ", "_", sheet)
+    )
+  
+  a_and_e_workforce_quarterly <- a_and_e_workforce_quarterly |> 
+    inner_join(
+      ae_workforce_metrics,
+      by = join_by(
+        sheet, year
+      )
+    )
+  
+  
+  top_row <- a_and_e_workforce_quarterly |> 
+    filter(character == "Code") |> 
+    distinct(
+      year, metric, row
+    ) |> 
+    rename(
+      top_row = "row"
+    )
+  
+  
+  a_and_e_workforce_quarterly <- a_and_e_workforce_quarterly |> 
+    left_join(
+      top_row,
+      by = join_by(
+        year, metric
+      )
+    ) |> 
+    filter(
+      row >= top_row
+    ) |> 
+    group_by(
+      year, metric
+    ) |> 
+    behead(
+      direction = "left",
+      name = "org"
+    ) |> 
+    behead(
+      direction = "left",
+      name = "org_name"
+    )
+  
+  if (type == "stability") {
+    output <- a_and_e_workforce_quarterly |> 
+      filter(
+        grepl("Stability", metric)
+      ) |> 
+      behead(
+        direction = "up-left",
+        name = "hchs"
+      ) |> 
+      behead(
+        direction = "up",
+        name = "staff_group"
+      ) |> 
+      select(
+        "year",
+        "metric",
+        "staff_group",
+        "org",
+        "org_name",
+        value = "numeric",
+      ) |> 
+      ungroup() |> 
+      filter(
+        grepl("^R", org),
+        staff_group != "All Staff"
+      ) |> 
+      mutate(
+        metric = paste0(
+          metric, 
+          " (", staff_group, ")"
+        ),
+        year = as.integer(year),
+        frequency = "annual financial"
+      )
+    select(!c("staff_group"))
+  } else if (type == "fte") {
+    output <- a_and_e_workforce_quarterly |> 
+      filter(
+        !grepl("Stability", metric)
+      ) |> 
+      behead(
+        direction = "up-left",
+        name = "yr"
+      ) |> 
+      behead(
+        direction = "up",
+        name = "month"
+      ) |> 
+      select(
+        "year", 
+        "month",
+        "metric",
+        "org",
+        "org_name",
+        numerator = "numeric"
+      ) |> 
+      ungroup() |> 
+      filter(
+        grepl("^R", org),
+        !grepl("Average", year)
+      ) |> 
+      mutate(
+        year = as.integer(year),
+        month = match(month, month.name),
+        quarter = case_when(
+          month == 6 ~ 1L,
+          month == 9 ~ 2L,
+          month == 12 ~ 3L,
+          month == 3 ~ 4L,
+          .default = NA_integer_
+        ),
+        frequency = "quarterly",
+        numerator = replace_na(numerator, 0),
+        metric = paste(
+          "A and E",
+          gsub(" Figures", "", metric)
+        )
+      ) |> 
+      filter(!is.na(quarter)) |> 
+      select(!c("month"))
+  }
+  
+  return(output)
+  
+}
+
 open_pops_file <- function(raw_pops_file) {
   
   yr <- stringr::str_extract(
