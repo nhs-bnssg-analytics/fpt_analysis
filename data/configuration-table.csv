@@ -180,3 +180,7 @@ metric_id,metric,domain,numerator_description,denominator_description,raw_area_t
 ,"Primary care workforce (FTEs) per 10,000 population (Direct Patient Care)",Capacity,Primary care workforce at June in year (Direct Patient Care),Total registered population within General Practices,STP,include
 ,"Primary care workforce (FTEs) per 10,000 population (GP)",Capacity,Primary care workforce at June in year (GP),Total registered population within General Practices,STP,include
 ,"Primary care workforce (FTEs) per 10,000 population (Nurses)",Capacity,Primary care workforce at June in year (Nurses),Total registered population within General Practices,STP,include
+,"A and E Full Time Equivalent (FTE) for Care Providers (per 10,000 population)",Capacity,A and E Full Time Equivalent (FTE) for Care Providers,Total registered population within General Practices,Trust,include
+,"A and E Full Time Equivalent (FTE) for Consultants (per 10,000 population)",Capacity,A and E Full Time Equivalent (FTE) for Consultants,Total registered population within General Practices,Trust,include
+,"A and E Full Time Equivalent (FTE) for Doctors (excluding Consultants) (per 10,000 population)",Capacity,A and E Full Time Equivalent (FTE) for Doctors (excluding Consultants),Total registered population within General Practices,Trust,include
+,"A and E Full Time Equivalent (FTE) for Nurses (per 10,000 population)",Capacity,A and E Full Time Equivalent (FTE) for Nurses,Total registered population within General Practices,Trust,include
