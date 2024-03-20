@@ -1465,6 +1465,10 @@ monthly_gp_wait_times <- setNames(
     ),
     .id = "date"
   ) |> 
+  rename(
+    org = SUB_ICB_CODE
+  ) |> 
+  update_to_latest_ics_codes() |> 
   mutate(
     year = as.integer(
       paste0(
@@ -1504,7 +1508,7 @@ monthly_gp_wait_times <- setNames(
       date,
       year,
       month,
-      ICB_STP_ONS_CODE,
+      org,
       metric,
       TIME_BETWEEN_BOOK_AND_APPT
     )
@@ -1515,19 +1519,12 @@ monthly_gp_wait_times <- setNames(
       date,
       year, 
       month,
-      ICB_STP_ONS_CODE
+      org
     )
   ) |> 
   mutate(
     value = numerator / denominator,
     frequency = "monthly"
-  ) |> 
-  rename(
-    org = "ICB_STP_ONS_CODE"
-  ) |> 
-  convert_ons_to_health_code(
-    latest_codes_used = FALSE,
-    retain_fields = c("month")
   ) |> 
   select(
     "year",

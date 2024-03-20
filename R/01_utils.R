@@ -181,9 +181,8 @@ summarise_and_write_gp_wait_time_data <- function(csv_file) {
     rename(
       any_of(
         c(
-          ICB_STP_ONS_CODE = "STP_ONS_CODE",
-          ICB_STP_ONS_CODE = "ICB_ONS_CODE",
-          ICB_STP_ONS_CODE = "STP_CODE"
+          SUB_ICB_CODE = "SUB_ICB_LOCATION_CODE",
+          SUB_ICB_CODE = "CCG_CODE"
         )
       )
     ) |> 
@@ -196,7 +195,7 @@ summarise_and_write_gp_wait_time_data <- function(csv_file) {
     summarise(
       COUNT_OF_APPOINTMENTS = sum(COUNT_OF_APPOINTMENTS),
       .by = c(
-        ICB_STP_ONS_CODE,
+        SUB_ICB_CODE,
         TIME_BETWEEN_BOOK_AND_APPT
       )
     )
@@ -1349,6 +1348,9 @@ tidy_a_and_e_workforce <- function(filepath, type) {
     behead(
       direction = "left",
       name = "org_name"
+    ) |> 
+    filter(
+      !grepl("ambulance", org_name, ignore.case = TRUE)
     )
   
   if (type == "stability") {
@@ -2512,6 +2514,56 @@ ccg_to_icb <- function() {
   return(ccg_to_icb)
 }
 
+update_to_latest_ics_codes <- function(data) {
+  latest_sub_icb_codes <- ccg_to_icb() |> 
+    pull(ccg_code)
+  
+  missing_codes <- data |> 
+    pull(org) |> 
+    setdiff(latest_sub_icb_codes)
+  
+  new_codes <- map_chr(
+    missing_codes,
+    health_org_successors
+  )
+  
+  lkp <- tibble(
+    missing_codes = missing_codes,
+    new_codes = new_codes
+  ) |> 
+    filter(
+      !is.na(new_codes)
+    ) |> 
+    deframe()
+  # replaces org with latest sub-icb codes
+  data <- data |> 
+    mutate(
+      org = str_replace_all(
+        org, lkp
+      )
+    )
+  
+  # create sub-ics to ics lkp
+  sub_ics_lkp <- tibble(
+    org = unique(data$org)
+  ) |> 
+    mutate(
+      ics = map_chr(
+        org,
+        health_org_lookup
+      )
+    ) |> 
+    deframe()
+  # replaces org with latest sub-ics codes
+  data <- data |> 
+    mutate(
+      org = str_replace_all(
+        org, sub_ics_lkp
+      )
+    )
+  
+  return(data)
+}
 # provides all available information from the Organsational Data Services API
 # based on provided health code
 ods_info <- function(health_org_code) {
@@ -2573,6 +2625,7 @@ ods_lookup <- function(health_org_code, table1, table2, filter_category) {
     lkp <- NA
   }
   
+  return(lkp)
 }
 
 
