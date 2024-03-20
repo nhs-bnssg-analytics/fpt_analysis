@@ -497,8 +497,8 @@ load_data <- function(target_variable, value_type = "value", incl_numerator_rema
       metric == target_variable
     )
   
-  # check whether monthly data area recorded
   if (sum(!is.na(target_data[["month"]])) > 0) {
+  # if monthly data are recorded, retain years where 12 months exist in that year
     full_years <- target_data |> 
       filter(!is.na(month)) |> 
       distinct(
@@ -511,6 +511,7 @@ load_data <- function(target_variable, value_type = "value", incl_numerator_rema
     dc_data <- dc_data |> 
       filter(year %in% full_years)
   } else if (sum(!is.na(target_data[["quarter"]])) > 0) {
+    # if quarterly data recorded, retain only years with 4 quarters
     full_years <- target_data |> 
       filter(!is.na(quarter)) |> 
       distinct(
@@ -981,7 +982,7 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
         "glmnet", 
         family = stats::quasibinomial(link = "logit"), 
         # path_values = pen_vals,
-        nlambda = 150,
+        nlambda = 200,
         num.threads = cores,
         standardize = FALSE
       ) |> 
@@ -1028,7 +1029,7 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
     )
   
   model_recipe <- model_recipe |> 
-    step_impute_median(
+    step_impute_knn(
       all_of(vars_selection[["vars_to_impute"]])
     )
   
