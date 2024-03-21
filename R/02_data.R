@@ -846,7 +846,8 @@ bind_rows(
   a_and_e_workforce_annual_per_population
 ) |> 
   write.csv(
-    "data/a-and-e-workforce.csv"
+    "data/a-and-e-workforce.csv",
+    row.names = FALSE
   )
 
 # Primary care workforce

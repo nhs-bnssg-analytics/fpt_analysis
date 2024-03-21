@@ -112,7 +112,7 @@ identify_missing_vars <- function(data_train, data_validation, data_test, model_
   )
   
   # if (model_type == "random_forest") {
-    vars_to_remove <- c(vars_to_remove, "year")
+    vars_to_remove <- c(vars_to_remove, "year", "quarter", "month")
   # }
   
   # identify fields to impute
@@ -137,7 +137,11 @@ create_lag_variables <- function(data, lagged_years, lag_variables) {
   
   data <- data |> 
     arrange(
-      year, org
+      across(
+        any_of(
+          c("year", "quarter", "month", "org")
+        )
+      )
     ) |>
     group_by(org) |> 
     group_split() |> 
@@ -531,7 +535,7 @@ load_data <- function(target_variable, value_type = "value", incl_numerator_rema
       by = join_by(metric)
     ) |> 
     filter(
-      grepl("annual", frequency),
+      grepl("quarterly", frequency),
       grepl("^Q", org)
     )
   
@@ -559,8 +563,10 @@ load_data <- function(target_variable, value_type = "value", incl_numerator_rema
       summarise(
         numerator = sum(numerator),
         denominator = mean(denominator),
-        .by = c(
-          year, org, frequency, metric,
+        .by = any_of(
+          c(
+            "year", "quarter", "month", "org", "frequency", "metric"
+          )
         )
       ) |> 
       mutate(
@@ -611,10 +617,12 @@ load_data <- function(target_variable, value_type = "value", incl_numerator_rema
   
   dc_data <- dc_data |> 
     select(
-      all_of(
+      any_of(
         c(
           "metric",
           "year", 
+          "quarter", 
+          "month",
           "org", 
           value_type
         )
@@ -782,7 +790,7 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
       arrange(org, year) |> 
       mutate(
         across(
-          !any_of(c("year", "org", "nhs_region", "pandemic_onwards")),
+          !any_of(c("year", "quarter", "month", "org", "nhs_region", "pandemic_onwards")),
           function(x) x - lag(x)
         ),
         .by = c(
@@ -806,7 +814,7 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
   if (lagged_years > 0) {
     # create lag variables
     
-    not_lag_variables <- c("year", "org", "nhs_region", 
+    not_lag_variables <- c("year", "quarter", "month", "org", "nhs_region", 
                            "pandemic_onwards", target_variable)
     
     extra_not_lag_vars <- names(data)[grepl("covid|^lag", 
@@ -840,7 +848,8 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
         )
       
       if (!keep_current) {
-        keep_variables <- c("year", "org", "nhs_region", target_variable)
+        keep_variables <- c("year", "quarter", "month", "org", 
+                            "nhs_region", target_variable)
         
         if (model_type == "logistic_regression") {
           keep_variables <- c(keep_variables, "total_cases")
@@ -848,7 +857,7 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
         
         data <- data |>
           select(
-            all_of(keep_variables),
+            any_of(keep_variables),
             starts_with("lag")
           ) |>
           filter(
@@ -982,7 +991,7 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
         "glmnet", 
         family = stats::quasibinomial(link = "logit"), 
         # path_values = pen_vals,
-        nlambda = 200,
+        nlambda = 150,
         num.threads = cores,
         standardize = FALSE
       ) |> 
@@ -999,14 +1008,16 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
   )
   
   # identify predictor variables
-  predictor_variables <- names(data)[!(names(data) %in% c("year", target_variable, "total_cases"))] |> 
+  predictor_variables <- names(data)[!(names(data) %in% c(
+    "year", "quarter", "month",
+    target_variable, "total_cases"))] |> 
     # remove variables that are mostly/entirely missing
     (\(x) x[!(x %in% vars_selection[["vars_to_remove"]])])()
   
   model_recipe <- data_train |> 
     recipe() |> 
     step_rm(
-      all_of(vars_selection[["vars_to_remove"]])
+      any_of(vars_selection[["vars_to_remove"]])
     ) |> 
     update_role(
       all_of(target_variable),
