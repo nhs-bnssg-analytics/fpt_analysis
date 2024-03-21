@@ -597,17 +597,28 @@ load_data <- function(target_variable, value_type = "value", incl_numerator_rema
       )
   }
   
-  ics_to_nhs_region <- "https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/SICBL22_ICB22_NHSER22_EN_LU/FeatureServer/0/query?outFields=*&where=1%3D1&f=geojson" |> 
-    jsonlite::fromJSON() |> 
-    pluck("features", "properties") |> 
-    distinct(
-      ICB22CDH,
-      NHSER22CDH
-    ) |> 
-    rename(
-      org = "ICB22CDH",
-      nhs_region = "NHSER22CDH"
+  ics_lkp_path <- "Lookups/ICB22CDH_NHSER22CDH.csv"
+  if (!file.exists(ics_lkp_path)) {
+    ics_to_nhs_region <- "https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/SICBL22_ICB22_NHSER22_EN_LU/FeatureServer/0/query?outFields=*&where=1%3D1&f=geojson" |> 
+      jsonlite::fromJSON() |> 
+      pluck("features", "properties") |> 
+      distinct(
+        ICB22CDH,
+        NHSER22CDH
+      ) |> 
+      rename(
+        org = "ICB22CDH",
+        nhs_region = "NHSER22CDH"
+      )
+    
+    write.csv(
+      ics_to_nhs_region,
+      ics_lkp_path,
+      row.names = FALSE
     )
+  } else {
+    ics_to_nhs_region <- read.csv(ics_to_nhs_region)
+  }
   
   dc_data <- dc_data |> 
     select(
