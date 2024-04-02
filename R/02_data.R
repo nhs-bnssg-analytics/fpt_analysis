@@ -675,7 +675,6 @@ beds_per_60plus <- c(
     read.csv
   ) |> 
   filter(
-    frequency == "annual financial",
     grepl("General", metric)
   ) |> 
   select(
@@ -853,17 +852,24 @@ bind_rows(
 # Primary care workforce
 url <- "https://digital.nhs.uk/data-and-information/publications/statistical/general-and-personal-medical-services"
 
-links <- obtain_links(url) |> 
-  (\(x) x[grepl(paste(2021:lubridate::year(Sys.Date()), collapse = "|"), x)])() |> 
-  (\(x) x[grepl("jun|december-2021", x)])() |> 
-  (\(x) x[grepl("data-and-information", x)])() |> 
+links <- obtain_links(
+  url,
+  include_link_text = TRUE) |> 
+  (\(x) x[grepl("General Practice Workforce", names(x))])() |> 
+  (\(x) x[grepl("[0-9]{4}$", names(x))])() |> 
   (\(x) paste0("https://digital.nhs.uk", x))() |> 
   map(
-    obtain_links
+    ~ obtain_links(
+      .x,
+      include_link_text = TRUE
+    )
   ) |> 
   unlist() |> 
-  (\(x) x[grepl("xls$|xlsx$|zip$", x)])() |> 
-  (\(x) x[grepl("Individual", x)])()
+  # (\(x) x[grepl("xls$|xlsx$|zip$", x)])() |> 
+  (\(x) x[grepl("Individual", names(x))])() |> 
+  (\(x) x[!grepl("Practice", names(x))])() |> 
+  (\(x) x[grepl("March|June|September|December", names(x))])() |> 
+  (\(x) x[!grepl("March 2022|June 2022|December 2021", names(x))])()
 
 gp_workforce_directory <- "data-raw/GP workforce"
 
@@ -876,31 +882,23 @@ files <- map(
   )
 )
 
-annual_gp_workforce <- tibble(
-  filepath = unlist(files)
-) |>
-  filter(
-    !grepl("December 2016|June 2017", filepath)
-  ) |> 
+quarterly_gp_workforce <- tibble(
+  fname = list.files(gp_workforce_directory)
+) |> 
   mutate(
-    month = str_extract(
-      filepath,
-      pattern = paste(month.name, collapse = "|")
-    ),
-    month_num = match(
-      month, month.name
-    ),
-    proximity_to_june = abs(month_num - 6),
-    year = str_extract(
-      filepath,
-      "[0-9]{4}"
-    )
-  ) |>
-  filter(
-    proximity_to_june == min(proximity_to_june),
-    .by = year
+    mnth = str_extract(fname, paste(month.name, collapse = "|")),
+    mnth_num = match(mnth, month.name),
+    yr = str_extract(fname, "[0-9]{4}")
   ) |> 
-  pull(filepath) |> 
+  filter(
+    mnth_num %in% c(3, 6, 9, 12),
+    grepl("^[0-9]", fname)) |> 
+  filter(
+    n() == 4,
+    .by = yr
+  ) |> 
+  pull(fname) |> 
+  (\(x) paste0(gp_workforce_directory, "/", x))() |> 
   map(
     read.csv
   ) |> 
@@ -935,37 +933,23 @@ annual_gp_workforce <- tibble(
       org = any_of(
         c("STP_CODE", "ICB_CODE")
       ),
-      year = "YEAR"
+      year = "YEAR",
+      month = "Month"
     )
   ) |> 
-  bind_rows() |> 
-  summarise(
-    numerator = mean(numerator),
-    .by = any_of(
-      c(
-        "year",
-        "org",
-        "STAFF_GROUP"#,
-        #"STAFF_ROLE"
-        
-      )
-    )
-  )
+  bind_rows()
 
 health_populations <- quarterly_ics_populations() |> 
-  summarise(
-    denominator = mean(denominator),
-    .by = c(
-      org, 
-      year
-    )
+  mutate(
+    month = month + 2
   )
 
-annual_gp_workforce_per_population <- annual_gp_workforce |> 
-  left_join(
+
+quarterly_gp_workforce_per_population <- quarterly_gp_workforce |> 
+  inner_join(
     health_populations,
     by = join_by(
-      org, year
+      org, year, month
     ),
     relationship = "many-to-one"
   ) |> 
@@ -977,18 +961,37 @@ annual_gp_workforce_per_population <- annual_gp_workforce |>
       # " - ", 
       # STAFF_ROLE,
       ")"),
-    frequency = "annual calendar"
+    frequency = "quarterly",
+    quarter = str_replace_all(
+      month,
+      c(
+        `3` = "4",
+        `6` = "1",
+        `9` = "2",
+        `12` = "3"
+      )
+    ),
+    quarter = as.integer(quarter)
   ) |> 
   select(!c(
-    "STAFF_GROUP"#, 
+    "STAFF_GROUP", 
+    "month"
     # "STAFF_ROLE"
-    ))
+  ))
 
-annual_gp_workforce_per_population |> 
-  write.csv(
-  "data/primary-care-workforce-per-population.csv",
-  row.names = FALSE
+annual_gp_workforce_per_population <- quarterly_to_annual_mean(
+  quarterly_gp_workforce_per_population,
+  year_type = "calendar"
 )
+
+bind_rows(
+  quarterly_gp_workforce_per_population,
+  annual_gp_workforce_per_population
+) |> 
+  write.csv(
+    "data/primary-care-workforce-per-population.csv",
+    row.names = FALSE
+  )
 
 # sickness absence
 # collecting numerators
