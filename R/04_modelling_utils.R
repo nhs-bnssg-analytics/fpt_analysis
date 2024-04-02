@@ -482,18 +482,31 @@ load_data <- function(target_variable, value_type = "value", incl_numerator_rema
   metrics <- read.csv(
     here::here("data/configuration-table.csv"),
     encoding = "latin1"
-  ) |> 
+  )
+  
+  dc_data <- list.files(here::here("data"), full.names = TRUE) |> 
+    (\(x) x[!grepl("configuration-table", x)])() |> 
+    purrr::map_dfr(
+      read.csv
+    )
+  
+  missing_metrics <- setdiff(
+    unique(dc_data$metric),
+    unique(metrics$metric)
+  )
+  
+  if (length(missing_metrics) > 0) {
+    stop("there are some metrics in dc_data that are not in the configuration table")
+  }
+  
+  metrics <- metrics |> 
     filter(
       grepl("include", status) |
         metric == target_variable
     ) |> 
     select(metric, denominator_description)
   
-  dc_data <- list.files(here::here("data"), full.names = TRUE) |> 
-    (\(x) x[!grepl("configuration-table|modelling_data", x)])() |> 
-    purrr::map_dfr(
-      read.csv
-    )
+  
   
   # ensure full year of data for target variable
   target_data <- dc_data |> 
