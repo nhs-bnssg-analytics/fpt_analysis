@@ -616,7 +616,7 @@ load_data <- function(target_variable, value_type = "value", incl_numerator_rema
       )
   }
   
-  ics_lkp_path <- "Lookups/ICB22CDH_NHSER22CDH.csv"
+  ics_lkp_path <- "data-raw/Lookups/ICB22CDH_NHSER22CDH.csv"
   if (!file.exists(ics_lkp_path)) {
     ics_to_nhs_region <- "https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/SICBL22_ICB22_NHSER22_EN_LU/FeatureServer/0/query?outFields=*&where=1%3D1&f=geojson" |> 
       jsonlite::fromJSON() |> 
@@ -636,7 +636,7 @@ load_data <- function(target_variable, value_type = "value", incl_numerator_rema
       row.names = FALSE
     )
   } else {
-    ics_to_nhs_region <- read.csv(ics_to_nhs_region)
+    ics_to_nhs_region <- read.csv(ics_lkp_path)
   }
   
   dc_data <- dc_data |> 
@@ -794,6 +794,7 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
   if (model_type == "logistic_regression" &
       all(c("numerator", "remainder") %in% names(data))
       ) {
+    
     data <- data |> 
       mutate(
         across(
@@ -1405,10 +1406,10 @@ pick_model <- function(modelling_outputs, evaluation_metric, id = "best") {
   return(outputs)
 }
 
-record_model_outputs <- function(best_model_outputs, eval_metric, 
+record_model_outputs <- function(model_outputs, eval_metric, 
                                  validation_type, target_type) {
   
-  inputs <- best_model_outputs |> 
+  inputs <- model_outputs |> 
     pluck("ft") |> 
     extract_recipe() |> 
     summary()
@@ -1425,28 +1426,28 @@ record_model_outputs <- function(best_model_outputs, eval_metric,
     ) |> 
     pull(variable)
   
-  important_predictors <- best_model_outputs |> 
+  important_predictors <- model_outputs |> 
     pluck("ft") |> 
     plot_variable_importance(
       top_n = 20,
       table_output = TRUE
     )
   
-  pre_processing <- best_model_outputs |> 
+  pre_processing <- model_outputs |> 
     pluck("ft") |> 
     extract_recipe() |> 
     tidy() |> 
     pull(type)
   
-  model_type <- pluck(best_model_outputs, "inputs", "Model type")
-  split_method <- pluck(best_model_outputs, "inputs", "Split type")
-  shuffled_training_years <- pluck(best_model_outputs, "inputs", "Shuffled training years")
-  training_years <- pluck(best_model_outputs, "inputs", "Training years")
-  lagged_years <- pluck(best_model_outputs, "inputs", "Lagged years")
-  lagged_target_years <- pluck(best_model_outputs, "inputs", "Lagged target variable")
+  model_type <- pluck(model_outputs, "inputs", "Model type")
+  split_method <- pluck(model_outputs, "inputs", "Split type")
+  shuffled_training_years <- pluck(model_outputs, "inputs", "Shuffled training years")
+  training_years <- pluck(model_outputs, "inputs", "Training years")
+  lagged_years <- pluck(model_outputs, "inputs", "Lagged years")
+  lagged_target_years <- pluck(model_outputs, "inputs", "Lagged target variable")
   
   test_statistic <- pluck(
-    best_model_outputs,
+    model_outputs,
     "evaluation_metrics"
   ) |> 
     filter(
@@ -1480,7 +1481,7 @@ record_model_outputs <- function(best_model_outputs, eval_metric,
     map_df(
       ~ calculate_baseline_score(
         pluck(
-          best_model_outputs, "ft"
+          model_outputs, "ft"
         ),
         target_variable = target_variable,
         projection_method = .x,
