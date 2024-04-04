@@ -529,10 +529,6 @@ tidy_a_and_e <- function(filepath) {
       direction = "left",
       name = "org_name"
     ) |> 
-    # behead(
-    #   direction = "left",
-    #   name = "org_name"
-    # ) |> 
     behead(
       direction = "up",
       name = "metric"
@@ -627,7 +623,7 @@ rename_rtt_files <- function(filepath) {
   return(filename)
 }
 
-tidy_rtt <- function(filepath) {
+tidy_rtt <- function(filepath, num_weeks) {
   admission_type <- "incomplete"
   
   # check sheet names
@@ -686,7 +682,7 @@ tidy_rtt <- function(filepath) {
     ) |> 
     mutate(
       headers = case_when(
-        headers %in% paste0(">", 0:17, "-", 1:18) ~ "numerator",
+        headers %in% paste0(">", 0:(num_weeks - 1), "-", 1:num_weeks) ~ "numerator",
         headers == "Total number of incomplete pathways" ~ "denominator",
         .default = NA_character_
       )
@@ -727,10 +723,10 @@ tidy_rtt <- function(filepath) {
       ),
       numerator = denominator - numerator, # forces bad = high
       value = numerator / denominator,
-      metric = paste0(
-        "Proportion of incomplete pathways greater than 18 weeks from referral (",
-        admission_type,
-        ")"
+      metric = paste(
+        "Proportion of incomplete pathways greater than",
+        num_weeks,
+        "weeks from referral"
       ),
       frequency = "monthly"
     ) |> 

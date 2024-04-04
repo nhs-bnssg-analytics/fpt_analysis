@@ -667,7 +667,7 @@ population_60_plus <- read.csv(
     )
   )
 
-beds_per_60plus <- c(
+quarterly_beds_per_60plus <- c(
   "data/overnight-beds.csv",
   "data/day-beds.csv"
 ) |> 
@@ -678,7 +678,8 @@ beds_per_60plus <- c(
     grepl("General", metric)
   ) |> 
   select(
-    "year", "org", "frequency",
+    "year", "quarter",
+    "org", "frequency",
     numerator = "denominator",
     metric
   ) |> 
@@ -686,7 +687,8 @@ beds_per_60plus <- c(
     population_60_plus,
     by = join_by(
       year, org
-    )
+    ),
+    relationship = "many-to-one"
   ) |> 
   mutate(
     metric = gsub(
@@ -697,11 +699,19 @@ beds_per_60plus <- c(
     value = 1e3 * numerator / denominator
   )
 
-write.csv(
-  beds_per_60plus,
-  "data/beds-per-1000-60plus.csv",
-  row.names = FALSE
-)
+annual_beds_per_60plus <- quarterly_beds_per_60plus |> 
+  quarterly_to_annual_mean(
+    year_type = "calendar"
+  )
+
+bind_rows(
+  quarterly_beds_per_60plus,
+  annual_beds_per_60plus
+) |> 
+  write.csv(
+    "data/beds-per-1000-60plus.csv",
+    row.names = FALSE
+  )
 
 
 # NHS workforce per population
@@ -1885,10 +1895,34 @@ files <- list.files(
 
 
 # tidy the data in the files
-monthly_rtt <- files |> 
+monthly_rtt_18 <- files |> 
   purrr::map_dfr(
-    tidy_rtt
+    ~ tidy_rtt(
+      .x,
+      num_weeks = 18
+    )
   )
+
+monthly_rtt_52 <- files |> 
+  purrr::map_dfr(
+    ~ tidy_rtt(
+      .x,
+      num_weeks = 52
+    )
+  )
+monthly_rtt_65 <- files |> 
+  purrr::map_dfr(
+    ~ tidy_rtt(
+      .x,
+      num_weeks = 65
+    )
+  )
+
+monthly_rtt <- bind_rows(
+  monthly_rtt_18,
+  monthly_rtt_52,
+  monthly_rtt_65
+)
 
 org_icb_lkp <- monthly_rtt |> 
   distinct(
