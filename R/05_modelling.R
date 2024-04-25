@@ -6,13 +6,13 @@ source("R/04_modelling_utils.R")
 # configure modelling  -----------------------------------------------------------
 
 for (target_variable in c(
-  "Proportion of incomplete pathways greater than 18 weeks from referral (incomplete)",
+  "Proportion of incomplete pathways greater than 18 weeks from referral",
   "62 day wait from suspected cancer or referral to first definitive treament (proportion outside of standard)",
   "Proportion of A&E attendances greater than 4 hours (Type 1 Departments - Major A&E)",
   "Proportion of attended appointments (Over 4 weeks wait time)"
   )) {
   
-  # target_variable <- "Proportion of incomplete pathways greater than 18 weeks from referral (incomplete)"
+  # target_variable <- "Proportion of A&E attendances greater than 4 hours (Type 1 Departments - Major A&E)"
   
   model_value_type <- "value"
   predict_year <- 2023
@@ -37,24 +37,25 @@ for (target_variable in c(
   evaluation_metric <- "mae"
   
   for (model_method in c("logistic_regression", "random_forest")) {
-    # model_method <- "random_forest"
+    # model_method <- "logistic_regression"
     
+    numerator_remainder <- include_numerator_remainder(model_method)
     
     if (model_method == "random_forest") {
-      numerator_remainder <- FALSE
       target_type <- c("proportion", "difference from previous")
     } else if (model_method == "logistic_regression") {
-      numerator_remainder <- TRUE
       target_type <- "proportion"
     }
     
     for (tt in target_type) {
+      # tt <- "proportion"
       # modelling -----------------------------------------------------------
       
       dc_data <- load_data(
         target_variable,
         value_type = model_value_type,
-        incl_numerator_remainder = numerator_remainder
+        incl_numerator_remainder = numerator_remainder,
+        binary_covid = FALSE
       ) |> 
         dplyr::filter(
           # retain all rows where target variable is not na
@@ -105,7 +106,7 @@ for (target_variable in c(
         model_summary <- map_df(
           modelling_outputs,
           ~ record_model_outputs(
-            best_model_outputs = .x,
+            model_outputs = .x,
             eval_metric = evaluation_metric,
             validation_type = val_type,
             target_type = tt
@@ -113,7 +114,6 @@ for (target_variable in c(
         )
       }
     }
-    
   }
 }
 

@@ -36,12 +36,35 @@ train_validation_proportions <- function(data, shuffle_training_records = FALSE)
 
 add_prediction_to_data <- function(data, final_fit) {
   
-  data <- final_fit |> 
-    workflowsets::extract_workflow() |> 
-    predict(data) |> 
-    bind_cols(
-      data
-    )
+  model_type <- final_fit |> 
+    hardhat::extract_fit_parsnip() |> 
+    class() |> 
+    head(1)
+  
+  if (grepl("glm", model_type)) {
+    lambda_penalty <- final_fit |> 
+      hardhat::extract_fit_parsnip() |> 
+      pluck("spec", "args", "penalty")
+    
+    data <- final_fit |> 
+      workflowsets::extract_workflow() |> 
+      predict(
+        new_data = data,
+        penalty = lambda_penalty
+      ) |> 
+      bind_cols(
+        data
+      )
+  } else if (grepl("random", model_type)) {
+    data <- final_fit |> 
+      workflowsets::extract_workflow() |> 
+      predict(data) |> 
+      bind_cols(
+        data
+      )
+  }
+  
+  
   
   return(data)
 }
@@ -152,13 +175,20 @@ create_lag_variables <- function(data, lagged_years, lag_variables) {
           all_of(lag_variables),
           .fn = map_lag,
           .names = "{.fn}_{.col}"
-        ),
+        )
       )
     )
   
   return(data)
 }
 
+include_numerator_remainder <- function(model_method) {
+  if (model_method == "random_forest") {
+    numerator_remainder <- FALSE
+  } else if (model_method == "logistic_regression") {
+    numerator_remainder <- TRUE
+  }
+}
 
 # plotting functions ------------------------------------------------------
 
@@ -389,36 +419,85 @@ plot_modelling_performance <- function(modelling_results, inputs, val_type,
   return(p)
 }
 
-plot_variable_importance <- function(model_last_fit, top_n = 10, table_output = FALSE) {
+plot_variable_importance <- function(model_last_fit, top_n = 10, 
+                                     table_output = FALSE, method = "default", 
+                                     test_set = NULL, target_variable = NULL,
+                                     evaluation_metric = NULL, predictors = NULL) {
+  
+  method <- match.arg(
+    method,
+    c("default", "permute")
+  )
   
   model_type <- model_last_fit |> 
     extract_fit_engine() |> 
-    pluck("call") |> 
-    as.character() |> 
+    class() |> 
     head(1)
   
   if (grepl("random", model_type, ignore.case = TRUE)) {
     model_type <- "random_forest"
-    table <- model_last_fit |> 
-      extract_fit_parsnip() |> 
-      vi()
   } else if (grepl("glm", model_type, ignore.case = TRUE)) {
     model_type <- "logistic_regression"
-    lambda_penalty <- model_last_fit |> 
-      extract_fit_parsnip() |> 
-      pluck("spec", "args", "penalty")
-    table <- model_last_fit |> 
-      extract_fit_parsnip() |> 
-      vi(
-        lambda = lambda_penalty
-      ) |> 
-      mutate(
-        Sign = factor(Sign,
-                      levels = c("POS", "NEG"))
-      )
-  } else {
-    stop("unknown model type")
   }
+  
+  if (method == "default") {
+    
+    if (model_type == "random_forest") {
+      table <- model_last_fit |> 
+        extract_fit_parsnip() |> 
+        vi()
+    } else if (model_type == "logistic_regression") {
+      lambda_penalty <- model_last_fit |> 
+        extract_fit_parsnip() |> 
+        pluck("spec", "args", "penalty")
+      
+      table <- model_last_fit |> 
+        extract_fit_parsnip() |> 
+        vi(
+          lambda = lambda_penalty
+        ) |> 
+        mutate(
+          Sign = factor(Sign,
+                        levels = c("POS", "NEG"))
+        )
+    } else {
+      stop("unknown model type")
+    }
+  } else if (method == "permute") {
+    
+    pfun_reg <- function(object, newdata) {
+      
+      model_type <- object |> 
+        extract_fit_parsnip() |> 
+        class() |> 
+        head(1)
+      
+      if (grepl("glm", model_type)) {
+        lambda_penalty <- object |> 
+          pluck("spec", "args", "penalty")
+        
+        pred_table <- predict(object, new_data = newdata, penalty = lambda_penalty)
+      } else if (grepl("random", model_type)) {
+        pred_table <- predict(object, new_data = newdata)
+      }
+      
+      preds <- pred_table |> 
+        pull(.pred)
+      return(preds)
+    }
+    print("calculating permutation importance...")
+    table <- vip::vi(
+      model_last_fit |> 
+        extract_workflow(),
+      method = method,
+      train = test_set,
+      target = target_variable,
+      metric = evaluation_metric,  
+      pred_wrapper = pfun_reg,
+      nsim = 20  # use 30 repetitions
+    )
+  }
+  
   
   table <- table |> 
     filter(
@@ -548,7 +627,7 @@ load_data <- function(target_variable, value_type = "value", incl_numerator_rema
       by = join_by(metric)
     ) |> 
     filter(
-      grepl("quarterly", frequency),
+      grepl("annual", frequency),
       grepl("^Q", org)
     )
   
@@ -1336,6 +1415,17 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
       distinguish_year = TRUE
     )
   
+  permutation_importance <- model_fit |> 
+    plot_variable_importance(
+      top_n = 20,
+      table_output = TRUE, 
+      method = "permute", 
+      test_set = data_test, 
+      target_variable = target_variable,
+      evaluation_metric = eval_metric,
+      predictors = predictor_variables
+    )
+  
   inputs <- tibble(
     `Model type` = model_type,
     `Split type` = ifelse(time_series_split == TRUE, "Time-series", "Random"),
@@ -1353,7 +1443,7 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
     evaluation_metrics = evaluation_metrics,
     errors_per_fold = errors_per_fold,
     inputs = inputs,
-    # coeffs = tuning_coefs
+    permutation_importance = permutation_importance,
     ft = model_fit
   )
   
@@ -1430,7 +1520,8 @@ record_model_outputs <- function(model_outputs, eval_metric,
     pluck("ft") |> 
     plot_variable_importance(
       top_n = 20,
-      table_output = TRUE
+      table_output = TRUE, 
+      method = "default"
     )
   
   pre_processing <- model_outputs |> 
@@ -1783,7 +1874,7 @@ calculate_baseline_score <- function(last_fit,
       )
   } else if (projection_method == "same as last year") {
     projection_method_described <- projection_method
-    
+    # browser()
     observed_predicted <- observed_predicted |> 
       mutate(
         last_year = year - 1
