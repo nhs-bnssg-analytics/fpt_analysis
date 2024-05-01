@@ -981,10 +981,15 @@ tidy_social_care_funding <- function(filepath) {
         metric == "Gross Total Expenditure" ~ "numerator",
         metric == "Long Term Support during the year" ~ "denominator",
         .default = "Not required"
+      ),
+      numeric = case_when(
+        character == "[c]" ~ 2.5,
+        .default = numeric
       )
     ) |> 
     filter(
-      metric != "Not required"
+      type != "Not required",
+      grepl("^E[0-9]{8}", org)
     ) |> 
     summarise(
       numeric = sum(numeric),
@@ -2836,7 +2841,7 @@ lsoa_utla_icb_weighted_pops <- function() {
   )
   
   file <- paste0(
-    "data-raw/Lookups/LSOA11_UTLA/", 
+    "data-raw/Lookups/LSOA11_UTLA", 
     names(urls), 
     ".csv"
     )
