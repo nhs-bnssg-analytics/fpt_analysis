@@ -144,11 +144,14 @@ download_unzip_files <- function(zip_url, directory, zip_file_pattern) {
     invisible()
   
   
-  zipped_files <- unzip(
-    zipfile = temp,
-    files = zipped_files,
-    exdir = directory
-  )
+  if (length(zipped_files) > 0) {
+    zipped_files <- unzip(
+      zipfile = temp,
+      files = zipped_files,
+      exdir = directory
+    )
+  }
+  
   
   unlink(temp)
   
@@ -162,7 +165,7 @@ download_unzip_gp_wait_times <- function(zip_url) {
   zipped_files <- download_unzip_files(
     zip_url = zip_url,
     directory = new_directory,
-    zip_file_pattern = "[[:alpha:]]{3}_[0-9]{2}.csv"
+    zip_file_pattern = "[[:alpha:]]{3}_[0-9]{2}.csv|[[:alpha:]]{3}[0-9]{2}.csv"
   )
   
   # unzip the new csvs and summarise them to icb/stp geography before saving
@@ -1854,7 +1857,7 @@ aggregate_nctr_to_month <- function(daily_nctr) {
       .by = c(year, month, org, org_name, metric)
     ) |> 
     mutate(
-      value = numerator / denominator,
+      value = (numerator / denominator) * 100,
       metric = "Average daily proportion of patients who no longer meet the criteria to reside that remain in hospital",
       frequency = "monthly"
     )
@@ -2267,7 +2270,10 @@ summarise_health_pop_files <- function(filepath, incl_agebands) {
 # takes a mean of numerator and denominator for each month in the quarter and
 # calculates a new value based on that. Requires the columns year, month, org,
 # org_name, metric, numerator and denominator
-monthly_to_quarterly_mean <- function(data) {
+#'
+#' @param proportion logical; if true, function will multiple the numerator /
+#'   denominator by 100 to ensure the value is between 0 and 100
+monthly_to_quarterly_mean <- function(data, proportion = FALSE) {
   data <- data |> 
     mutate(
       quarter = case_when(
@@ -2291,6 +2297,13 @@ monthly_to_quarterly_mean <- function(data) {
       value = numerator / denominator,
       frequency = "quarterly"
     )
+  
+  if (proportion == TRUE) {
+    data <- data |> 
+      mutate(
+        value = value * 100
+      )
+  }
   
   return(data)
 }
@@ -2298,7 +2311,10 @@ monthly_to_quarterly_mean <- function(data) {
 # takes a mean of numerator and denominator for each month in the quarter and
 # calculates a new value based on that. Requires the columns year, month, org,
 # org_name, metric, numerator and denominator
-monthly_to_quarterly_sum <- function(data) {
+#'
+#' @param proportion logical; if true, function will multiple the numerator /
+#'   denominator by 100 to ensure the value is between 0 and 100
+monthly_to_quarterly_sum <- function(data, proportion = FALSE) {
   data <- data |> 
     mutate(
       quarter = case_when(
@@ -2323,13 +2339,24 @@ monthly_to_quarterly_sum <- function(data) {
       frequency = "quarterly"
     )
   
+  if (proportion == TRUE) {
+    data <- data |> 
+      mutate(
+        value = value * 100
+      )
+  }
+  
   return(data)
 }
 
-# takes a mean of numerator and denominator for each month in the year and
-# calculates a new value based on that. Requires the columns year, month, org,
-# org_name, metric, numerator and denominator
-monthly_to_annual_mean <- function(data, year_type = "financial") {
+#' takes a mean of numerator and denominator for each month in the year and
+#' calculates a new value based on that. Requires the columns year, month, org,
+#' org_name, metric, numerator and denominator
+#'
+#' @param proportion logical; if true, function will multiple the numerator /
+#'   denominator by 100 to ensure the value is between 0 and 100
+
+monthly_to_annual_mean <- function(data, year_type = "financial", proportion = FALSE) {
   
   year_type <- match.arg(year_type, c("financial", "calendar"))
   
@@ -2361,13 +2388,23 @@ monthly_to_annual_mean <- function(data, year_type = "financial") {
       )
     )
   
+  if (proportion == TRUE) {
+    data <- data |> 
+      mutate(
+        value = value * 100
+      )
+  }
   return(data)
 }
 
-# takes a mean of numerator and denominator for each month in the year and
-# calculates a new value based on that. Requires the columns year, month, org,
-# org_name, metric, numerator and denominator
-monthly_to_annual_sum <- function(data, year_type = "financial") {
+#' takes a mean of numerator and denominator for each month in the year and
+#' calculates a new value based on that. Requires the columns year, month, org,
+#' org_name, metric, numerator and denominator
+#' 
+#' @param proportion logical; if true, function will multiple the numerator /
+#'   denominator by 100 to ensure the value is between 0 and 100
+
+monthly_to_annual_sum <- function(data, year_type = "financial", proportion = FALSE) {
   year_type <- match.arg(year_type, c("financial", "calendar"))
   
   if (year_type == "financial") {
@@ -2398,24 +2435,23 @@ monthly_to_annual_sum <- function(data, year_type = "financial") {
       )
     )
   
+  if (proportion == TRUE) {
+    data <- data |> 
+      mutate(
+        value = value * 100
+      )
+  }
   return(data)
 }
 
-# takes a mean of numerator and denominator for each quarter in the year and
-# calculates a new value based on that. Requires the columns year, month, org,
-# org_name, metric, numerator and denominator
-quarterly_to_annual_mean <- function(data, year_type) {
+#' takes a mean of numerator and denominator for each quarter in the year and
+#' calculates a new value based on that. Requires the columns year, month, org,
+#' org_name, metric, numerator and denominator
+#' 
+#' @param proportion logical; if true, function will multiple the numerator /
+#'   denominator by 100 to ensure the value is between 0 and 100
+quarterly_to_annual_mean <- function(data, year_type, proportion = FALSE) {
   year_type <- match.arg(year_type, c("financial", "calendar"))
-  
-  # if (year_type == "financial") {
-  #   data <- data |> 
-  #     mutate(
-  #       year = case_when(
-  #         quarter == 1 ~ year - 1,
-  #         .default = year
-  #       )
-  #     )
-  # }
   
   # only keep years with 4 quarters of data
   years_to_keep <- data |> 
@@ -2447,13 +2483,23 @@ quarterly_to_annual_mean <- function(data, year_type) {
       year %in% years_to_keep
     )
   
+  if (proportion == TRUE) {
+    data <- data |> 
+      mutate(
+        value = value * 100
+      )
+  }
+  
   return(data)
 }
 
-# takes a sum of numerator and denominator for each quarter in the year and
-# calculates a new value based on that. Requires the columns year, month, org,
-# org_name, metric, numerator and denominator
-quarterly_to_annual_sum <- function(data, year_type) {
+#' takes a sum of numerator and denominator for each quarter in the year and
+#' calculates a new value based on that. Requires the columns year, month, org,
+#' org_name, metric, numerator and denominator
+#' 
+#' @param proportion logical; if true, function will multiple the numerator /
+#'   denominator by 100 to ensure the value is between 0 and 100
+quarterly_to_annual_sum <- function(data, year_type, proportion = FALSE) {
   year_type <- match.arg(year_type, c("financial", "calendar"))
   
   # if (year_type == "financial") {
@@ -2493,6 +2539,13 @@ quarterly_to_annual_sum <- function(data, year_type) {
     filter(
       year %in% years_to_keep
     )
+  
+  if (proportion == TRUE) {
+    data <- data |> 
+      mutate(
+        value = value * 100
+      )
+  }
   
   return(data)
 }
@@ -3596,8 +3649,10 @@ nearest_health_orgs <- function(missing_orgs, known_orgs, n) {
 #'
 #' @param data; tibble with org, year, (quarter), (metric), (frequency), and
 #'   numerator or denominator
+#' @param proportion logical; if true, function will multiple the numerator /
+#'   denominator by 100 to ensure the value is between 0 and 100
 #' 
-apply_catchment_proportions <- function(data) {
+apply_catchment_proportions <- function(data, proportion = FALSE) {
   
   
   trust_ics_lkp <- trust_to_ics_proportions(
@@ -3691,8 +3746,13 @@ apply_catchment_proportions <- function(data) {
     ) 
   
   if (all(c("numerator", "denominator") %in% names(data))) {
-    data <- data |> 
-      mutate(value = numerator / denominator)
+    if (proportion == TRUE) {
+      data <- data |> 
+        mutate(value = (numerator / denominator) * 100)
+    } else {
+      data <- data |> 
+        mutate(value = numerator / denominator)  
+    }
   }
   
   return(data)

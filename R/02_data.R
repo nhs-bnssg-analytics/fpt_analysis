@@ -33,7 +33,7 @@ quarterly_population_by_age_band <- quarterly_ics_populations(
     )
   ) |> 
   mutate(
-    value = numerator / denominator
+    value = (numerator / denominator) * 100
   )
   
 annual_population_by_age_band <- quarterly_to_annual_mean(
@@ -263,7 +263,7 @@ deprivation <- check_and_download(
     org = "ICB22CDH"
   ) |> 
   mutate(
-    value = numerator / denominator,
+    value = (numerator / denominator) * 100,
     frequency = "annual calendar",
     metric = paste0(
       "Proportion of resident population in national deprivation quintile (",
@@ -333,6 +333,9 @@ bind_rows(
   quarterly_overnight_beds,
   annual_overnight_beds
 ) |> 
+  mutate(
+    value = value * 100
+  ) |> 
   write.csv(
   "data/overnight-beds.csv",
   row.names = FALSE
@@ -387,6 +390,9 @@ bind_rows(
   quarterly_day_beds,
   annual_day_beds
 ) |> 
+  mutate(
+    value = value * 100
+  ) |> 
   write.csv(
     "data/day-beds.csv",
     row.names = FALSE
@@ -499,6 +505,9 @@ bind_rows(
   quarterly_covid_beds,
   annual_covid_beds
 ) |> 
+  mutate(
+    value = value * 100
+  ) |> 
   write.csv(
     "data/covid-beds.csv",
     row.names = FALSE
@@ -586,6 +595,9 @@ admissions_with_covid |>
   bind_rows(
     backcast_denominator
   ) |> 
+  mutate(
+    value = value * 100
+  ) |> 
   write.csv(
     "data/covid-admissions.csv",
     row.names = FALSE
@@ -645,6 +657,9 @@ backcast_denominator <- covid_absences |>
 covid_absences |> 
   bind_rows(
     backcast_denominator
+  ) |> 
+  mutate(
+    value = value * 100
   ) |> 
   write.csv(
     "data/covid-absences.csv",
@@ -1404,7 +1419,10 @@ annual_mh_spend_metrics <- annual_mh_spend |>
       grepl("proportion", metric) ~ 1,
       .default = denominator / 1e4
     ),
-    value = numerator / denominator
+    value = case_when(
+      grepl("allocation", metric) ~ (numerator / denominator) * 100,
+      .default = numerator / denominator
+    )
   )
 
 write.csv(
@@ -1537,7 +1555,7 @@ monthly_gp_wait_times <- setNames(
     )
   ) |> 
   mutate(
-    value = numerator / denominator,
+    value = (numerator / denominator) * 100,
     frequency = "monthly"
   ) |> 
   select(
@@ -1566,6 +1584,9 @@ bind_rows(
   quarterly_gp_wait_times,
   annual_gp_wait_times
 ) |> 
+  mutate(
+    value = value * 100
+  ) |> 
   write.csv(
     "data/gp-wait-times.csv",
     row.names = FALSE
@@ -1702,15 +1723,19 @@ monthly_nctr <- purrr::map_dfr(
   tidy_nctr,
   aggregate_nctr_to_month
 ) |> 
-  apply_catchment_proportions()
+  apply_catchment_proportions(
+    proportion = TRUE
+  )
 
 quarterly_nctr <- monthly_to_quarterly_sum(
-  monthly_nctr
+  monthly_nctr,
+  proportion = TRUE
 )
 
 annual_nctr <- monthly_to_annual_sum(
   monthly_nctr,
-  year_type = "financial"
+  year_type = "financial",
+  proportion = TRUE
 )
 
 bind_rows(
@@ -1799,6 +1824,9 @@ bind_rows(
   quarterly_cancer_wait_times,
   annual_cancer_wait_times
 ) |> 
+  mutate(
+    value = value * 100
+  ) |> 
   write.csv(
     "data/62-day-cancer-wait-times.csv",
     row.names = FALSE
@@ -1854,6 +1882,9 @@ bind_rows(
   quarterly_a_and_e,
   annual_a_and_e
 ) |> 
+  mutate(
+    value = value * 100
+  ) |> 
   write.csv(
     "data/a-and-e-4-hours.csv",
     row.names = FALSE
@@ -1954,7 +1985,7 @@ monthly_rtt <- monthly_rtt |>
     org = "icb_code"
   ) |> 
   mutate(
-    value = numerator / denominator
+    value = (numerator / denominator) * 100
   )
 
 quarterly_rtt <- monthly_to_quarterly_sum(
