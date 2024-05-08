@@ -38,7 +38,8 @@ quarterly_population_by_age_band <- quarterly_ics_populations(
   
 annual_population_by_age_band <- quarterly_to_annual_mean(
   quarterly_population_by_age_band,
-  year_type = "financial"
+  year_type = "financial",
+  proportion = TRUE
 )
 
 
@@ -1570,12 +1571,14 @@ monthly_gp_wait_times <- setNames(
   )
 
 quarterly_gp_wait_times <- monthly_to_quarterly_sum(
-  monthly_gp_wait_times
+  monthly_gp_wait_times,
+  proportion = TRUE
 )
 
 annual_gp_wait_times <- monthly_to_annual_sum(
   monthly_gp_wait_times,
-  year_type = "financial"
+  year_type = "financial",
+  proportion = TRUE
 )
 
 
@@ -1584,9 +1587,6 @@ bind_rows(
   quarterly_gp_wait_times,
   annual_gp_wait_times
 ) |> 
-  mutate(
-    value = value * 100
-  ) |> 
   write.csv(
     "data/gp-wait-times.csv",
     row.names = FALSE
@@ -1807,16 +1807,18 @@ monthly_cancer_wait_times <- monthly_cancer_wait_times |>
     org = icb_code
   ) |> 
   mutate(
-    value = numerator / denominator
+    value = (numerator / denominator) * 100
   )
 
 quarterly_cancer_wait_times <- monthly_to_quarterly_sum(
-  monthly_cancer_wait_times
+  monthly_cancer_wait_times,
+  proportion = TRUE
 )
 
 annual_cancer_wait_times <- monthly_to_annual_sum(
   monthly_cancer_wait_times,
-  year_type = "financial"
+  year_type = "financial",
+  proportion = TRUE
 )
 
 bind_rows(
@@ -1824,9 +1826,6 @@ bind_rows(
   quarterly_cancer_wait_times,
   annual_cancer_wait_times
 ) |> 
-  mutate(
-    value = value * 100
-  ) |> 
   write.csv(
     "data/62-day-cancer-wait-times.csv",
     row.names = FALSE
@@ -1989,12 +1988,14 @@ monthly_rtt <- monthly_rtt |>
   )
 
 quarterly_rtt <- monthly_to_quarterly_sum(
-  monthly_rtt
+  monthly_rtt,
+  proportion = TRUE
 )
 
 annual_rtt <- monthly_to_annual_sum(
   monthly_rtt,
-  year_type = "financial"
+  year_type = "financial",
+  proportion = TRUE
 )
 
 bind_rows(
