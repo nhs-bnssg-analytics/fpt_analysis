@@ -419,7 +419,7 @@ plot_modelling_performance <- function(modelling_results, inputs, val_type,
   return(p)
 }
 
-plot_variable_importance <- function(model_last_fit, top_n = 10, 
+plot_variable_importance <- function(model_last_fit, top_n = NULL, 
                                      table_output = FALSE, method = "default", 
                                      test_set = NULL, target_variable = NULL,
                                      evaluation_metric = NULL, predictors = NULL) {
@@ -494,7 +494,8 @@ plot_variable_importance <- function(model_last_fit, top_n = 10,
       target = target_variable,
       metric = evaluation_metric,  
       pred_wrapper = pfun_reg,
-      nsim = 20  # use 30 repetitions
+      # parallel = TRUE,
+      nsim = 10  # use 10 repetitions
     )
   }
   
@@ -502,8 +503,12 @@ plot_variable_importance <- function(model_last_fit, top_n = 10,
   table <- table |> 
     filter(
       Importance != 0
-    ) |> 
-    head(top_n)
+    )
+  
+  if (!is.null(top_n)) {
+    table <- table |> 
+      head(top_n)
+  }
   
   p <- table |>
     arrange(
@@ -662,7 +667,7 @@ load_data <- function(target_variable, value_type = "value", incl_numerator_rema
         )
       ) |> 
       mutate(
-        value = numerator / denominator
+        value = (numerator / denominator) * 100
       )
     
     dc_data <- dc_data |> 
@@ -803,6 +808,8 @@ load_data <- function(target_variable, value_type = "value", incl_numerator_rema
 #'   "leave_group_out_validation" or "train_validation"
 #' @param seed numeric; seed number
 #' @param eval_metric string; one of "rmse", "mae", "smape", "mape"
+#' @param include_pi logical; whether to include permuiation importance outcomes
+#'   in the outputs
 #' @details This webpage was useful
 #'   https://www.tidyverse.org/blog/2022/05/case-weights/
 #' 
@@ -816,6 +823,7 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
                                   target_type = "proportion",
                                   validation_type,
                                   eval_metric,
+                                  include_pi = FALSE,
                                   seed = 321) {
   
   model_type <- match.arg(
@@ -1080,7 +1088,7 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
     ) |> 
       set_engine(
         "randomForest", 
-        num.threads = cores
+        num.threads = !!cores
       ) |> 
       set_mode("regression")
   } else if (model_type == "logistic_regression") {
@@ -1096,7 +1104,7 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
         family = stats::quasibinomial(link = "logit"), 
         # path_values = pen_vals,
         nlambda = 150,
-        num.threads = cores,
+        num.threads = !!cores,
         standardize = FALSE
       ) |> 
       set_mode("regression")
@@ -1159,9 +1167,6 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
       )
   }
   
-  # model_recipe <- model_recipe |> 
-  #   prep(training = data_train, retain = TRUE)
-  
   # start workflow
   modelling_workflow <- workflow() |> 
     add_model(model_setup) |> 
@@ -1211,17 +1216,17 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
     
     tuning_grid <- 30
     
-    # obtain resample coefficients function
-    get_glmnet_coefs <- function(x) {
-      x %>% 
-        extract_fit_engine() %>% 
-        tidy(return_zeros = TRUE) %>% 
-        rename(penalty = lambda)
-    }
-    
-    extract_input <- get_glmnet_coefs
+    # # obtain resample coefficients function
+    # get_glmnet_coefs <- function(x) {
+    #   x %>%
+    #     extract_fit_engine() %>%
+    #     tidy(return_zeros = TRUE) %>%
+    #     rename(penalty = lambda)
+    # }
+
+    # extract_input <- get_glmnet_coefs
   }
- 
+ # tuning_grid <- 2
   evaluation_metrics <- metric_set(
     yardstick::rmse,
     # yardstick::rsq,
@@ -1236,24 +1241,24 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
       metrics = evaluation_metrics,
       control = control_grid(
         save_pred = TRUE,
-        extract = extract_input
+        # extract = extract_input,
+        parallel_over = "resamples"
       )
     )
   
-  tuning_parameters <- autoplot(residuals)
+  # tuning_parameters <- autoplot(residuals)
     
   # collate coefficients
   if (model_type == "logistic_regression") {
-    tuning_coefs <- 
-      residuals |> 
-      select(id, .extracts) |> 
-      unnest(.extracts) |> 
-      select(id, mixture, .extracts) |>  
-      slice(
-        1,
-        .by = c(mixture, id)
-      ) |>   # │ Remove the redundant results
-      unnest(.extracts)
+    # tuning_coefs <- residuals |>
+    #   select(id, .extracts) |>
+    #   unnest(.extracts) |>
+    #   select(id, mixture, .extracts) |>
+    #   slice(
+    #     1,
+    #     .by = c(mixture, id)
+    #   ) |>   # │ Remove the redundant results
+    #   unnest(.extracts)
     
     joining_fields <- join_by(penalty, mixture, .config)
   } else if (model_type == "random_forest") {
@@ -1415,16 +1420,21 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
       distinguish_year = TRUE
     )
   
-  permutation_importance <- model_fit |> 
-    plot_variable_importance(
-      top_n = 20,
-      table_output = TRUE, 
-      method = "permute", 
-      test_set = data_test, 
-      target_variable = target_variable,
-      evaluation_metric = eval_metric,
-      predictors = predictor_variables
-    )
+  if (include_pi == TRUE) {
+    permutation_importance <- model_fit |> 
+      plot_variable_importance(
+        # top_n = 20,
+        table_output = TRUE, 
+        method = "permute", 
+        test_set = data_test, 
+        target_variable = target_variable,
+        evaluation_metric = eval_metric,
+        predictors = predictor_variables
+      )
+  } else {
+    permutation_importance <- NULL
+  }
+  
   
   inputs <- tibble(
     `Model type` = model_type,
@@ -1438,7 +1448,7 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
   
   output <- list(
     dataset_yrs = dataset_yrs,
-    tuning_parameters = tuning_parameters,
+    # tuning_parameters = tuning_parameters,
     prediction_plot = prediction_plot,
     evaluation_metrics = evaluation_metrics,
     errors_per_fold = errors_per_fold,
@@ -1874,7 +1884,7 @@ calculate_baseline_score <- function(last_fit,
       )
   } else if (projection_method == "same as last year") {
     projection_method_described <- projection_method
-    # browser()
+    
     observed_predicted <- observed_predicted |> 
       mutate(
         last_year = year - 1
