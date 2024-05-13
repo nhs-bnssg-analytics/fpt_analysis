@@ -986,7 +986,7 @@ tidy_social_care_funding <- function(filepath) {
         .default = "Not required"
       ),
       numeric = case_when(
-        character == "[c]" ~ 2.5,
+        character %in% c("*", "[c]") ~ 2.5,
         .default = numeric
       )
     ) |> 
