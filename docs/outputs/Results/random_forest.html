@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Spatio-temporal demand and capacity relationships with performance - Data preparation for modelling</title>
+<title>Spatio-temporal demand and capacity relationships with performance - Random Forest</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -30,8 +30,8 @@ ul.task-list li input[type="checkbox"] {
 <script src="../../site_libs/quarto-search/fuse.min.js"></script>
 <script src="../../site_libs/quarto-search/quarto-search.js"></script>
 <meta name="quarto:offset" content="../../">
-<link href="../../outputs/Results/results.html" rel="next">
-<link href="../../outputs/Data/data_metadata.html" rel="prev">
+<link href="../../outputs/Results/logistic_regression.html" rel="next">
+<link href="../../outputs/Modelling/modelling_preparation.html" rel="prev">
 <script src="../../site_libs/quarto-html/quarto.js"></script>
 <script src="../../site_libs/quarto-html/popper.min.js"></script>
 <script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
@@ -99,7 +99,7 @@ ul.task-list li input[type="checkbox"] {
       <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
-      <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../outputs/Modelling/modelling_preparation.html">Modelling</a></li><li class="breadcrumb-item"><a href="../../outputs/Modelling/modelling_preparation.html">Data preparation for modelling</a></li></ol></nav>
+      <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../outputs/Results/random_forest.html">Results</a></li><li class="breadcrumb-item"><a href="../../outputs/Results/random_forest.html">Random Forest</a></li></ol></nav>
       <a class="flex-grow-1" role="button" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
       </a>
       <button type="button" class="btn quarto-search-button" aria-label="" onclick="window.quartoOpenSearch();">
@@ -176,7 +176,7 @@ ul.task-list li input[type="checkbox"] {
       <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../outputs/Modelling/modelling_preparation.html" class="sidebar-item-text sidebar-link active">
+  <a href="../../outputs/Modelling/modelling_preparation.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Data preparation for modelling</span></a>
   </div>
 </li>
@@ -193,8 +193,14 @@ ul.task-list li input[type="checkbox"] {
       <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth1 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../outputs/Results/results.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Results</span></a>
+  <a href="../../outputs/Results/random_forest.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text">Random Forest</span></a>
+  </div>
+</li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="../../outputs/Results/logistic_regression.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Logistic regression</span></a>
   </div>
 </li>
       </ul>
@@ -209,31 +215,7 @@ ul.task-list li input[type="checkbox"] {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#conceptualisation" id="toc-conceptualisation" class="nav-link active" data-scroll-target="#conceptualisation">Conceptualisation</a></li>
-  <li><a href="#data-driven-approach" id="toc-data-driven-approach" class="nav-link" data-scroll-target="#data-driven-approach">Data-driven approach</a></li>
-  <li><a href="#data-structure" id="toc-data-structure" class="nav-link" data-scroll-target="#data-structure">Data structure</a></li>
-  <li><a href="#modelling-approaches" id="toc-modelling-approaches" class="nav-link" data-scroll-target="#modelling-approaches">Modelling approaches</a>
-  <ul class="collapse">
-  <li><a href="#generalised-linear-model" id="toc-generalised-linear-model" class="nav-link" data-scroll-target="#generalised-linear-model">Generalised linear model</a></li>
-  <li><a href="#random-forest" id="toc-random-forest" class="nav-link" data-scroll-target="#random-forest">Random Forest</a></li>
-  </ul></li>
-  <li><a href="#pre-processing" id="toc-pre-processing" class="nav-link" data-scroll-target="#pre-processing">Pre-processing</a>
-  <ul class="collapse">
-  <li><a href="#frequency-weights" id="toc-frequency-weights" class="nav-link" data-scroll-target="#frequency-weights">Frequency weights</a></li>
-  <li><a href="#lagging-data" id="toc-lagging-data" class="nav-link" data-scroll-target="#lagging-data">Lagging data</a></li>
-  <li><a href="#pandemic-impact" id="toc-pandemic-impact" class="nav-link" data-scroll-target="#pandemic-impact">Pandemic impact</a></li>
-  <li><a href="#splitting-dataset" id="toc-splitting-dataset" class="nav-link" data-scroll-target="#splitting-dataset">Splitting dataset</a></li>
-  <li><a href="#variable-removal" id="toc-variable-removal" class="nav-link" data-scroll-target="#variable-removal">Variable removal</a></li>
-  <li><a href="#imputing-missing-variables" id="toc-imputing-missing-variables" class="nav-link" data-scroll-target="#imputing-missing-variables">Imputing missing variables</a></li>
-  <li><a href="#normalisation" id="toc-normalisation" class="nav-link" data-scroll-target="#normalisation">Normalisation</a></li>
-  <li><a href="#tuning" id="toc-tuning" class="nav-link" data-scroll-target="#tuning">Hyperparameter tuning</a></li>
-  </ul></li>
-  <li><a href="#model-specification" id="toc-model-specification" class="nav-link" data-scroll-target="#model-specification">Model specification</a>
-  <ul class="collapse">
-  <li><a href="#logistic-regression-with-elastic-net-regularisation" id="toc-logistic-regression-with-elastic-net-regularisation" class="nav-link" data-scroll-target="#logistic-regression-with-elastic-net-regularisation">Logistic regression with elastic net regularisation</a></li>
-  <li><a href="#random-forest-1" id="toc-random-forest-1" class="nav-link" data-scroll-target="#random-forest-1">Random forest</a></li>
-  </ul></li>
-  <li><a href="#model-evaluation" id="toc-model-evaluation" class="nav-link" data-scroll-target="#model-evaluation">Model evaluation</a></li>
+  <li><a href="#random-forest" id="toc-random-forest" class="nav-link active" data-scroll-target="#random-forest">Random Forest model description</a></li>
   </ul>
 </nav>
     </div>
@@ -242,7 +224,7 @@ ul.task-list li input[type="checkbox"] {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Data preparation for modelling</h1>
+<h1 class="title">Random Forest</h1>
 </div>
 
 
@@ -257,102 +239,8 @@ ul.task-list li input[type="checkbox"] {
 
 </header>
 
-<section id="conceptualisation" class="level2">
-<h2 class="anchored" data-anchor-id="conceptualisation">Conceptualisation</h2>
-<p>The aim of the modelling process is to predict a performance metrics at Integrated Care System geography from metrics that describe demand and capacity.</p>
-</section>
-<section id="data-driven-approach" class="level2">
-<h2 class="anchored" data-anchor-id="data-driven-approach">Data-driven approach</h2>
-<p>The approach taken in this project is to develop an adaptable process that can be repeated with small amounts of human intervention. The data collection is manual, but the input data provided to each model is only selected based on data quality, length and whether the published geography is at a granular enough scale. The metrics provided to the modelling are selected based on whether they provide information on system demand or capacity, and not based on pre-conceived hypotheses of relevance to the output metric being modelled. The final metrics used by the models are determined by the modelling method itself using metric selection methods (see <a href="#modelling-approaches">Modelling approaches</a>).</p>
-</section>
-<section id="data-structure" class="level2">
-<h2 class="anchored" data-anchor-id="data-structure">Data structure</h2>
-<p>A table of metrics is created from the prepared data. Each row in the table represents a unique combination of Integrated Care System and year. The columns in the table consist of the target variable (the variable that is being predicted), taking a value between 0 and 1, the number of cases for that target variable (see <a href="#frequency-weights">frequency weights</a>) and the predictor variables (the demand and capacity metrics).</p>
-<p>In order to identify which is the best model for predicting each metric different sizes of input data are tested. Here, we test for different lengths of input data (e.g., testing whether by including more years of data in the model development process it improve its predictive capability). This results in a longer dataset. We also test for whether including lagged values of the predictor variables improves the models predictive capability. This results in a wider dataset.</p>
-</section>
-<section id="modelling-approaches" class="level2">
-<h2 class="anchored" data-anchor-id="modelling-approaches">Modelling approaches</h2>
-<p>Two modelling approaches were attempted.</p>
-<section id="generalised-linear-model" class="level3">
-<h3 class="anchored" data-anchor-id="generalised-linear-model">Generalised linear model</h3>
-<p>This approach attributes the target variable into two groups; “successful” and “unsuccessful”. The “successful” group is the count of cases for each ICS that achieved the performance metrics within the criteria specified. The “unsuccessful” group are the remaining cases. This allows for binomial regression using a generalised linear model using a logit link function.</p>
-<p>Regularisation was performed to enable selection of the final variables to go into the model. Elastic net regularisation was performed (described in the <a href="#tuning">hyperparameter tuning</a>) section), and the important variables were identified.</p>
-<p>Variable importance was determine by the absolute value of the coefficients for the final model.</p>
-</section>
-<section id="random-forest" class="level3">
-<h3 class="anchored" data-anchor-id="random-forest">Random Forest</h3>
-<p>This non-parametric approach allows the full dataset to be randomly sub-sampled (with replacement), along with taking random samples of the predictor variables, to build multiple decision trees. These decision trees get aggregated up to provide a model to use on unseen data.</p>
-<p>Important variables are determined by [DN - must finish but the following text is taken from the help pages from <code>vip::vi_model</code>]</p>
-<blockquote class="blockquote">
-<p>The first measure is computed from permuting out-of-bag (OOB) data: for each tree, the prediction error on the OOB portion of the data is recorded (error rate for classification and MSE for regression). Then the same is done after permuting each predictor variable. The difference between the two are then averaged over all trees in the forest, and normalized by the standard deviation of the differences. If the standard deviation of the differences is equal to 0 for a variable, the division is not done (but the average is almost always equal to 0 in that case).</p>
-</blockquote>
-<blockquote class="blockquote">
-<p>The second measure is the total decrease in node impurities from splitting on the variable, averaged over all trees. For classification, the node impurity is measured by the Gini index. For regression, it is measured by residual sum of squares.</p>
-</blockquote>
-</section>
-</section>
-<section id="pre-processing" class="level2">
-<h2 class="anchored" data-anchor-id="pre-processing">Pre-processing</h2>
-<section id="frequency-weights" class="level3">
-<h3 class="anchored" data-anchor-id="frequency-weights">Frequency weights</h3>
-<p>A column for frequency weighting is used for the logistic regression only. This column is the total number of cases included in the target variable calculation. For example, if the target variable is the proportion of incomplete referral to treatment pathways that are greater than 18 weeks, the frequency weighting column is the total number of incomplete pathways. The purpose of this column is to ensure downstream processes consider the different weighting of each record in the dataset. Some records account for a much higher volume of cases than others, so they should have more weighting on processes like normalisation than others. These weights impact the pre-processing, the model estimation, and the performance estimation steps.</p>
-</section>
-<section id="lagging-data" class="level3">
-<h3 class="anchored" data-anchor-id="lagging-data">Lagging data</h3>
-<p>Models were tested with lagged predictor variables. Both one and two year lagging was testing. Conceptually, this was done to determine whether the value of a predictor value for a previous year has an influence on the target variable for the current year. Where lagged data were included, the lagged values for the target variables were also included. This was done to allow for more accurate predictions to improve model utility for the end user [DN - including the lagged target variable is still up in the air; it significantly improves the model performance but the impact of the other variables that can be influenced by management decisions reduces].</p>
-</section>
-<section id="pandemic-impact" class="level3">
-<h3 class="anchored" data-anchor-id="pandemic-impact">Pandemic impact</h3>
-<p>The impact fo the pandemic was accommodated for by introducing a binary variable which is 0 prior to 2020, and 1 from 2020 onwards.</p>
-</section>
-<section id="splitting-dataset" class="level3">
-<h3 class="anchored" data-anchor-id="splitting-dataset">Splitting dataset</h3>
-<p>Both of the <a href="#modelling-approaches">modelling approaches</a> described have unknown hyperparameters. These can be tuned to optimise the performance of the model. The optimisation process was done by splitting the input dataset into two parts: 80% of the data were selected into a training set and 20% were selected into a test set. This split was done at random, so all ICSs and all years have equal chance of appearing in each set.</p>
-</section>
-<section id="variable-removal" class="level3">
-<h3 class="anchored" data-anchor-id="variable-removal">Variable removal</h3>
-<p>Variables are removed manually in three circumstances:</p>
-<ol type="1">
-<li>where more than 40% of the training set are missing</li>
-<li>where more than 95% of the training set are 0</li>
-<li>Where more than 95% of the test set are missing</li>
-</ol>
-</section>
-<section id="imputing-missing-variables" class="level3">
-<h3 class="anchored" data-anchor-id="imputing-missing-variables">Imputing missing variables</h3>
-<p>Missing values are imputed for the remaining variables by applying the median value for the variable from the training data. [DN - should I consider different imputation methods for different variables? Other off-the-shelf imputation methods are “bag”, “knn”, “linear”, “lower”, “mean”, “model”, “roll”]</p>
-</section>
-<section id="normalisation" class="level3">
-<h3 class="anchored" data-anchor-id="normalisation">Normalisation</h3>
-<p>For the logistic regression model, the data are centred and scaled to a range of 0 and 1. This range aligns with the binary pandemic variable.</p>
-</section>
-<section id="tuning" class="level3">
-<h3 class="anchored" data-anchor-id="tuning">Hyperparameter tuning</h3>
-<p>The training set was split into 7 folds to perform “leave-group-out” cross validation to enable the hyperparameter tuning. Each fold was defined by NHS region and only contained the ICSs in those NHS regions. Models were then trained on 6 of the 7 folds using a variety of hyperparameters, and then validated on the remaining fold to identify the parameters that provided the best performance. The purpose of doing leave-group-out cross validation was to reduce the likelihood that the hyperparameters for the model were tuned on data that is similar in the training and validation sets due to being consecutive years for one ICS (e.g., a specific ICS could have similar inputs in two adjacent years, which, if one year was used for training and the subsequent year used for validation, it could lead to overfitting and promote a model that performs poorly on the test dataset).</p>
-</section>
-</section>
-<section id="model-specification" class="level2">
-<h2 class="anchored" data-anchor-id="model-specification">Model specification</h2>
-<section id="logistic-regression-with-elastic-net-regularisation" class="level3">
-<h3 class="anchored" data-anchor-id="logistic-regression-with-elastic-net-regularisation">Logistic regression with elastic net regularisation</h3>
-<p>Using the R package <code>glmnet</code>, a quasibinomial model was selected with a logit link transformation. The number of lambda values that determine the lambda path was selected as 150, which is higher than the default value of 100, to increase the likelihood of model convergence. Standardisation of the input data was performed as a separate pre-processing step, as described above, rather than within the <code>glmnet</code> function.</p>
-<p>The two hyperparameters that were tuned were; the penalty parameter (lambda), which defines the amount of regularisation (e.g., the amount of explanatory variable penalisation that occurs), and the mixture parameter, where a value of 1 is a pure lasso model, and 0 is a pure ridge regression model.</p>
-</section>
-<section id="random-forest-1" class="level3">
-<h3 class="anchored" data-anchor-id="random-forest-1">Random forest</h3>
-<p>The random forest model was also specified with the <code>randomForest</code> package. The three hyperparameters that were tuned were; the number of randomly selected predictors in each tree, the number of trees, and the minimum node size allowed before permitting another branch to grow.</p>
-</section>
-</section>
-<section id="model-evaluation" class="level2">
-<h2 class="anchored" data-anchor-id="model-evaluation">Model evaluation</h2>
-<p>The models are evaluated using the mean absolute error (MAE) [DN - at the moment]. The error metric is on the same scale as the target variable, which provides users with an simpler interpretation. Additionally, the metric is not affected by the size of the values for the target variable, like the percentage error metrics, so it allows comparability between models. Other metrics considered were:</p>
-<ul>
-<li>R<sup>2</sup> - this was ruled out for two reasons; firstly, it is quite difficult for the user to interpret how well the model is performing relative to the variable that is being predicted (e.g., it is not in the same units as the target variable). Secondly, it does not optimise on the difference between the observed and the expected, meaning that some ICSs may see greater errors than others.</li>
-<li>Root mean squared error (RMSE) - [DN - I think this is still an option]</li>
-<li>Symmetric mean absolute percentage error (SMAPE) - this was rejected because it made the comparison between models difficult. This occurred because, even though the target variables are all on a scale between 0 and 1, the percentage error value is influence by how large the target variable values are. A smaller SMAPE value therefore could be because the target variable is a smaller value.</li>
-<li>Mean absolute percentage error (MAPE) - this is rejected for the same reason as SMAPE</li>
-</ul>
-<p>The MAE is calculated for each of the seven validation sets as described in the <span id="tuning">Hyperparameter tuning</span> section, and an average is taken to calculate the summary validation MAE metric. The optimal model hyperparameters are selected based on this metric and are used to calculate the MAE value for the test dataset. The best model is then identified as the one with the lowest MAE on the test dataset. This identifies the number of years of data in the model, and also whether to include lagged data in the model and if so, the number of years of lagged data to include.</p>
+<section id="random-forest" class="level2">
+<h2 class="anchored" data-anchor-id="random-forest">Random Forest model description</h2>
 
 
 </section>
@@ -593,13 +481,13 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 </script>
 <nav class="page-navigation">
   <div class="nav-page nav-page-previous">
-      <a href="../../outputs/Data/data_metadata.html" class="pagination-link">
-        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">Modelling inputs</span>
+      <a href="../../outputs/Modelling/modelling_preparation.html" class="pagination-link">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">Data preparation for modelling</span>
       </a>          
   </div>
   <div class="nav-page nav-page-next">
-      <a href="../../outputs/Results/results.html" class="pagination-link">
-        <span class="nav-page-text">Results</span> <i class="bi bi-arrow-right-short"></i>
+      <a href="../../outputs/Results/logistic_regression.html" class="pagination-link">
+        <span class="nav-page-text">Logistic regression</span> <i class="bi bi-arrow-right-short"></i>
       </a>
   </div>
 </nav>

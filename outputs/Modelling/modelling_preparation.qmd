@@ -7,6 +7,11 @@ order: 1
 
 The aim of the modelling process is to predict a performance metrics at Integrated Care System geography from metrics that describe demand and capacity. 
 
+## Data-driven approach
+
+The approach taken in this project is to develop an adaptable process that can be repeated with small amounts of human intervention. The data collection is manual, but the input data provided to each model is only selected based on data quality, length and whether the published geography is at a granular enough scale. The metrics provided to the modelling are selected based on whether they provide information on system demand or capacity, and not based on pre-conceived hypotheses of relevance to the output metric being modelled. The final metrics used by the models are determined by the modelling method itself using metric selection methods (see [Modelling approaches](#modelling-approaches)).
+
+
 ## Data structure
 
 A table of metrics is created from the prepared data. Each row in the table represents a unique combination of Integrated Care System and year. The columns in the table consist of the target variable (the variable that is being predicted), taking a value between 0 and 1, the number of cases for that target variable (see [frequency weights](#frequency-weights)) and the predictor variables (the demand and capacity metrics).
@@ -21,9 +26,9 @@ Two modelling approaches were attempted.
 
 This approach attributes the target variable into two groups; "successful" and "unsuccessful". The "successful" group is the count of cases for each ICS that achieved the performance metrics within the criteria specified. The "unsuccessful" group are the remaining cases. This allows for binomial regression using a generalised linear model using a logit link function.
 
-Due to the generalised dataset having a large number of predictor variables, regularisation was performed for variable selection. Elastic net regularisation occurred (described in the [hyperparameter tuning](#tuning)) section), and the important variables were identified.
+Regularisation was performed to enable selection of the final variables to go into the model. Elastic net regularisation was performed (described in the [hyperparameter tuning](#tuning)) section), and the important variables were identified.
 
-Important variables are determine by the absolute value of the coefficients for the final model. 
+Variable importance was determine by the absolute value of the coefficients for the final model. 
 
 ### Random Forest
 

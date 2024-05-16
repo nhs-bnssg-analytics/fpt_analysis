@@ -193,14 +193,8 @@ ul.task-list li input[type="checkbox"] {
       <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth1 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../../outputs/Results/random_forest.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Random Forest</span></a>
-  </div>
-</li>
-          <li class="sidebar-item">
-  <div class="sidebar-item-container"> 
-  <a href="../../outputs/Results/logistic_regression.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text">Logistic regression</span></a>
+  <a href="../../outputs/Results/results.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">Results</span></a>
   </div>
 </li>
       </ul>
@@ -227,8 +221,8 @@ ul.task-list li input[type="checkbox"] {
   <li><a href="#depression-qof-prevalence-18-yrs" id="toc-depression-qof-prevalence-18-yrs" class="nav-link" data-scroll-target="#depression-qof-prevalence-18-yrs">Depression: QOF prevalence (18+ yrs)</a></li>
   <li><a href="#obesity-qof-prevalence-18-yrs" id="toc-obesity-qof-prevalence-18-yrs" class="nav-link" data-scroll-target="#obesity-qof-prevalence-18-yrs">Obesity: QOF prevalence (18+ yrs)</a></li>
   <li><a href="#smoking-qof-prevalence-15-yrs" id="toc-smoking-qof-prevalence-15-yrs" class="nav-link" data-scroll-target="#smoking-qof-prevalence-15-yrs">Smoking: QOF prevalence (15+ yrs)</a></li>
-  <li><a href="#populations" id="toc-populations" class="nav-link" data-scroll-target="#populations">Proportion of population by age band</a></li>
-  <li><a href="#proportion-of-population-within-each-deprivation-quintile" id="toc-proportion-of-population-within-each-deprivation-quintile" class="nav-link" data-scroll-target="#proportion-of-population-within-each-deprivation-quintile">Proportion of population within each deprivation quintile</a></li>
+  <li><a href="#populations" id="toc-populations" class="nav-link" data-scroll-target="#populations">Proportion of resident population by age band</a></li>
+  <li><a href="#proportion-of-resident-population-within-each-deprivation-quintile" id="toc-proportion-of-resident-population-within-each-deprivation-quintile" class="nav-link" data-scroll-target="#proportion-of-resident-population-within-each-deprivation-quintile">Proportion of resident population within each deprivation quintile</a></li>
   </ul></li>
   <li><a href="#capacity-data" id="toc-capacity-data" class="nav-link" data-scroll-target="#capacity-data">Capacity data</a>
   <ul class="collapse">
@@ -239,8 +233,8 @@ ul.task-list li input[type="checkbox"] {
   <li><a href="#proportion-of-beds-available" id="toc-proportion-of-beds-available" class="nav-link" data-scroll-target="#proportion-of-beds-available">Proportion of beds available</a></li>
   <li><a href="#total-beds-per-1000-population-60-years" id="toc-total-beds-per-1000-population-60-years" class="nav-link" data-scroll-target="#total-beds-per-1000-population-60-years">Total beds per 1,000 population (60+ years)</a></li>
   <li><a href="#gross-total-expenditure-per-individual-with-long-term-support-during-the-year" id="toc-gross-total-expenditure-per-individual-with-long-term-support-during-the-year" class="nav-link" data-scroll-target="#gross-total-expenditure-per-individual-with-long-term-support-during-the-year">Gross Total Expenditure per individual with long term support during the year</a></li>
-  <li><a href="#mental-health-spending" id="toc-mental-health-spending" class="nav-link" data-scroll-target="#mental-health-spending">Mental Health spending</a></li>
-  <li><a href="#primary-care-workforce" id="toc-primary-care-workforce" class="nav-link" data-scroll-target="#primary-care-workforce">Primary care workforce</a></li>
+  <li><a href="#mental-health-spending-per-10000-population" id="toc-mental-health-spending-per-10000-population" class="nav-link" data-scroll-target="#mental-health-spending-per-10000-population">Mental Health spending per 10,000 population</a></li>
+  <li><a href="#primary-care-workforce-per-10000-population" id="toc-primary-care-workforce-per-10000-population" class="nav-link" data-scroll-target="#primary-care-workforce-per-10000-population">Primary care workforce per 10,000 population</a></li>
   <li><a href="#pandemic-onwards" id="toc-pandemic-onwards" class="nav-link" data-scroll-target="#pandemic-onwards">Pandemic onwards</a></li>
   </ul></li>
   <li><a href="#discontinued-covid-capacity-metrics" id="toc-discontinued-covid-capacity-metrics" class="nav-link" data-scroll-target="#discontinued-covid-capacity-metrics">Discontinued COVID capacity metrics</a>
@@ -329,7 +323,7 @@ ul.task-list li input[type="checkbox"] {
 <p><strong>Denominator:</strong> Practice list size for patients aged 15 yrs and over.</p>
 </section>
 <section id="populations" class="level3">
-<h3 class="anchored" data-anchor-id="populations">Proportion of population by age band</h3>
+<h3 class="anchored" data-anchor-id="populations">Proportion of resident population by age band</h3>
 <p><strong>Source:</strong> <a href="https://www.ons.gov.uk/peoplepopulationandcommunity/populationandmigration/populationestimates/datasets/lowersuperoutputareamidyearpopulationestimates">ONS Lower layer Super Output Area (LSOA) population estimates</a> for 2011 to 2020.</p>
 <p><strong>Source:</strong> <a href="https://www.ons.gov.uk/peoplepopulationandcommunity/populationandmigration/populationestimates/datasets/estimatesofthepopulationforenglandandwales">ONS local authority population estimates</a> for 2021 and 2022.</p>
 <p>[DN - considering to update these to GP registered population because the time series is more current]</p>
@@ -338,12 +332,12 @@ ul.task-list li input[type="checkbox"] {
 <p><strong>Numerator:</strong> Sum of population into 10 year age bands (0-9 years up to 90+ years) or into 3 broader age bands (0-29 years, 30-59 years, and 60+ years).</p>
 <p><strong>Denominator:</strong> Total population.</p>
 </section>
-<section id="proportion-of-population-within-each-deprivation-quintile" class="level3">
-<h3 class="anchored" data-anchor-id="proportion-of-population-within-each-deprivation-quintile">Proportion of population within each deprivation quintile</h3>
+<section id="proportion-of-resident-population-within-each-deprivation-quintile" class="level3">
+<h3 class="anchored" data-anchor-id="proportion-of-resident-population-within-each-deprivation-quintile">Proportion of resident population within each deprivation quintile</h3>
 <p><strong>Source:</strong> <a href="https://assets.publishing.service.gov.uk/media/5d8b3b51ed915d036a455aa6/File_5_-_IoD2019_Scores.xlsx">ONS Indices of Deprivation 2019 by LSOA</a></p>
 <p><strong>Calculation description:</strong> LSOAs are attributed to deprivation quintile based on the Index of Multiple Deprivation (IMD) Score. Populations are assigned to each LSOA using the method described in the <a href="#populations">Populations by age band</a> section. Numerators and denominators are subsequently calculated from here using the <a href="https://www.arcgis.com/sharing/rest/content/items/1ac8547e9a8945478f0b5ea7ffe1a6b1/data">LSOA to ICS lookup</a>.</p>
-<p><strong>Numerator:</strong> Total population within each deprivation quintile.</p>
-<p><strong>Denominator:</strong> Total population.</p>
+<p><strong>Numerator:</strong> Total resident population within each deprivation quintile.</p>
+<p><strong>Denominator:</strong> Total resident population.</p>
 </section>
 </section>
 <section id="capacity-data" class="level2">
@@ -443,8 +437,8 @@ ul.task-list li input[type="checkbox"] {
 <p><strong>Numerator:</strong> Gross Total Expenditure by Local Authority applied to ICSs.</p>
 <p><strong>Denominator:</strong> Long Term Support during the year by Local Authority applied to ICSs.</p>
 </section>
-<section id="mental-health-spending" class="level3">
-<h3 class="anchored" data-anchor-id="mental-health-spending">Mental Health spending</h3>
+<section id="mental-health-spending-per-10000-population" class="level3">
+<h3 class="anchored" data-anchor-id="mental-health-spending-per-10000-population">Mental Health spending per 10,000 population</h3>
 <p><strong>Numerator:</strong> The numerators obtained from this source are:</p>
 <ul>
 <li>Children and Young People Mental Health spend - excluding learning disabilities and eating disorders</li>
@@ -461,8 +455,8 @@ ul.task-list li input[type="checkbox"] {
 <p><strong>Denominator:</strong> Quarterly registered population within General Practices averaged to calculate an annual figure. This figure is multiplied by 10,000 for ease of understanding the calculated metric.</p>
 <p>This denominator is used for all of the metrics described above except “mental health spend as a proportion of overall allocation”, as this data are provided as a proportion already so it does not require a denominator.</p>
 </section>
-<section id="primary-care-workforce" class="level3">
-<h3 class="anchored" data-anchor-id="primary-care-workforce">Primary care workforce</h3>
+<section id="primary-care-workforce-per-10000-population" class="level3">
+<h3 class="anchored" data-anchor-id="primary-care-workforce-per-10000-population">Primary care workforce per 10,000 population</h3>
 <p><strong>Numerator:</strong> Total annual FTEs at the end of June (or the average of the two months nearest June if data for June are not published) for the following staff groups:</p>
 <ul>
 <li>Admin/Non-Clinical</li>

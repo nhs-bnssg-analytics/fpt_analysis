@@ -1,0 +1,189 @@
+---
+title: "Results"
+order: 1
+---
+
+```{r}
+#| label: page-setup
+#| message: false
+#| echo: false
+
+source(here::here("R/00_libraries.R"))
+results <- readRDS(
+  here::here("tests/model_testing/model_summary_information.rds")
+) |> 
+  select(
+    "Target variable",
+    "Important predictors",
+    "Model type",
+    "Target variable type",
+    "Number of training years" = "Number training years",
+    "Number of lagged years" = "Number lagged years",
+    `Include previous year's outcome value` = "Number lagged target years",
+    `MAE (test data)` = "Test set value",
+    `MAE (baseline - last year)` = "Baseline (same as last year)",
+    `MAE (baseline - linear 3 years)` = "Baseline (linear (3 years))"
+  ) |> 
+  mutate(
+    `Model type` = str_replace_all(`Model type`, "_", " "),
+    `Model type` = str_to_sentence(`Model type`),
+    `Model type` = str_replace_all(`Model type`, "Logistic regression", "Generalised linear model"),
+    `Include previous year's outcome value` = case_when(
+      grepl("1", `Include previous year's outcome value`) ~ TRUE,
+      .default = FALSE
+    ),
+    `Number of training years` = `Number of training years` + 1,
+    unrounded_mae = `MAE (test data)`,
+    across(
+      starts_with("MAE"),
+      ~ round(.x, 3)
+    )
+  )
+```
+
+## Model inputs
+
+Three main modelling methods were attempted (generalised linear modelling (GLM), using a binomial model with a logit link function; random forest (RF) model modelling the outcome; and a random forest model that models the change in the outcome from the previous year).
+
+Variations on model inputs were also tested. Models were tested where the input data varied between 3 and 7 years. For each of those, different amount of lagging to the input data was tested too - in order to see whether there was a knock on effect of a previous year for an input variable on the outcome variable for the following year. Models with 0, 1 and 2 lagged years were tested. The importance of the previous year's outcome value was also tested, by either including it or not including it in the modelling process. See @tbl-input-combinations for a summary of the combinations of inputs.
+
+| Inputs to modelling                                     | Description                                             |
+|-------------------------------------|----------------------------------|
+| Number of years of data                                 | 3 to 7 years                                            |
+| Number of lagged years for predictor variables          | 0, 1, and 2 lagged years                                |
+| Inclusion of previous year's value for outcome variable | True or false                                           |
+| Number of different outcome variables modelled          | 4                                                       |
+| Modelling methods explored                              | GLM, RF (on outcome), RF (on change from previous year) |
+
+: Description of the combinations of the input data assessed in the modelling process. {#tbl-input-combinations}
+
+In all, 360 different models were built and assessed.
+
+## Model selection
+
+Each of the outcome variables are a proportion, so they have a scale of between 0 and 1. Despite the consistent scale, the distribution between within the scales of the outcome variables differs. For this reason, best performing models are selected by selecting the model for each outcome with the lowest mean absolute error (MAE) when comparing the predicted outcome with the observed outcome on the portion of the data held back for testing. This allows us to compare results between outcomes to compare the performance of the models between outcomes.
+
+## Baseline comparison
+
+To contextualise the models performance for estimating the outcome variable, the MAE statistic calculated on the test data for the model is compared with two other methods of estimating the outcome variable on the same test data. The two methods chosen to compare with were selected because of their simplicity, but also because these are typical methods teams might employ for predicting future performance:
+
+-   Next year's performance is equal to the previous year's performance
+-   Next year's performance is equal to a linear extrapolation based on the past 3 years' performance
+
+
+## Important variables
+
+The tables in this section show, for each modelling method and outcome, the most important variables selected by the models for the models with the lowest MAE. 
+
+```{r}
+#| label: results-breakdown
+#| echo: false
+#| results: 'asis'
+
+methods <- results |> 
+  distinct(`Model type`, `Target variable type`)
+
+cat("::: {.panel-tabset}\n\n")
+
+for (i in seq_len(nrow(methods))) {
+  model_method <- methods |> 
+    slice(i) |> 
+    pull(`Model type`)
+  
+  outcome_type <- methods |> 
+    slice(i) |> 
+    pull(`Target variable type`)
+  
+  tab_name <- paste(
+    model_method,
+    outcome_type,
+    sep = " - "
+  )
+  
+  cat(paste("##",
+          tab_name,
+          "\n\n"))
+  
+  
+  results_per_method <- results |> 
+    filter(
+      `Model type` == model_method,
+      `Target variable type` == outcome_type
+    ) |> 
+    filter(
+    unrounded_mae == min(unrounded_mae),
+    .by = `Target variable`
+    
+    ) |> 
+    filter(
+      `Number of training years` == min(`Number of training years`),
+      .by = `Target variable`
+      
+    ) |> 
+    select(
+      `Target variable`,
+      `MAE (test data)`,
+      `Important predictors`
+    )
+  
+  for (outcome in unique(results_per_method$`Target variable`)) {
+    cat('::: {.callout-tip icon=false collapse="true"}\n\n')
+    
+    cat(paste("##", outcome, "\n\n"))
+    
+    filtered_results <- results_per_method |> 
+      filter(
+        `Target variable` == outcome
+      )
+    
+    mae <- filtered_results |> 
+      pull(`MAE (test data)`)
+    
+    cat(paste(
+      "The MAE for this model is",
+      mae,
+      "\n\n"
+    ))
+    
+    filtered_results |> 
+      select("Important predictors") |> 
+      unnest("Important predictors") |> 
+      knitr::kable(
+        format = "markdown"
+      ) |> 
+      print()
+  
+    cat("\n\n")
+    cat(":::\n\n")
+  }
+}
+
+cat(":::")
+```
+
+
+## Summary of best models
+
+@tbl-best-models-inputs presents the combinations of the inputs to the modelling that created the lowest MAE for each outcome, along with the baseline comparisons.
+
+```{r}
+#| label: tbl-best-models-inputs
+#| tbl-cap: "By outcome, the best combination of input data, along with the MAE score when comparing the predicted outcome with the observed outcome on the data held back for testing."
+#| echo: false
+
+results |> 
+  filter(
+    `MAE (test data)`== min(`MAE (test data)`),
+    .by = `Target variable`
+    
+  ) |> 
+  filter(
+    `Number of training years` == min(`Number of training years`),
+    `Number of lagged years` == min(`Number of lagged years`),
+    .by = `Target variable`
+    
+  ) |> 
+  select(!c("Important predictors",
+            "unrounded_mae")) |> 
+  knitr::kable()
+```
