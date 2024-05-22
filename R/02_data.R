@@ -38,8 +38,8 @@ quarterly_population_by_age_band <- quarterly_ics_populations(
   
 annual_population_by_age_band <- quarterly_to_annual_mean(
   quarterly_population_by_age_band,
-  year_type = "financial",
-  proportion = TRUE
+  year_type = "calendar",
+  multiplier = 100
 )
 
 
@@ -327,16 +327,14 @@ quarterly_overnight_beds <- quarterly_overnight_beds_by_trust |>
 
 annual_overnight_beds <- quarterly_to_annual_sum(
   quarterly_overnight_beds,
-  year_type = "financial"
+  year_type = "calendar",
+  multiplier = 100
 )
 
 bind_rows(
   quarterly_overnight_beds,
   annual_overnight_beds
 ) |> 
-  mutate(
-    value = value * 100
-  ) |> 
   write.csv(
   "data/overnight-beds.csv",
   row.names = FALSE
@@ -383,17 +381,15 @@ quarterly_day_beds <- quarterly_day_beds_by_trust |>
 
 annual_day_beds <- quarterly_to_annual_sum(
   quarterly_day_beds,
-  year_type = "financial"
+  year_type = "calendar",
+  multiplier = 100
 )
 
 
 bind_rows(
   quarterly_day_beds,
   annual_day_beds
-) |> 
-  mutate(
-    value = value * 100
-  ) |> 
+)|> 
   write.csv(
     "data/day-beds.csv",
     row.names = FALSE
@@ -499,16 +495,14 @@ quarterly_covid_beds <- covid_numerators_by_trust |>
 
 annual_covid_beds <- quarterly_covid_beds |> 
   quarterly_to_annual_mean(
-    year_type = "financial"
+    year_type = "calendar",
+    multiplier = 100
   )
 
 bind_rows(
   quarterly_covid_beds,
   annual_covid_beds
 ) |> 
-  mutate(
-    value = value * 100
-  ) |> 
   write.csv(
     "data/covid-beds.csv",
     row.names = FALSE
@@ -717,7 +711,8 @@ quarterly_beds_per_60plus <- c(
 
 annual_beds_per_60plus <- quarterly_beds_per_60plus |> 
   quarterly_to_annual_mean(
-    year_type = "calendar"
+    year_type = "calendar",
+    multiplier = 1e3
   )
 
 bind_rows(
@@ -753,11 +748,11 @@ workforce_metrics <- annual_workforce_fte |>
   mutate(
     numerator = replace_na(numerator, 0),
     metric = paste0(
-      "Workforce FTEs per 10,000 population (",
+      "Workforce FTEs per 100,000 population (",
       metric,
       ")"
     ),
-    value = numerator / (denominator / 1e4),
+    value = (numerator / denominator) * 1e5,
     frequency = "annual calendar"
   ) |> 
   select(!c("month"))
@@ -857,13 +852,14 @@ a_and_e_workforce_quarterly_per_population <- a_and_e_workforce_quarterly |>
     )
   ) |> 
   mutate(
-    value = numerator / (denominator / 1e4),
-    metric = paste0(metric, " (per 10,000 population)")
+    value = numerator / (denominator / 1e5),
+    metric = paste0(metric, " (per 100,000 population)")
   )
 
 a_and_e_workforce_annual_per_population <- quarterly_to_annual_mean(
   a_and_e_workforce_quarterly_per_population,
-  year_type = "financial"
+  year_type = "calendar",
+  multiplier = 1e5
 )
 
 bind_rows(
@@ -980,9 +976,9 @@ quarterly_gp_workforce_per_population <- quarterly_gp_workforce |>
     relationship = "many-to-one"
   ) |> 
   mutate(
-    value = numerator / (denominator / 1e4),
+    value = numerator / (denominator / 1e5),
     metric = paste0(
-      "Primary care workforce (FTEs) per 10,000 population (",
+      "Primary care workforce (FTEs) per 100,000 population (",
       STAFF_GROUP,
       # " - ", 
       # STAFF_ROLE,
@@ -1007,7 +1003,8 @@ quarterly_gp_workforce_per_population <- quarterly_gp_workforce |>
 
 annual_gp_workforce_per_population <- quarterly_to_annual_mean(
   quarterly_gp_workforce_per_population,
-  year_type = "calendar"
+  year_type = "calendar",
+  multiplier = 1e5
 )
 
 bind_rows(
@@ -1056,11 +1053,11 @@ monthly_sickness_absence <- read.csv(url) |>
     values_to = "numerator"
   ) |> 
   mutate(
-    metric = paste0(
-      metric,
-      " per 10,000 population (",
-      Org.Type,
-      ")"
+    metric = case_when(
+      grepl("sick", metric) ~ paste0(metric, " per 10,000 population (",
+                                     Org.Type, ")"),
+      .default = paste0(metric, " per 100 population (",
+                        Org.Type, ")")
     )
   ) |> 
   select(
@@ -1122,11 +1119,11 @@ monthly_sickness_monthly_files <- purrr::map_dfr(
     values_to = "numerator"
   ) |> 
   mutate(
-    metric = paste0(
-      metric,
-      " per 10,000 population (",
-      ORG_TYPE,
-      ")"
+    metric = case_when(
+      grepl("sick", metric) ~ paste0(metric, " per 10,000 population (",
+                                     ORG_TYPE, ")"),
+      .default = paste0(metric, " per 100 population (",
+                        ORG_TYPE, ")")
     )
   ) |> 
   select(
@@ -1259,7 +1256,10 @@ quarterly_sickness_absence <- monthly_sickness_absence |>
     )
   ) |> 
   mutate(
-    value = (numerator / denominator) * 1e4,
+    value = case_when(
+      grepl("sick", metric) ~ (numerator / denominator) * 1e4,
+      .default = (numerator / denominator) * 1e2
+    ),
     frequency = "quarterly"
   ) |> 
   rename(
@@ -1268,8 +1268,14 @@ quarterly_sickness_absence <- monthly_sickness_absence |>
 
 annual_sickness_absence <- quarterly_to_annual_mean(
   quarterly_sickness_absence,
-  year_type = "financial"
-)
+  year_type = "calendar"
+) |> 
+  mutate(
+    value = case_when(
+      grepl("sick", metric) ~ value * 1e4,
+      .default = value * 1e2
+    )
+  )
 
 bind_rows(
   quarterly_sickness_absence,
@@ -1418,7 +1424,7 @@ annual_mh_spend_metrics <- annual_mh_spend |>
   mutate(
     denominator = case_when(
       grepl("proportion", metric) ~ 1,
-      .default = denominator / 1e4
+      .default = denominator
     ),
     value = case_when(
       grepl("allocation", metric) ~ (numerator / denominator) * 100,
@@ -1572,13 +1578,13 @@ monthly_gp_wait_times <- setNames(
 
 quarterly_gp_wait_times <- monthly_to_quarterly_sum(
   monthly_gp_wait_times,
-  proportion = TRUE
+  multiplier = 100
 )
 
 annual_gp_wait_times <- monthly_to_annual_sum(
   monthly_gp_wait_times,
-  year_type = "financial",
-  proportion = TRUE
+  year_type = "calendar",
+  multiplier = 100
 )
 
 
@@ -1656,8 +1662,9 @@ monthly_ambsys <- read.csv(
       c(numerator, denominator),
       as.numeric
     ),
+    numerator = numerator / 60, # convert from seconds to minutes
     metric = paste0(
-      "Mean ambulance response time (",
+      "Mean ambulance response time - minutes (",
       description,
       ")"
     ),
@@ -1686,7 +1693,7 @@ quarterly_ambsys <- monthly_to_quarterly_sum(
 
 annual_ambsys <- monthly_to_annual_sum(
   monthly_ambsys,
-  year_type = "financial"
+  year_type = "calendar"
 )
 
 bind_rows(
@@ -1729,13 +1736,13 @@ monthly_nctr <- purrr::map_dfr(
 
 quarterly_nctr <- monthly_to_quarterly_sum(
   monthly_nctr,
-  proportion = TRUE
+  multiplier = 100
 )
 
 annual_nctr <- monthly_to_annual_sum(
   monthly_nctr,
-  year_type = "financial",
-  proportion = TRUE
+  year_type = "calendar",
+  multiplier = 100
 )
 
 bind_rows(
@@ -1812,13 +1819,13 @@ monthly_cancer_wait_times <- monthly_cancer_wait_times |>
 
 quarterly_cancer_wait_times <- monthly_to_quarterly_sum(
   monthly_cancer_wait_times,
-  proportion = TRUE
+  multiplier = 100
 )
 
 annual_cancer_wait_times <- monthly_to_annual_sum(
   monthly_cancer_wait_times,
-  year_type = "financial",
-  proportion = TRUE
+  year_type = "calendar",
+  multiplier = 100
 )
 
 bind_rows(
@@ -1868,12 +1875,14 @@ monthly_a_and_e <- purrr::map_dfr(
   apply_catchment_proportions()
 
 quarterly_a_and_e <- monthly_to_quarterly_sum(
-  monthly_a_and_e
+  monthly_a_and_e,
+  multiplier = 100
 )
 
 annual_a_and_e <- monthly_to_annual_sum(
   monthly_a_and_e,
-  year_type = "financial"
+  multiplier = 100,
+  year_type = "calendar"
 )  
 
 bind_rows(
@@ -1881,9 +1890,6 @@ bind_rows(
   quarterly_a_and_e,
   annual_a_and_e
 ) |> 
-  mutate(
-    value = value * 100
-  ) |> 
   write.csv(
     "data/a-and-e-4-hours.csv",
     row.names = FALSE
@@ -1989,13 +1995,13 @@ monthly_rtt <- monthly_rtt |>
 
 quarterly_rtt <- monthly_to_quarterly_sum(
   monthly_rtt,
-  proportion = TRUE
+  multiplier = 100
 )
 
 annual_rtt <- monthly_to_annual_sum(
   monthly_rtt,
-  year_type = "financial",
-  proportion = TRUE
+  year_type = "calendar",
+  multiplier = 100
 )
 
 bind_rows(
