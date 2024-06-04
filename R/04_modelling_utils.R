@@ -48,23 +48,15 @@ add_prediction_to_data <- function(data, final_fit) {
     
     data <- final_fit |> 
       workflowsets::extract_workflow() |> 
-      predict(
+      augment(
         new_data = data,
         penalty = lambda_penalty
-      ) |> 
-      bind_cols(
-        data
       )
   } else if (grepl("random", model_type)) {
     data <- final_fit |> 
       workflowsets::extract_workflow() |> 
-      predict(data) |> 
-      bind_cols(
-        data
-      )
+      augment(data)
   }
-  
-  
   
   return(data)
 }
@@ -771,6 +763,53 @@ load_data <- function(target_variable, value_type = "value", incl_numerator_rema
 
 # modelling ---------------------------------------------------------------
 
+modelling_grid <- function(data, target_variable, predict_year) {
+  min_max_years <- data |> 
+    select(
+      all_of(
+        c(
+          "year",
+          target_variable
+        )
+      )
+    ) |> 
+    summarise(
+      min = min(year),
+      max = max(year)
+    ) |> 
+    mutate(
+      max = if_else(max > predict_year, predict_year, max),
+      max_years_incl_lag = (max - min),
+      max_years = if_else(max_years_incl_lag > 6, 6, max_years_incl_lag)
+    )
+  
+  input_grid <- tibble(
+    training_years = 2:min_max_years[["max_years"]]
+    ) |> 
+    cross_join(
+      tibble(
+        lagged_years = 0:2  
+      )
+    ) |> 
+    cross_join(
+      tibble(
+        lag_target = 0:1
+      )
+    ) |> 
+    filter(
+      training_years + lagged_years <= min_max_years[["max_years_incl_lag"]],
+      training_years + lag_target <= min_max_years[["max_years_incl_lag"]]
+    ) |> 
+    arrange(
+      training_years,
+      lagged_years,
+      lag_target
+    )
+  
+  return(input_grid)
+}
+
+
 #' @param data tibble containing data for modelling. Each record is a year
 #'   (field name is "year") and an ICS (field name is "org"), with all other
 #'   columns representing target and predictor variables
@@ -1161,9 +1200,8 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
       step_zv(
         all_numeric_predictors()
       ) |> 
-      step_range(
-        all_numeric_predictors(),
-        clipping = FALSE
+      step_normalize(
+        all_numeric_predictors()
       )
   }
   
@@ -1617,10 +1655,10 @@ record_model_outputs <- function(model_outputs, eval_metric,
       output_file
     )
   } else {
-    combined_record <- readRDS(output_file) |> 
+    combined_record <- readRDS(output_file) |>
       bind_rows(
         summary_record
-      ) |> 
+      ) |>
       saveRDS(output_file)
   }
   
@@ -1812,11 +1850,25 @@ calculate_baseline_score <- function(last_fit,
     pull(.row)
     
   data <- last_fit |> 
-    pluck("splits", 1, "data") |> 
+    pluck("splits", 1, "data")
+  
+  model_method_type <- model_type(data)
+  
+  data <- data |> 
     select(
       "org", "year",
       value = all_of(target_variable)
     )
+  
+  if (model_method_type == "difference from previous") {
+    data <- data |> 
+      mutate(value = NA_real_) |> 
+      rename(last_year = "year") |> 
+      update_missing_historic_values(target_variable) |> 
+      rename(
+        year = "last_year"
+      )
+  } 
   
   observed_predicted <- data |> 
     slice(test_set_rows) |> 
@@ -1852,6 +1904,15 @@ calculate_baseline_score <- function(last_fit,
         by = join_by(
           year, org
         )
+      ) |> 
+      rename(
+        last_year = "year"
+      ) |> 
+      update_missing_historic_values(
+        target_variable = target_variable
+      ) |> 
+      rename(
+        year = "last_year"
       ) |> 
       mutate(
         value = case_when(
@@ -1896,12 +1957,16 @@ calculate_baseline_score <- function(last_fit,
           last_year == year
         )
       ) |> 
+      update_missing_historic_values(
+        target_variable = target_variable
+      ) |> 
       select(
         "org",
         "year",
         "observed",
         "predicted" = "value"
       )
+    
   }
     
   rmse <- observed_predicted  |> 
@@ -1943,4 +2008,80 @@ calculate_baseline_score <- function(last_fit,
   
   return(metrics)
    
+}
+
+#' Where baseline mae are calculated, where we are assuming the prediction is
+#' based on a previous value we will face issues at the beginning of the time
+#' series because there are no previous values available in the dataset that
+#' went into the modelling. This function draws on the full dataset files to
+#' apply the correct historic value where they are missing
+update_missing_historic_values <- function(data, target_variable) {
+  fill_missing <- load_data(
+    target_variable = target_variable
+  ) |> 
+    select(
+      all_of(
+        c(
+          "org",
+          "year",
+          target_variable
+        )
+      )
+    ) |> 
+    rename(
+      value = all_of(target_variable)
+    ) |> 
+    mutate(
+      value = value / 100
+    )
+  
+  missing_values <- data |> 
+    # filter(is.na(value)) |> 
+    distinct(
+      org, 
+      last_year
+    ) |> 
+    inner_join(
+      fill_missing,
+      by = join_by(
+        org, 
+        last_year == year
+      )
+    )
+  
+  data <- data |> 
+    select(!c("value")) |> 
+    left_join(
+      missing_values,
+      by = c("org", "last_year")
+    )
+  
+  return(data)
+}
+
+
+model_type <- function(data) {
+  type <- data |> 
+    select(!any_of(c("total_cases", "month", "quarter", "year", "nhs_region", "org"))) |>
+    summarise(
+      across(everything(),
+             ~ sum(.x < 0, na.rm = TRUE))
+    ) |> 
+    pivot_longer(
+      cols = everything(),
+      names_to = "metric",
+      values_to = "number_negative"
+    ) |> 
+    summarise(
+      type = sum(number_negative)
+    ) |> 
+    mutate(
+      type = case_when(
+        type > 0 ~ "difference from previous",
+        .default = "proportion"
+      )
+    ) |> 
+    pull(type)
+  
+  return(type)
 }

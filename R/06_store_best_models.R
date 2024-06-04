@@ -27,19 +27,25 @@ best_models <- readRDS("tests/model_testing/model_summary_information.rds") |>
   )
 
 # filter just for specific model for the purpose of building the shiny app
-best_models <- best_models |>
-  filter(
-    `Model type` == "logistic_regression"
-    # `Model type` == "random_forest",
-    # `Target variable type` == "proportion"
-    # `Target variable type` == "difference from previous"
-  )
+# best_models <- best_models |>
+#   filter(
+#     `Model type` == "logistic_regression"
+#     `Model type` == "random_forest",
+#     `Target variable type` == "proportion"
+#     `Target variable type` == "difference from previous"
+#   )
 
 # best_models <- best_models |> 
 #   filter(
 #   `Model type` == "logistic_regression",
 #   grepl("incomplete", `Target variable`)
 # )
+
+best_models <- best_models |>
+  filter(
+    `Test set value` == min(`Test set value`),
+    .by = `Target variable`
+  )
 
 final_workflows <- list()
 for (i in seq_len(nrow(best_models))) {
@@ -69,6 +75,13 @@ for (i in seq_len(nrow(best_models))) {
     ) |> 
     filter(
       year <= predict_year
+    ) |> 
+    # make sure target variable is between 0 and 100
+    mutate(
+      across(
+        all_of(target_variable),
+        \(x) x / 100
+      )
     )
   
   m <- modelling_performance(
@@ -86,6 +99,7 @@ for (i in seq_len(nrow(best_models))) {
     target_type = best_models$`Target variable type`[i],
     validation_type = best_models$`Validation method`[i],
     eval_metric = best_models$`Tuning objective`[i],
+    include_pi = TRUE,
     seed = 321
   )
   
@@ -100,5 +114,5 @@ for (i in seq_len(nrow(best_models))) {
 
 saveRDS(
   final_workflows,
-  "outputs/model_objects/wfs_log.rds"
+  "outputs/model_objects/wfs_best_pi.rds"
 )

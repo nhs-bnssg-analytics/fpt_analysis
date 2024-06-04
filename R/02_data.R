@@ -54,6 +54,28 @@ bind_rows(
 
 # risk factors
 
+sub_icb_obesity <- fingertipsR::fingertips_data(
+  IndicatorID = 92588,
+  AreaTypeID = 66,
+  ParentAreaTypeID = 221
+) |> 
+  filter(AreaType == "ICB sub-locations") |> 
+  summarise(
+    across(
+      c(Count, Denominator),
+      sum
+    ),
+    .by = c(Timeperiod, IndicatorName, IndicatorID, ParentCode, ParentName)
+  ) |> 
+  mutate(
+    Value = 100 * (Count / Denominator),
+    ParentCode = gsub("n", "", ParentCode)
+  ) |> 
+  rename(
+    AreaCode = ParentCode,
+    AreaName = ParentName
+  )
+
 risk_factors <- fingertipsR::indicators() |> 
   filter(
     grepl("[Rr]isk", DomainName),
@@ -85,6 +107,14 @@ risk_factors <- fingertipsR::indicators() |>
       Sex,
       Age
     )
+  ) |> 
+  # remove obesity prevalence as it is missing some areas that can be replaced
+  # with the sub-icb aggregated values
+  filter(
+    IndicatorID != 92588
+  ) |> 
+  bind_rows(
+    sub_icb_obesity
   ) |> 
   select(
     year = "Timeperiod",
