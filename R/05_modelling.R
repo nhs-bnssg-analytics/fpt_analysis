@@ -5,9 +5,9 @@ source("R/04_modelling_utils.R")
 # configure modelling  -----------------------------------------------------------
 for (target_variable in c(
   "Proportion of incomplete pathways greater than 52 weeks from referral",
-  "62 day wait from suspected cancer or referral to first definitive treatment (proportion outside of standard)",
-  "Proportion of A&E attendances greater than 4 hours (Type 1 Departments - Major A&E)",
-  "Proportion of attended appointments (Over 4 weeks wait time)"
+  "Proportion of suspected cancer or referral to first definitive treatment that are longer than 62 days wait",
+  "Proportion of A&E attendances greater than 4 hours wait (Type 1 Departments - Major A&E)",
+  "Proportion of attended GP appointments (over 4 weeks wait time)"
   )) {
   
   # target_variable <- "Proportion of incomplete pathways greater than 52 weeks from referral"

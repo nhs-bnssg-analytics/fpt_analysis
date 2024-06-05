@@ -433,7 +433,7 @@ tidy_cancer_wait_times <- function(filepath) {
         numerator = denominator - numerator, # forces high = bad
         value = numerator / denominator,
         frequency = "monthly",
-        metric = "62 day wait from suspected cancer or referral to first definitive treament (proportion outside of standard)"
+        metric = "Proportion of suspected cancer or referral to first definitive treatment that are longer than 62 days wait"
       )
     
     return(tidied_sheet)
@@ -571,7 +571,7 @@ tidy_a_and_e <- function(filepath) {
       month = lubridate::month(dt),
       value = numerator / denominator,
       metric = paste0(
-        "Proportion of A&E attendances greater than 4 hours (",
+        "Proportion of A&E attendances greater than 4 hours wait (",
         metric,
         ")"
       ),

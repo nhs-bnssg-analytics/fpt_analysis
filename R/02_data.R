@@ -1558,11 +1558,11 @@ monthly_gp_wait_times <- setNames(
       TIME_BETWEEN_BOOK_AND_APPT %in% c("8  to 14 Days") ~ "1 to 2 weeks",
       TIME_BETWEEN_BOOK_AND_APPT %in% c("15  to 21 Days") ~ "2 to 3 weeks",
       TIME_BETWEEN_BOOK_AND_APPT %in% c("22  to 28 Days") ~ "3 to 4 weeks",
-      TIME_BETWEEN_BOOK_AND_APPT %in% c("More than 28 Days") ~ "Over 4 weeks",
+      TIME_BETWEEN_BOOK_AND_APPT %in% c("More than 28 Days") ~ "over 4 weeks",
       .default = "Unknown/Data Issue"
     ),
     metric = paste0(
-      "Proportion of attended appointments",
+      "Proportion of attended GP appointments",
       " (",
       TIME_BETWEEN_BOOK_AND_APPT,
       " wait time)"
