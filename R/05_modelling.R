@@ -2,7 +2,6 @@ source("R/00_libraries.R")
 source("R/01_utils.R")
 source("R/04_modelling_utils.R")
 
-
 # configure modelling  -----------------------------------------------------------
 for (target_variable in c(
   "Proportion of incomplete pathways greater than 52 weeks from referral",
@@ -67,9 +66,10 @@ for (target_variable in c(
       inputs <- modelling_grid(
         data = dc_data, 
         target_variable = target_variable, 
-        predict_year = predict_year
+        predict_year = predict_year,
+        target_type = tt
       )
-        
+      
       modelling_outputs <- inputs |> 
         pmap(
           \(lagged_years, training_years, lag_target)

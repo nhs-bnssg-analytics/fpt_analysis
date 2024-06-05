@@ -763,7 +763,12 @@ load_data <- function(target_variable, value_type = "value", incl_numerator_rema
 
 # modelling ---------------------------------------------------------------
 
-modelling_grid <- function(data, target_variable, predict_year) {
+modelling_grid <- function(data, target_variable, predict_year, target_type) {
+  
+  target_type <- match.arg(
+    target_type,
+    c("proportion", "difference from previous")
+  )
   min_max_years <- data |> 
     select(
       all_of(
@@ -780,6 +785,11 @@ modelling_grid <- function(data, target_variable, predict_year) {
     mutate(
       max = if_else(max > predict_year, predict_year, max),
       max_years_incl_lag = (max - min),
+      max_years_incl_lag = ifelse(
+        target_type == "difference from previous",
+        max_years_incl_lag - 1,
+        max_years_incl_lag
+      ),
       max_years = if_else(max_years_incl_lag > 6, 6, max_years_incl_lag)
     )
   
@@ -993,11 +1003,6 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
     )
     
     if (time_series_split) {
-      data <- data |> 
-        arrange(
-          year, org
-        )
-      
       if (!keep_current) {
         keep_variables <- c("year", "quarter", "month", "org", 
                             "nhs_region", target_variable)
@@ -1048,8 +1053,13 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
   # splitting
   
   
+  
   # split dataset into train, validation and test
   if (time_series_split) {
+    data <- data |> 
+      arrange(
+        year, org
+      )
     proportions <- train_validation_proportions(
       data,
       shuffle_training_records = shuffle_training_records
@@ -1072,6 +1082,10 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
     )
     
   } else {
+    data <- data |> 
+      arrange(
+        org, year
+      )
     # 60% train, 20% val, 20% test
     proportions <- c(0.6, 0.2)
     splits <- rsample::initial_validation_split(
@@ -1665,180 +1679,11 @@ record_model_outputs <- function(model_outputs, eval_metric,
   return(summary_record)
 }
 
-# applying model to scenarios ---------------------------------------------
-
-#' @param input_data tibble containing all of the fields that feed into the
-#'   workflow contained in the last_fit object
-#' @param number_year_to_extrapolate integer; the number of years to inform the
-#'   method of extrapolation (eg, if extrapolation_method is "linear", and this
-#'   value is 2, then the future years will be extrapolated based on the latest
-#'   2 years of data using a linear trend)
-#' @param area_code string; code for the area(s) of interest. Can take a vector
-#'   containing multiple area code
-#' @param extrapolation_method string; "linear" or "spline". Linear will
-#'   extrapolate the last n points linearly. Spline will extend the last n
-#'   points with a natural spline.
-#' @param model_fit an object returned from the last_fit function
-#' @param target_variable string; name of target variable
-#' @param scenario tibble with two columns, metric and multiplier. The
-#'   extrapolated values for the metric will be multiplied by the multiplier
-#'   before being put through the model to predict the target variable
-#' @return a tibble with a columns for year, org, nhs_region and target variable
-#'   value
-apply_model_to_scenario <- function(input_data, number_year_to_extrapolate, 
-                                    area_code, extrapolation_method, model_fit,
-                                    target_variable, scenario = NULL) {
-  
-  extrapolation_method <- match.arg(
-    extrapolation_method,
-    c("linear", "spline")
-  )
-  
-  # expand dataset to include future years by org and metric
-  predictions <- input_data |> 
-    filter(org %in% area_code) |> 
-    pivot_longer(
-      cols = !c(year, org, nhs_region),
-      names_to = "metric",
-      values_to = "value"
-    ) |> 
-    filter(
-      year > (max(year) - number_year_to_extrapolate)
-    ) |> 
-    complete(
-      year = seq(
-        from = min(year), 
-        to = max(year) + 5
-      ),
-      nesting(
-        org,
-        nhs_region
-      ),
-      metric
-    ) |> 
-    arrange(org, metric, year)
-  
-  if (extrapolation_method == "linear") {
-    # generate linear interpolations for the predictor variables
-    predictions <- predictions |> 
-      nest(
-        data = c(year, value)
-      ) |> 
-      mutate(
-        fit = map(data, ~ lm(value ~ year, data = .x, na.action = na.omit)),
-        data = map2(fit, data, ~ bind_cols(.y, tibble(prediction = predict(.x, newdata = .y))))
-      ) |> 
-      select(!c(fit)) |> 
-      unnest(data)
-  } else if (extrapolation_method == "spline") {
-    predictions <- predictions |> 
-      mutate(
-        prediction = stats::spline(
-          x = year, 
-          y = value,
-          xout = year,
-          method = "natural"
-        )$y,
-        .by = c(org, metric)
-      )
-  } 
-  
-  if (!is.null(scenario)) {
-    predictions <- predictions |> 
-      left_join(
-        scenario,
-        by = join_by(
-          metric
-        ),
-        relationship = "many-to-one"
-      ) |> 
-      mutate(
-        multiplier = replace_na(multiplier, 1),
-        prediction = prediction * multiplier
-      ) |> 
-      select(!c("multiplier"))
-  }
-  
-  predictions <- predictions |> 
-    mutate(
-      type = case_when(
-        is.na(value) ~ "prediction",
-        .default = "observed"
-      ),
-      value = case_when(
-        is.na(value) & metric != "pandemic_onwards" ~ prediction,
-        metric == "pandemic_onwards" & year >= 2020 ~ 1L,
-        metric == "pandemic_onwards" & year < 2020 ~ 0L,
-        .default = value
-      )
-    ) |> 
-    select(!c("prediction", "type")) |> 
-    select(!c("type")) |> 
-    pivot_wider(
-      names_from = metric,
-      values_from = value
-    )
-  
-  # are there lagged years in the modelling
-  lagged_years <- calculate_lag_years_from_last_fit(model_fit)
-  if (lagged_years > 0) {
-    # calculate lagged values for input variables
-    predictions <- create_lag_variables(
-      data = predictions,
-      lagged_years = lagged_years,
-      lag_variables = c("ENTER FIELDS HERE")
-    )
-  }
-  
-    filter(
-      year > max(input_data[["year"]])
-    ) |> 
-    add_prediction_to_data(
-      final_fit = model_fit
-    ) |> 
-    select(
-      "year", "org", "nhs_region", ".pred"
-    ) |> 
-    rename_with(
-      ~ target_variable,
-      ".pred"
-    ) |> 
-    mutate(
-      type = paste0(
-        "Prediction based on ",
-        extrapolation_method, 
-        " extrapolation (",
-        number_year_to_extrapolate,
-        " years)"
-      )
-    )
-  
-  orig <- dc_data |> 
-    select(
-      "year", "org", "nhs_region", all_of(target_variable)
-    ) |> 
-    filter(
-      org == "QUY"
-    ) |> 
-    mutate(
-      type = "observed"
-    )
-  
-  predictions <- bind_rows(
-    orig,
-    predictions
-  )
-  
-  return(predictions)
-}
-
-
 calculate_baseline_score <- function(last_fit,
                                      target_variable, 
                                      projection_method,
                                      n_years) {
  
-  
   projection_method <- match.arg(
     projection_method,
     c("linear", "same as last year")
@@ -1892,7 +1737,7 @@ calculate_baseline_score <- function(last_fit,
           .x,
           org,
           year = seq(
-            from = max(year) - (n_years + 1),
+            from = max(year) - n_years,
             to = max(year),
             by = 1
           )
