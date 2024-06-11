@@ -463,7 +463,7 @@ tidy_cancer_wait_times <- function(filepath) {
       ) |> 
       mutate(
         value = numerator / denominator,
-        metric = "62 day wait from suspected cancer or referral to first definitive treament (proportion outside of standard)"
+        metric = "Proportion of suspected cancer or referral to first definitive treatment that are longer than 62 days wait"
       )
   }
   
