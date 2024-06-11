@@ -571,7 +571,7 @@ tidy_a_and_e <- function(filepath) {
       month = lubridate::month(dt),
       value = numerator / denominator,
       metric = paste0(
-        "Proportion of A&E attendances greater than 4 hours wait (",
+        "Proportion of A&E attendances with greater than 4 hours wait (",
         metric,
         ")"
       ),
