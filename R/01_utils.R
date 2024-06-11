@@ -2267,6 +2267,71 @@ summarise_health_pop_files <- function(filepath, incl_agebands) {
 
 # aggregation tasks -------------------------------------------------------
 
+remove_incomplete_period <- function(data, from, to) {
+  from <- match.arg(
+    from,
+    c("month", "quarter")
+  )
+  
+  to <- match.arg(
+    to,
+    c("quarter", "year")
+  )
+  
+  if (from == "month") {
+    if (to == "quarter") {
+      expected_n <- 3
+      data <- data |> 
+        mutate(
+          quarter = case_when(
+            month %in% 1:3 ~ 4L,
+            month %in% 4:6 ~ 1L,
+            month %in% 7:9 ~ 2L,
+            month %in% 10:12 ~ 3L,
+            .default = NA_real_
+          ),
+          year = case_when(
+            quarter == 4L ~ year - 1,
+            .default = year
+          )
+        )
+      group_fields <- c("year", "quarter")
+    } else if (to == "year") {
+      expected_n <- 12
+      group_fields <- "year"
+    }
+  } else if (from == "quarter") {
+    if (to == "year") {
+      expected_n <- 4
+      group_fields <- "year"
+    }
+  }
+  group_fields <- c(group_fields, "org", "metric")
+  
+  data_keep <- data |> 
+    summarise(
+      cnt = n(),
+      .by = any_of(
+        group_fields
+      )
+    ) |> 
+    filter(
+      cnt == expected_n
+    ) |> 
+    select(!c("cnt", "org")) |> 
+    distinct()
+    
+  
+  data <- data |> 
+    inner_join(
+      data_keep,
+      by  = unique(c("year", to, "metric")),
+      relationship = "many-to-one"
+    )
+  
+  return(data)
+}
+
 # takes a mean of numerator and denominator for each month in the quarter and
 # calculates a new value based on that. Requires the columns year, month, org,
 # org_name, metric, numerator and denominator
@@ -2274,14 +2339,9 @@ summarise_health_pop_files <- function(filepath, incl_agebands) {
 #' @param multiplier integer; what to multiply the final value by
 monthly_to_quarterly_mean <- function(data, multiplier = 1) {
   data <- data |> 
-    mutate(
-      quarter = case_when(
-        month %in% 1:3 ~ 4L,
-        month %in% 4:6 ~ 1L,
-        month %in% 7:9 ~ 2L,
-        month %in% 10:12 ~ 3L,
-        .default = NA_real_
-      )
+    remove_incomplete_period(
+      from = "month",
+      to = "quarter"
     ) |>
     summarise(
       across(
@@ -2307,14 +2367,9 @@ monthly_to_quarterly_mean <- function(data, multiplier = 1) {
 #' @param multiplier integer; what to multiply the final value by
 monthly_to_quarterly_sum <- function(data, multiplier = 1) {
   data <- data |> 
-    mutate(
-      quarter = case_when(
-        month %in% 1:3 ~ 4L,
-        month %in% 4:6 ~ 1L,
-        month %in% 7:9 ~ 2L,
-        month %in% 10:12 ~ 3L,
-        .default = NA_real_
-      )
+    remove_incomplete_period(
+      from = "month",
+      to = "quarter"
     ) |>
     summarise(
       across(
@@ -2353,6 +2408,10 @@ monthly_to_annual_mean <- function(data, year_type = "financial", multiplier = 1
   }
   
   data <- data |> 
+    remove_incomplete_period(
+      from = "month",
+      to = "year"
+    ) |> 
     summarise(
       across(
         c(numerator, denominator),
@@ -2392,6 +2451,10 @@ monthly_to_annual_sum <- function(data, year_type = "financial", multiplier = 1)
   }
   
   data <- data |> 
+    remove_incomplete_period(
+      from = "month",
+      to = "year"
+    ) |> 
     summarise(
       across(
         c(numerator, denominator),
@@ -2420,16 +2483,11 @@ monthly_to_annual_sum <- function(data, year_type = "financial", multiplier = 1)
 quarterly_to_annual_mean <- function(data, year_type, multiplier = 1) {
   year_type <- match.arg(year_type, c("financial", "calendar"))
   
-  # only keep years with 4 quarters of data
-  years_to_keep <- data |> 
-    distinct(
-      year, quarter
-    ) |> 
-    count(year) |> 
-    filter(n == 4) |> 
-    pull(year)
-  
   data <- data |> 
+    remove_incomplete_period(
+      from = "quarter",
+      to = "year"
+    ) |> 
     summarise(
       across(
         c(numerator, denominator),
@@ -2445,9 +2503,6 @@ quarterly_to_annual_mean <- function(data, year_type, multiplier = 1) {
         "annual",
         year_type
       )
-    ) |> 
-    filter(
-      year %in% years_to_keep
     )
   
   return(data)
@@ -2461,14 +2516,11 @@ quarterly_to_annual_mean <- function(data, year_type, multiplier = 1) {
 quarterly_to_annual_sum <- function(data, year_type, multiplier = 1) {
   year_type <- match.arg(year_type, c("financial", "calendar"))
   
-  # only keep years with 4 quarters of data
-  years_to_keep <- data |> 
-    distinct(year, quarter) |> 
-    count(year) |> 
-    filter(n == 4) |> 
-    pull(year)
-  
   data <- data |> 
+    remove_incomplete_period(
+      from = "quarter",
+      to = "year"
+    ) |> 
     summarise(
       across(
         c(numerator, denominator),
@@ -2484,9 +2536,6 @@ quarterly_to_annual_sum <- function(data, year_type, multiplier = 1) {
         "annual",
         year_type
       )
-    ) |> 
-    filter(
-      year %in% years_to_keep
     )
   
   return(data)
