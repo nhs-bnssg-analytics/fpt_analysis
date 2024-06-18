@@ -1127,41 +1127,7 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
   }
   
   
-  # how many cores on the machine so we can parallelise
-  cores <- parallel::detectCores()
   
-  # set model
-  if (model_type == "random_forest") {
-    
-    # set model
-    model_setup <- rand_forest(
-      mtry = tune(), 
-      min_n = tune(), 
-      trees = tune()
-    ) |> 
-      set_engine(
-        "randomForest", 
-        num.threads = !!cores
-      ) |> 
-      set_mode("regression")
-  } else if (model_type == "logistic_regression") {
-    path_length <- 300
-    pen_vals <- 10 ^ seq(-4, 0, length.out = path_length)
-    
-    model_setup <- parsnip::linear_reg(
-      penalty = tune(),
-      mixture = tune()
-    ) |> 
-      set_engine(
-        "glmnet", 
-        family = stats::quasibinomial(link = "logit"), 
-        # path_values = pen_vals,
-        nlambda = 150,
-        num.threads = !!cores,
-        standardize = FALSE
-      ) |> 
-      set_mode("regression")
-  }
   
   # identify variables in train and val that are over 40% missing, so they are
   # subsequently removed
@@ -1219,10 +1185,60 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
       )
   }
   
+  # how many cores on the machine so we can parallelise
+  cores <- parallel::detectCores()
+  
+  # set model
+  if (model_type == "random_forest") {
+    
+    # set model
+    model_setup <- rand_forest(
+      mtry = tune(), 
+      min_n = tune(), 
+      trees = tune()
+    ) |> 
+      set_engine(
+        "randomForest", 
+        num.threads = !!cores
+      ) |> 
+      set_mode("regression")
+  } else if (model_type == "logistic_regression") {
+    path_length <- 300
+    pen_vals <- 10 ^ seq(-4, 0, length.out = path_length)
+    
+    if (lag_target > 0) {
+      penalise_lag_target <- ifelse(
+        grepl(
+          target_variable, 
+          predictor_variables
+        ), 
+        1, # eg, allow maximum penalisation for the lagged version of the target variable
+        1 # option to reduce penalisation for the remaining predictors
+      )
+      
+    }
+    
+    model_setup <- parsnip::linear_reg(
+      penalty = tune(),
+      mixture = tune()
+    ) |> 
+      set_engine(
+        "glmnet", 
+        family = stats::quasibinomial(link = "logit"), 
+        # path_values = pen_vals,
+        nlambda = 150,
+        num.threads = !!cores,
+        standardize = FALSE,
+        penalty.factor = penalise_lag_target
+      ) |> 
+      set_mode("regression")
+  }
+  
   # start workflow
   modelling_workflow <- workflow() |> 
     add_model(model_setup) |> 
     add_recipe(model_recipe)
+  # browser()
   
   # if logistic regression add case weights to workflow
   if (model_type == "logistic_regression") {
