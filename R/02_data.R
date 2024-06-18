@@ -715,7 +715,8 @@ quarterly_beds_per_60plus <- c(
     read.csv
   ) |> 
   filter(
-    grepl("General", metric)
+    grepl("General", metric),
+    !is.na(quarter)
   ) |> 
   select(
     "year", "quarter",
