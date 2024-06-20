@@ -947,6 +947,21 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
   }
   
   if (target_type == "difference from previous") {
+    # make copy of data before any manipulation in order to calculate future
+    # evaluation metrics
+    original_data <- data |> 
+      select(
+        all_of(
+          c("year", "org", target_variable)
+        )
+      ) |> 
+      mutate(
+        # add a year to the year column so when joining to the dataset for
+        # evaluating change from last year, last year's data is joined with this
+        # years data
+        last_year = year + 1
+      )
+
     data <- data |> 
       arrange(org, year) |> 
       mutate(
@@ -1215,7 +1230,8 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
         1, # eg, allow maximum penalisation for the lagged version of the target variable
         1 # option to reduce penalisation for the remaining predictors
       )
-      
+    } else {
+      penalise_lag_target <- rep(1, length(predictor_variables))
     }
     
     model_setup <- parsnip::linear_reg(
@@ -1295,12 +1311,13 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
     # extract_input <- get_glmnet_coefs
   }
  # tuning_grid <- 2
+  
   evaluation_metrics <- metric_set(
     yardstick::rmse,
-    # yardstick::rsq,
     yardstick::mae,
     yardstick::mape,
-    yardstick::smape)
+    yardstick::smape
+  )
   
   residuals <- modelling_workflow |> 
     tune_grid(
@@ -1377,48 +1394,70 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
       )
   }
   
-  validation_metrics <- validation_metrics |> 
-    select(
-      ".metric",
-      .estimate = "mean"
-    ) |> 
-    mutate(
-      data = "validation"
+  if (target_type == "proportion") {
+    validation_metrics <- validation_metrics |> 
+      select(
+        ".metric",
+        .estimate = "mean"
+      ) |> 
+      mutate(
+        data = "validation"
+      )
+    
+    test_metrics <- model_fit |> 
+      collect_metrics() |> 
+      select(
+        ".metric",
+        ".estimate"
+      ) |> 
+      mutate(
+        data = "test"
+      )
+    
+    train_metrics <- model_fit |> 
+      extract_workflow() |> 
+      augment(data_train) |> 
+      evaluation_metrics(
+        truth = all_of(target_variable), 
+        estimate = .pred
+      ) |> 
+      mutate(
+        data = "train",  
+      ) |> 
+      select(!c(".estimator"))
+    
+    evaluation_metrics <- bind_rows(
+      train_metrics,
+      validation_metrics,
+      test_metrics
     )
-  
-  test_metrics <- model_fit |> 
-    collect_metrics() |> 
-    select(
-      ".metric",
-      ".estimate"
+  } else if (target_type == "difference from previous") {
+    
+    evaluation_metrics <- list(
+      train = data_train,
+      validation = data_validation,
+      test = data_test
     ) |> 
-    mutate(
-      data = "test"
-    )
-  
-  if (model_type == "logistic_regression") {
-    case_wts <- TRUE
-  } else if (model_type == "random_forest") {
-    case_wts <- FALSE
+      purrr::map(
+        ~ augment(
+          x = model_fit |> extract_workflow(),
+          new_data = .x
+        )
+      ) |> 
+      purrr::map(
+        ~ change_from_previous_eval_metric(
+          predicted_dataset = .x,
+          original_data = original_data,
+          eval_metric_set = evaluation_metrics
+        )
+      ) |> 
+      purrr::list_rbind(
+        names_to = "data"
+      ) |> 
+      select(!c(".estimator"))
   }
   
-  train_metrics <- model_fit |> 
-    extract_workflow() |> 
-    augment(data_train) |> 
-    evaluation_metrics(
-      truth = all_of(target_variable), 
-      estimate = .pred
-    ) |> 
-    mutate(
-      data = "train",  
-    ) |> 
-    select(!c(".estimator"))
-  
-  evaluation_metrics <- bind_rows(
-    train_metrics,
-    validation_metrics,
-    test_metrics
-  ) |>
+  evaluation_metrics <- evaluation_metrics |>
     tidyr::pivot_wider(
       names_from = data,
       values_from = .estimate
@@ -1529,51 +1568,47 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
   
 }
 
-# Modelling output functions ----------------------------------------------
-#' @param id either "best" or a number representing the id of the model
-pick_model <- function(modelling_outputs, evaluation_metric, id = "best") {
-  
-  if (id == "best") {
-    model_metric <- modelling_outputs |> 
-      map_df(
-        ~ pluck(.x, "evaluation_metrics")
-      ) |> 
-      filter(
-        .metric == evaluation_metric
-      ) |> 
-      select(
-        metric = "test"
-      ) |> 
-      mutate(
-        input_id = row_number()
-      ) |> 
-      filter(metric == min(metric)) |> 
-      slice(1)
-    
-    model_id <- model_metric |> 
-      pull(input_id)
-  } else {
-    model_id <- id
-    model_metric <- modelling_outputs[[model_id]] |> 
-      pluck("evaluation_metrics") |> 
-      filter(
-        .metric == evaluation_metric
-      ) |> 
-      select(
-        metric = "test"
+#' function to calculate the evaluation metrics for the "change from previous"
+#' models
+change_from_previous_eval_metric <- function(predicted_dataset, original_data, eval_metric_set) {
+  metrics <- predicted_dataset |> 
+    select(
+      all_of(
+        c("year", "org", ".pred")
       )
-    
-  }
+    ) |> 
+    left_join(
+      select(original_data,
+             all_of(c("last_year", "org", observed = target_variable))
+      ),
+      by = join_by(
+        year == last_year,
+        org
+      )
+    ) |> 
+    mutate(
+      .pred = .pred + observed
+    ) |> 
+    select(!c("observed")) |> 
+    left_join(
+      select(original_data,
+             all_of(c("year", "org", observed = target_variable))
+      ),
+      by = join_by(
+        year,
+        org
+      )
+    ) |> 
+    eval_metric_set(
+      truth = observed, 
+      estimate = .pred
+    )
   
+  return(metrics)
   
-  outputs <- modelling_outputs[[model_id]]
-  
-  outputs[["best_metric"]] <- model_metric |> 
-    pull(metric)
-  
-  return(outputs)
 }
 
+# Modelling output functions ----------------------------------------------
 record_model_outputs <- function(model_outputs, eval_metric, 
                                  validation_type, target_type) {
   
