@@ -72,7 +72,7 @@ Missing values were imputed for the remaining variables by applying the mean of 
 
 ### Normalisation
 
-For the logistic regression model, the data are centred and scaled to a range of 0 and 1. This range aligns with the binary pandemic variable.
+For the logistic regression model, the data are centred and scaled.
 
 ### Hyperparameter tuning {#tuning}
 
