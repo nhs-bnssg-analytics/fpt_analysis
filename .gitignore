@@ -9,6 +9,6 @@ data-raw/
 /.quarto/
 *.pdf
 *.rds
-*.png
+tests/data_checks/*.png
 
 /ad_hoc/

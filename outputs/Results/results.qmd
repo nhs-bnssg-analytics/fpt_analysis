@@ -12,6 +12,9 @@ source(here::here("R/00_libraries.R"))
 results <- readRDS(
   here::here("tests/model_testing/model_summary_information.rds")
 ) |> 
+  filter(
+    `Tuning objective` == "mape"
+  ) |> 
   select(
     "Target variable",
     "Important predictors",
@@ -20,9 +23,9 @@ results <- readRDS(
     "Number of training years" = "Number training years",
     "Number of lagged years" = "Number lagged years",
     `Include previous year's outcome value` = "Number lagged target years",
-    `MAE (test data)` = "Test set value",
-    `MAE (baseline - last year)` = "Baseline (same as last year)",
-    `MAE (baseline - linear 3 years)` = "Baseline (linear (3 years))"
+    `MAPE (test data)` = "Test set value",
+    `MAPE (baseline - last year)` = "Baseline (same as last year)",
+    `MAPE (baseline - linear 3 years)` = "Baseline (linear (3 years))"
   ) |> 
   mutate(
     `Model type` = str_replace_all(`Model type`, "_", " "),
@@ -33,9 +36,9 @@ results <- readRDS(
       .default = FALSE
     ),
     `Number of training years` = `Number of training years` + 1,
-    unrounded_mae = `MAE (test data)`,
+    unrounded_mape = `MAPE (test data)`,
     across(
-      starts_with("MAE"),
+      starts_with("MAPE"),
       ~ round(.x, 3)
     )
   )
@@ -61,11 +64,11 @@ In all, 360 different models were built and assessed.
 
 ## Model selection
 
-Each of the outcome variables are a proportion, so they have a scale of between 0 and 1. Despite the consistent scale, the distribution between within the scales of the outcome variables differs. For this reason, best performing models are selected by selecting the model for each outcome with the lowest mean absolute error (MAE) when comparing the predicted outcome with the observed outcome on the portion of the data held back for testing. This allows us to compare results between outcomes to compare the performance of the models between outcomes.
+Each of the outcome variables are a proportion, so they have a scale of between 0 and 1. Despite the consistent scale, the distribution between within the scales of the outcome variables differs. For this reason, best performing models are selected by selecting the model for each outcome with the lowest mean absolute percentage error (MAPE) when comparing the predicted outcome with the observed outcome on the portion of the data held back for testing. This allows us to compare results between outcomes to compare the performance of the models between outcomes.
 
 ## Baseline comparison
 
-To contextualise the models performance for estimating the outcome variable, the MAE statistic calculated on the test data for the model is compared with two other methods of estimating the outcome variable on the same test data. The two methods chosen to compare with were selected because of their simplicity, but also because these are typical methods teams might employ for predicting future performance:
+To contextualise the models performance for estimating the outcome variable, the MAPE statistic calculated on the test data for the model is compared with two other methods of estimating the outcome variable on the same test data. The two methods chosen to compare with were selected because of their simplicity, but also because these are typical methods teams might employ for predicting future performance:
 
 -   Next year's performance is equal to the previous year's performance
 -   Next year's performance is equal to a linear extrapolation based on the past 3 years' performance
@@ -73,7 +76,7 @@ To contextualise the models performance for estimating the outcome variable, the
 
 ## Important variables
 
-The tables in this section show, for each modelling method and outcome, the most important variables selected by the models for the models with the lowest MAE. 
+The tables in this section show, for each modelling method and outcome, the most important variables selected by the models for the models with the lowest MAPE. 
 
 ```{r}
 #| label: results-breakdown
@@ -111,7 +114,7 @@ for (i in seq_len(nrow(methods))) {
       `Target variable type` == outcome_type
     ) |> 
     filter(
-    unrounded_mae == min(unrounded_mae),
+    unrounded_mape == min(unrounded_mape),
     .by = `Target variable`
     
     ) |> 
@@ -122,7 +125,7 @@ for (i in seq_len(nrow(methods))) {
     ) |> 
     select(
       `Target variable`,
-      `MAE (test data)`,
+      `MAPE (test data)`,
       `Important predictors`
     )
   
@@ -136,12 +139,12 @@ for (i in seq_len(nrow(methods))) {
         `Target variable` == outcome
       )
     
-    mae <- filtered_results |> 
-      pull(`MAE (test data)`)
+    mape <- filtered_results |> 
+      pull(`MAPE (test data)`)
     
     cat(paste(
-      "The MAE for this model is",
-      mae,
+      "The MAPE for this model is",
+      mape,
       "\n\n"
     ))
     
@@ -164,16 +167,16 @@ cat(":::")
 
 ## Summary of best models
 
-@tbl-best-models-inputs presents the combinations of the inputs to the modelling that created the lowest MAE for each outcome, along with the baseline comparisons.
+@tbl-best-models-inputs presents the combinations of the inputs to the modelling that created the lowest MAPE for each outcome, along with the baseline comparisons.
 
 ```{r}
 #| label: tbl-best-models-inputs
-#| tbl-cap: "By outcome, the best combination of input data, along with the MAE score when comparing the predicted outcome with the observed outcome on the data held back for testing."
+#| tbl-cap: "By outcome, the best combination of input data, along with the MAPE score when comparing the predicted outcome with the observed outcome on the data held back for testing."
 #| echo: false
 
 results |> 
   filter(
-    `MAE (test data)`== min(`MAE (test data)`),
+    `MAPE (test data)`== min(`MAPE (test data)`),
     .by = `Target variable`
     
   ) |> 
@@ -184,6 +187,6 @@ results |>
     
   ) |> 
   select(!c("Important predictors",
-            "unrounded_mae")) |> 
+            "unrounded_mape")) |> 
   knitr::kable()
 ```

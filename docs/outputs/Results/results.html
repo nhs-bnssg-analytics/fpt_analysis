@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
 
 <meta charset="utf-8">
-<meta name="generator" content="quarto-1.3.450">
+<meta name="generator" content="quarto-1.4.555">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
@@ -46,7 +46,13 @@ ul.task-list li input[type="checkbox"] {
   "collapse-after": 3,
   "panel-placement": "end",
   "type": "overlay",
-  "limit": 20,
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
   "language": {
     "search-no-results-text": "No results",
     "search-matching-documents-text": "matching documents",
@@ -55,6 +61,7 @@ ul.task-list li input[type="checkbox"] {
     "search-more-match-text": "more match in this document",
     "search-more-matches-text": "more matches in this document",
     "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
     "search-detached-cancel-button-title": "Cancel",
     "search-submit-button-title": "Submit",
     "search-label": "Search"
@@ -69,9 +76,9 @@ ul.task-list li input[type="checkbox"] {
 
 <div id="quarto-search-results"></div>
   <header id="quarto-header" class="headroom fixed-top">
-    <nav class="navbar navbar-expand-lg navbar-dark ">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
       <div class="navbar-container container-fluid">
-      <div class="navbar-brand-container">
+      <div class="navbar-brand-container mx-auto">
     <a class="navbar-brand" href="../../index.html">
     <span class="navbar-title">Spatio-temporal demand and capacity relationships with performance</span>
     </a>
@@ -83,24 +90,24 @@ ul.task-list li input[type="checkbox"] {
           <div class="collapse navbar-collapse" id="navbarCollapse">
             <ul class="navbar-nav navbar-nav-scroll ms-auto">
   <li class="nav-item compact">
-    <a class="nav-link" href="https://github.com/nhs-bnssg-analytics/d_and_c" rel="" target=""><i class="bi bi-github" role="img" aria-label="GitHub">
+    <a class="nav-link" href="https://github.com/nhs-bnssg-analytics/d_and_c"> <i class="bi bi-github" role="img" aria-label="GitHub">
 </i> 
- <span class="menu-text"></span></a>
+<span class="menu-text"></span></a>
   </li>  
 </ul>
-            <div class="quarto-navbar-tools">
-</div>
           </div> <!-- /navcollapse -->
+          <div class="quarto-navbar-tools">
+</div>
       </div> <!-- /container-fluid -->
     </nav>
   <nav class="quarto-secondary-nav">
     <div class="container-fluid d-flex">
-      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
-      <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../outputs/Results/results.html">Results</a></li><li class="breadcrumb-item"><a href="../../outputs/Results/results.html">Results</a></li></ol></nav>
-      <a class="flex-grow-1" role="button" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
-      </a>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../outputs/Results/results.html">Results</a></li><li class="breadcrumb-item"><a href="../../outputs/Results/results.html">Results</a></li></ol></nav>
+        <a class="flex-grow-1" role="button" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
       <button type="button" class="btn quarto-search-button" aria-label="" onclick="window.quartoOpenSearch();">
         <i class="bi bi-search"></i>
       </button>
@@ -110,7 +117,7 @@ ul.task-list li input[type="checkbox"] {
 <!-- content -->
 <div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
-  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal sidebar-navigation docked overflow-auto">
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation docked overflow-auto">
     <div class="pt-lg-2 mt-2 text-left sidebar-header">
       <a href="../../index.html" class="sidebar-logo-link">
       <img src="../../outputs/logo.png" alt="" class="sidebar-logo py-0 d-lg-inline d-none">
@@ -201,7 +208,7 @@ ul.task-list li input[type="checkbox"] {
     </ul>
     </div>
 </nav>
-<div id="quarto-sidebar-glass" data-bs-toggle="collapse" data-bs-target="#quarto-sidebar,#quarto-sidebar-glass"></div>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
 <!-- margin-sidebar -->
     <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
         <nav id="TOC" role="doc-toc" class="toc-active">
@@ -219,7 +226,7 @@ ul.task-list li input[type="checkbox"] {
 <!-- main -->
 <main class="content" id="quarto-document-content">
 
-<header id="title-block-header" class="quarto-title-block default">
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../outputs/Results/results.html">Results</a></li><li class="breadcrumb-item"><a href="../../outputs/Results/results.html">Results</a></li></ol></nav>
 <div class="quarto-title">
 <h1 class="title">Results</h1>
 </div>
@@ -234,15 +241,21 @@ ul.task-list li input[type="checkbox"] {
   </div>
   
 
+
 </header>
+
 
 <section id="model-inputs" class="level2">
 <h2 class="anchored" data-anchor-id="model-inputs">Model inputs</h2>
 <p>Three main modelling methods were attempted (generalised linear modelling (GLM), using a binomial model with a logit link function; random forest (RF) model modelling the outcome; and a random forest model that models the change in the outcome from the previous year).</p>
-<p>Variations on model inputs were also tested. Models were tested where the input data varied between 3 and 7 years. For each of those, different amount of lagging to the input data was tested too - in order to see whether there was a knock on effect of a previous year for an input variable on the outcome variable for the following year. Models with 0, 1 and 2 lagged years were tested. The importance of the previous year’s outcome value was also tested, by either including it or not including it in the modelling process. See <a href="#tbl-input-combinations">Table&nbsp;1</a> for a summary of the combinations of inputs.</p>
-<div id="tbl-input-combinations" class="anchored">
-<table class="table">
-<caption>Table&nbsp;1: Description of the combinations of the input data assessed in the modelling process.</caption>
+<p>Variations on model inputs were also tested. Models were tested where the input data varied between 3 and 7 years. For each of those, different amount of lagging to the input data was tested too - in order to see whether there was a knock on effect of a previous year for an input variable on the outcome variable for the following year. Models with 0, 1 and 2 lagged years were tested. The importance of the previous year’s outcome value was also tested, by either including it or not including it in the modelling process. See <a href="#tbl-input-combinations" class="quarto-xref">Table&nbsp;1</a> for a summary of the combinations of inputs.</p>
+<div id="tbl-input-combinations" class="quarto-float anchored">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-input-combinations-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;1: Description of the combinations of the input data assessed in the modelling process.
+</figcaption>
+<div aria-describedby="tbl-input-combinations-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<table class="caption-top table">
 <colgroup>
 <col style="width: 52%">
 <col style="width: 47%">
@@ -277,15 +290,17 @@ ul.task-list li input[type="checkbox"] {
 </tbody>
 </table>
 </div>
+</figure>
+</div>
 <p>In all, 360 different models were built and assessed.</p>
 </section>
 <section id="model-selection" class="level2">
 <h2 class="anchored" data-anchor-id="model-selection">Model selection</h2>
-<p>Each of the outcome variables are a proportion, so they have a scale of between 0 and 1. Despite the consistent scale, the distribution between within the scales of the outcome variables differs. For this reason, best performing models are selected by selecting the model for each outcome with the lowest mean absolute error (MAE) when comparing the predicted outcome with the observed outcome on the portion of the data held back for testing. This allows us to compare results between outcomes to compare the performance of the models between outcomes.</p>
+<p>Each of the outcome variables are a proportion, so they have a scale of between 0 and 1. Despite the consistent scale, the distribution between within the scales of the outcome variables differs. For this reason, best performing models are selected by selecting the model for each outcome with the lowest mean absolute percentage error (MAPE) when comparing the predicted outcome with the observed outcome on the portion of the data held back for testing. This allows us to compare results between outcomes to compare the performance of the models between outcomes.</p>
 </section>
 <section id="baseline-comparison" class="level2">
 <h2 class="anchored" data-anchor-id="baseline-comparison">Baseline comparison</h2>
-<p>To contextualise the models performance for estimating the outcome variable, the MAE statistic calculated on the test data for the model is compared with two other methods of estimating the outcome variable on the same test data. The two methods chosen to compare with were selected because of their simplicity, but also because these are typical methods teams might employ for predicting future performance:</p>
+<p>To contextualise the models performance for estimating the outcome variable, the MAPE statistic calculated on the test data for the model is compared with two other methods of estimating the outcome variable on the same test data. The two methods chosen to compare with were selected because of their simplicity, but also because these are typical methods teams might employ for predicting future performance:</p>
 <ul>
 <li>Next year’s performance is equal to the previous year’s performance</li>
 <li>Next year’s performance is equal to a linear extrapolation based on the past 3 years’ performance</li>
@@ -293,9 +308,9 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="important-variables" class="level2">
 <h2 class="anchored" data-anchor-id="important-variables">Important variables</h2>
-<p>The tables in this section show, for each modelling method and outcome, the most important variables selected by the models for the models with the lowest MAE.</p>
+<p>The tables in this section show, for each modelling method and outcome, the most important variables selected by the models for the models with the lowest MAPE.</p>
 <div class="tabset-margin-container"></div><div class="panel-tabset">
-<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-1-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-1" role="tab" aria-controls="tabset-1-1" aria-selected="true" aria-current="page">Generalised linear model - proportion</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-2" role="tab" aria-controls="tabset-1-2" aria-selected="false">Random forest - proportion</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-3-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-3" role="tab" aria-controls="tabset-1-3" aria-selected="false">Random forest - difference from previous</a></li></ul>
+<ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-1-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-1" role="tab" aria-controls="tabset-1-1" aria-selected="true" aria-current="page">Random forest - difference from previous</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-2" role="tab" aria-controls="tabset-1-2" aria-selected="false">Random forest - proportion</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-3-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-3" role="tab" aria-controls="tabset-1-3" aria-selected="false">Generalised linear model - proportion</a></li></ul>
 <div class="tab-content">
 <div id="tabset-1-1" class="tab-pane active" role="tabpanel" aria-labelledby="tabset-1-1-tab">
 <div class="callout callout-style-default callout-tip no-icon callout-titled">
@@ -304,126 +319,104 @@ ul.task-list li input[type="checkbox"] {
 <i class="callout-icon no-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-Proportion of incomplete pathways greater than 18 weeks from referral (incomplete)
+Proportion of incomplete pathways greater than 52 weeks from referral
 </div>
 <div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
 <div id="callout-1" class="callout-1-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<p>The MAE for this model is 0.022</p>
-<table class="table">
+<p>The MAPE for this model is 20.625</p>
+<table class="caption-top table">
 <colgroup>
-<col style="width: 86%">
+<col style="width: 90%">
 <col style="width: 9%">
-<col style="width: 4%">
 </colgroup>
 <thead>
 <tr class="header">
 <th style="text-align: left;">Variable</th>
 <th style="text-align: right;">Importance</th>
-<th style="text-align: left;">Sign</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td style="text-align: left;">lag_1_Proportion of incomplete pathways greater than 18 weeks from referral (incomplete)</td>
-<td style="text-align: right;">0.9889565</td>
-<td style="text-align: left;">POS</td>
+<td style="text-align: left;">lag_1_Obesity: QOF prevalence (18+ yrs)</td>
+<td style="text-align: right;">0.0074587</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">pandemic_onwards</td>
-<td style="text-align: right;">0.9295987</td>
-<td style="text-align: left;">POS</td>
+<td style="text-align: left;">lag_1_Proportion of available beds that are occupied (General &amp; Acute - overnight)</td>
+<td style="text-align: right;">0.0063890</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">lag_1_Proportion of available beds that are occupied (General &amp; Acute - overnight)</td>
-<td style="text-align: right;">0.5325391</td>
-<td style="text-align: left;">POS</td>
+<td style="text-align: left;">Hypertension: QOF prevalence (all ages)</td>
+<td style="text-align: right;">0.0055145</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">lag_1_Workforce FTEs per 10,000 population (Central functions - Acute)</td>
-<td style="text-align: right;">0.3381249</td>
-<td style="text-align: left;">POS</td>
+<td style="text-align: left;">Mental health spend as a proportion of overall allocation</td>
+<td style="text-align: right;">0.0036833</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">lag_1_Proportion of available beds that are occupied (General &amp; Acute - day)</td>
+<td style="text-align: right;">0.0034042</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">lag_1_Proportion of available beds that are occupied (Mental Illness - overnight)</td>
+<td style="text-align: right;">0.0033233</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">Proportion of available beds that are occupied (General &amp; Acute - overnight)</td>
-<td style="text-align: right;">0.3349509</td>
-<td style="text-align: left;">NEG</td>
+<td style="text-align: right;">0.0020498</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">lag_2_Workforce FTEs per 10,000 population (Midwives - Acute)</td>
-<td style="text-align: right;">0.2326822</td>
-<td style="text-align: left;">NEG</td>
+<td style="text-align: left;">Obesity: QOF prevalence (18+ yrs)</td>
+<td style="text-align: right;">0.0016364</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">Workforce FTEs per 10,000 population (Hospital Practitioner / Clinical Assistant - Acute)</td>
-<td style="text-align: right;">0.2075133</td>
-<td style="text-align: left;">NEG</td>
+<td style="text-align: left;">lag_1_Mental health spend as a proportion of overall allocation</td>
+<td style="text-align: right;">0.0015831</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">lag_1_Proportion of available beds that are occupied (General &amp; Acute - day)</td>
-<td style="text-align: right;">0.1953210</td>
-<td style="text-align: left;">POS</td>
+<td style="text-align: left;">lag_1_Total beds per 1,000 60+ yrs (General &amp; Acute - overnight)</td>
+<td style="text-align: right;">0.0013365</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">Proportion of available beds that are occupied (General &amp; Acute - day)</td>
-<td style="text-align: right;">0.1935819</td>
-<td style="text-align: left;">NEG</td>
+<td style="text-align: left;">Proportion of resident population in national deprivation quintile (Most deprived) - IMD 2019</td>
+<td style="text-align: right;">0.0012339</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">lag_2_A and E and Ward Liaison mental health services spend (£k) per 10,000 population</td>
-<td style="text-align: right;">0.1618898</td>
-<td style="text-align: left;">NEG</td>
+<td style="text-align: left;">lag_1_Hypertension: QOF prevalence (all ages)</td>
+<td style="text-align: right;">0.0011743</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">lag_1_Proportion of available beds that are occupied (Mental Illness - overnight)</td>
-<td style="text-align: right;">0.1612583</td>
-<td style="text-align: left;">POS</td>
+<td style="text-align: left;">lag_1_Total beds per 1,000 60+ yrs (General &amp; Acute - day)</td>
+<td style="text-align: right;">0.0009802</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">Depression: QOF prevalence (18+ yrs)</td>
-<td style="text-align: right;">0.1451172</td>
-<td style="text-align: left;">POS</td>
+<td style="text-align: left;">lag_1_Atrial fibrillation: QOF prevalence (all ages)</td>
+<td style="text-align: right;">0.0009714</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">Smoking: QOF prevalence (15+ yrs)</td>
-<td style="text-align: right;">0.1322855</td>
-<td style="text-align: left;">NEG</td>
+<td style="text-align: left;">lag_1_Violent crime - violence offences per 1,000 population</td>
+<td style="text-align: right;">0.0008224</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">Workforce FTEs per 10,000 population (Support to ST&amp;T staff - Acute)</td>
-<td style="text-align: right;">0.1113202</td>
-<td style="text-align: left;">NEG</td>
+<td style="text-align: left;">Proportion of resident population in national deprivation quintile (Average deprived) - IMD 2019</td>
+<td style="text-align: right;">0.0007783</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">lag_1_Depression: QOF prevalence (18+ yrs)</td>
-<td style="text-align: right;">0.1083786</td>
-<td style="text-align: left;">POS</td>
+<td style="text-align: left;">lag_1_Workforce FTEs per 100,000 population (Foundation Doctor Year 1 - Acute)</td>
+<td style="text-align: right;">0.0006059</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">Proportion of resident population in national deprivation quintile (Second most deprived ) - IMD 2019</td>
-<td style="text-align: right;">0.0985597</td>
-<td style="text-align: left;">POS</td>
+<td style="text-align: left;">A and E and Ward Liaison mental health services spend (£k) per population</td>
+<td style="text-align: right;">0.0005846</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">lag_2_Mental Health total spend per 10,000 population</td>
-<td style="text-align: right;">0.0937337</td>
-<td style="text-align: left;">NEG</td>
+<td style="text-align: left;">lag_1_A and E Full Time Equivalent (FTE) for Doctors (excluding Consultants) (per 100,000 population)</td>
+<td style="text-align: right;">0.0005247</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">Workforce FTEs per 10,000 population (Staff Grade - Acute)</td>
-<td style="text-align: right;">0.0931847</td>
-<td style="text-align: left;">NEG</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">lag_2_Workforce FTEs per 10,000 population (Managers - Acute)</td>
-<td style="text-align: right;">0.0915629</td>
-<td style="text-align: left;">NEG</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">lag_2_Workforce FTEs per 10,000 population (Central functions - Acute)</td>
-<td style="text-align: right;">0.0841892</td>
-<td style="text-align: left;">POS</td>
+<td style="text-align: left;">Children in relative low income families (under 16s)</td>
+<td style="text-align: right;">0.0004823</td>
 </tr>
 </tbody>
 </table>
@@ -436,14 +429,1140 @@ Proportion of incomplete pathways greater than 18 weeks from referral (incomplet
 <i class="callout-icon no-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-62 day wait from suspected cancer or referral to first definitive treament (proportion outside of standard)
+Proportion of suspected cancer or referral to first definitive treatment that are longer than 62 days wait
 </div>
 <div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
 <div id="callout-2" class="callout-2-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<p>The MAE for this model is 0.023</p>
-<table class="table">
+<p>The MAPE for this model is 7.058</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 90%">
+<col style="width: 9%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Variable</th>
+<th style="text-align: right;">Importance</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">lag_2_Obesity: QOF prevalence (18+ yrs)</td>
+<td style="text-align: right;">0.0170255</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">lag_2_Proportion of available beds that are occupied (General &amp; Acute - overnight)</td>
+<td style="text-align: right;">0.0144450</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">lag_2_Proportion of available beds that are occupied (General &amp; Acute - day)</td>
+<td style="text-align: right;">0.0139337</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Hypertension: QOF prevalence (all ages)</td>
+<td style="text-align: right;">0.0105565</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">lag_1_Proportion of available beds that are occupied (General &amp; Acute - overnight)</td>
+<td style="text-align: right;">0.0035616</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">lag_2_Mental health spend as a proportion of overall allocation</td>
+<td style="text-align: right;">0.0031475</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">lag_2_% former smokers (GPPS)</td>
+<td style="text-align: right;">0.0029992</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">lag_2_Proportion of available beds that are occupied (Mental Illness - overnight)</td>
+<td style="text-align: right;">0.0028850</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Smoking: QOF prevalence (15+ yrs)</td>
+<td style="text-align: right;">0.0026196</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">% active smokers (GPPS)</td>
+<td style="text-align: right;">0.0023487</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">lag_1_Obesity: QOF prevalence (18+ yrs)</td>
+<td style="text-align: right;">0.0022318</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Obesity: QOF prevalence (18+ yrs)</td>
+<td style="text-align: right;">0.0014686</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">lag_2_Violent crime - violence offences per 1,000 population</td>
+<td style="text-align: right;">0.0013326</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">lag_1_Hypertension: QOF prevalence (all ages)</td>
+<td style="text-align: right;">0.0013159</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Proportion of resident population in national deprivation quintile (Second most deprived ) - IMD 2019</td>
+<td style="text-align: right;">0.0013057</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">lag_2_Workforce FTEs per 100,000 population (Managers - Acute)</td>
+<td style="text-align: right;">0.0012818</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">lag_2_Atrial fibrillation: QOF prevalence (all ages)</td>
+<td style="text-align: right;">0.0012348</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">lag_1_Violent crime - violence offences per 1,000 population</td>
+<td style="text-align: right;">0.0011992</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">lag_2_Out of Area Placements - Reported Spend per population</td>
+<td style="text-align: right;">0.0011887</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">lag_2_Hypertension: QOF prevalence (all ages)</td>
+<td style="text-align: right;">0.0011224</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip no-icon callout-titled">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-3-contents" aria-controls="callout-3" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Proportion of A&amp;E attendances with greater than 4 hours wait (Type 1 Departments - Major A&amp;E)
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-3" class="callout-3-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>The MAPE for this model is 11.72</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 90%">
+<col style="width: 9%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Variable</th>
+<th style="text-align: right;">Importance</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Proportion of available beds that are occupied (General &amp; Acute - overnight)</td>
+<td style="text-align: right;">0.2314050</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Obesity: QOF prevalence (18+ yrs)</td>
+<td style="text-align: right;">0.0682073</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Proportion of available beds that are occupied (General &amp; Acute - day)</td>
+<td style="text-align: right;">0.0634055</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">FTE days sick per 10,000 population (acute)</td>
+<td style="text-align: right;">0.0469098</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Mean proportion of beds that contain a patient with confirmed COVID</td>
+<td style="text-align: right;">0.0241137</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">FTE days sick per 10,000 population (mental health)</td>
+<td style="text-align: right;">0.0229036</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Total beds per 1,000 60+ yrs (General &amp; Acute - overnight)</td>
+<td style="text-align: right;">0.0168766</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Hypertension: QOF prevalence (all ages)</td>
+<td style="text-align: right;">0.0097653</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">lag_1_Proportion of A&amp;E attendances with greater than 4 hours wait (Type 1 Departments - Major A&amp;E)</td>
+<td style="text-align: right;">0.0090896</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Workforce FTEs per 100,000 population (HCHS Doctors - Acute)</td>
+<td style="text-align: right;">0.0075274</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Workforce FTEs per 100,000 population (Core Training - Acute)</td>
+<td style="text-align: right;">0.0066291</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Primary care workforce (FTEs) per 100,000 population (Direct Patient Care)</td>
+<td style="text-align: right;">0.0062202</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Workforce FTEs per 100,000 population (Foundation Doctor Year 1 - Acute)</td>
+<td style="text-align: right;">0.0053324</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">% active smokers (GPPS)</td>
+<td style="text-align: right;">0.0044823</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Smoking: QOF prevalence (15+ yrs)</td>
+<td style="text-align: right;">0.0044205</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Workforce FTEs per 100,000 population (Midwives - Acute)</td>
+<td style="text-align: right;">0.0043492</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Improving Access to Psychological Therapies spend (£k) per population</td>
+<td style="text-align: right;">0.0041315</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Workforce FTEs per 100,000 population (Staff Grade - Acute)</td>
+<td style="text-align: right;">0.0040447</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Primary care workforce (FTEs) per 100,000 population (GP)</td>
+<td style="text-align: right;">0.0040421</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">% former smokers (GPPS)</td>
+<td style="text-align: right;">0.0040194</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip no-icon callout-titled">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-4-contents" aria-controls="callout-4" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Proportion of attended GP appointments (over 4 weeks wait time)
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-4" class="callout-4-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>The MAPE for this model is 8.436</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 90%">
+<col style="width: 9%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Variable</th>
+<th style="text-align: right;">Importance</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">lag_1_Obesity: QOF prevalence (18+ yrs)</td>
+<td style="text-align: right;">0.0004288</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">lag_1_Proportion of available beds that are occupied (General &amp; Acute - overnight)</td>
+<td style="text-align: right;">0.0003569</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">lag_1_Atrial fibrillation: QOF prevalence (all ages)</td>
+<td style="text-align: right;">0.0003184</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Hypertension: QOF prevalence (all ages)</td>
+<td style="text-align: right;">0.0003134</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">lag_1_Proportion of attended GP appointments (over 4 weeks wait time)</td>
+<td style="text-align: right;">0.0002897</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">lag_1_Hypertension: QOF prevalence (all ages)</td>
+<td style="text-align: right;">0.0002385</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">lag_1_Proportion of available beds that are occupied (General &amp; Acute - day)</td>
+<td style="text-align: right;">0.0001889</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Mental health spend as a proportion of overall allocation</td>
+<td style="text-align: right;">0.0001695</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">lag_1_Proportion of available beds that are occupied (Mental Illness - overnight)</td>
+<td style="text-align: right;">0.0001558</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">lag_1_Total beds per 1,000 60+ yrs (General &amp; Acute - overnight)</td>
+<td style="text-align: right;">0.0001418</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">lag_1_Violent crime - violence offences per 1,000 population</td>
+<td style="text-align: right;">0.0001114</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Obesity: QOF prevalence (18+ yrs)</td>
+<td style="text-align: right;">0.0001061</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">lag_1_Workforce FTEs per 100,000 population (Foundation Doctor Year 1 - Acute)</td>
+<td style="text-align: right;">0.0001016</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Proportion of available beds that are occupied (General &amp; Acute - overnight)</td>
+<td style="text-align: right;">0.0000940</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">lag_1_Total beds per 1,000 60+ yrs (General &amp; Acute - day)</td>
+<td style="text-align: right;">0.0000770</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Proportion of population in age band (30-59)</td>
+<td style="text-align: right;">0.0000624</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">lag_1_Mental health spend as a proportion of overall allocation</td>
+<td style="text-align: right;">0.0000565</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">lag_1_FTE days sick per 10,000 population (mental health)</td>
+<td style="text-align: right;">0.0000532</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Proportion of resident population in national deprivation quintile (Most deprived) - IMD 2019</td>
+<td style="text-align: right;">0.0000528</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Proportion of resident population in national deprivation quintile (Least deprived quintile) - IMD 2019</td>
+<td style="text-align: right;">0.0000518</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip no-icon callout-titled">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-5-contents" aria-controls="callout-5" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Proportion of incomplete pathways greater than 18 weeks from referral
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-5" class="callout-5-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>The MAPE for this model is 6.319</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 91%">
+<col style="width: 8%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Variable</th>
+<th style="text-align: right;">Importance</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Proportion of available beds that are occupied (General &amp; Acute - overnight)</td>
+<td style="text-align: right;">0.4256106</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Obesity: QOF prevalence (18+ yrs)</td>
+<td style="text-align: right;">0.1069997</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Proportion of available beds that are occupied (General &amp; Acute - day)</td>
+<td style="text-align: right;">0.0454824</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Mean proportion of beds that contain a patient with confirmed COVID</td>
+<td style="text-align: right;">0.0351884</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">lag_1_FTE days sick per 10,000 population (mental health)</td>
+<td style="text-align: right;">0.0096356</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">lag_1_Violent crime - violence offences per 1,000 population</td>
+<td style="text-align: right;">0.0081980</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">lag_1_Proportion of available beds that are occupied (General &amp; Acute - overnight)</td>
+<td style="text-align: right;">0.0071593</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">lag_1_Obesity: QOF prevalence (18+ yrs)</td>
+<td style="text-align: right;">0.0069808</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">lag_1_Proportion of available beds that are occupied (General &amp; Acute - day)</td>
+<td style="text-align: right;">0.0063588</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Total beds per 1,000 60+ yrs (General &amp; Acute - overnight)</td>
+<td style="text-align: right;">0.0044809</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Proportion of available beds that are occupied (Mental Illness - overnight)</td>
+<td style="text-align: right;">0.0042547</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Workforce FTEs per 100,000 population (Support to doctors, nurses &amp; midwives - Acute)</td>
+<td style="text-align: right;">0.0039502</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Hypertension: QOF prevalence (all ages)</td>
+<td style="text-align: right;">0.0034974</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">lag_1_Workforce FTEs per 100,000 population (Senior managers - Acute)</td>
+<td style="text-align: right;">0.0030821</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">lag_1_Workforce FTEs per 100,000 population (Managers - Acute)</td>
+<td style="text-align: right;">0.0029569</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">lag_1_Children and Young People Mental Health spend - excluding learning disabilities and eating disorders per population</td>
+<td style="text-align: right;">0.0027968</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">lag_1_Children and Young People Mental Health spend - eating disorders per population</td>
+<td style="text-align: right;">0.0022726</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">FTE days available per 100 population (mental health)</td>
+<td style="text-align: right;">0.0021805</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">lag_1_FTE days sick per 10,000 population (acute)</td>
+<td style="text-align: right;">0.0021215</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">lag_1_Hypertension: QOF prevalence (all ages)</td>
+<td style="text-align: right;">0.0020613</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+<div id="tabset-1-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-1-2-tab">
+<div class="callout callout-style-default callout-tip no-icon callout-titled">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-6-contents" aria-controls="callout-6" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Proportion of incomplete pathways greater than 52 weeks from referral
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-6" class="callout-6-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>The MAPE for this model is 19.046</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 89%">
+<col style="width: 10%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Variable</th>
+<th style="text-align: right;">Importance</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">lag_2_A and E and Ward Liaison mental health services spend (£k) per population</td>
+<td style="text-align: right;">0.0079119</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">lag_1_Workforce FTEs per 100,000 population (Support to ambulance staff - Acute)</td>
+<td style="text-align: right;">0.0021834</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">lag_2_A and E Full Time Equivalent (FTE) for Consultants (per 100,000 population)</td>
+<td style="text-align: right;">0.0020548</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">lag_2_Workforce FTEs per 100,000 population (Support to ambulance staff - Acute)</td>
+<td style="text-align: right;">0.0018392</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">lag_2_Workforce FTEs per 100,000 population (Senior managers - Acute)</td>
+<td style="text-align: right;">0.0018180</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">A and E and Ward Liaison mental health services spend (£k) per population</td>
+<td style="text-align: right;">0.0015925</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">lag_1_A and E and Ward Liaison mental health services spend (£k) per population</td>
+<td style="text-align: right;">0.0015918</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">lag_2_Primary care workforce (FTEs) per 100,000 population (Admin/Non-Clinical)</td>
+<td style="text-align: right;">0.0015494</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">lag_2_Out of Area Placements - Reported Spend per population</td>
+<td style="text-align: right;">0.0014231</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Workforce FTEs per 100,000 population (Support to ambulance staff - Acute)</td>
+<td style="text-align: right;">0.0013066</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">A and E Full Time Equivalent (FTE) for Doctors (excluding Consultants) (per 100,000 population)</td>
+<td style="text-align: right;">0.0012578</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Primary care workforce (FTEs) per 100,000 population (GP)</td>
+<td style="text-align: right;">0.0009689</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Atrial fibrillation: QOF prevalence (all ages)</td>
+<td style="text-align: right;">0.0009303</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">lag_2_Workforce FTEs per 100,000 population (Foundation Doctor Year 2 - Acute)</td>
+<td style="text-align: right;">0.0008231</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">A and E Full Time Equivalent (FTE) for Consultants (per 100,000 population)</td>
+<td style="text-align: right;">0.0007196</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Workforce FTEs per 100,000 population (Foundation Doctor Year 2 - Acute)</td>
+<td style="text-align: right;">0.0007076</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">lag_1_Primary care workforce (FTEs) per 100,000 population (GP)</td>
+<td style="text-align: right;">0.0006932</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Proportion of available beds that are occupied (General &amp; Acute - day)</td>
+<td style="text-align: right;">0.0006400</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Proportion of resident population in national deprivation quintile (Average deprived) - IMD 2019</td>
+<td style="text-align: right;">0.0006082</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">lag_2_Proportion of population in age band (30-59)</td>
+<td style="text-align: right;">0.0006017</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip no-icon callout-titled">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-7-contents" aria-controls="callout-7" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Proportion of suspected cancer or referral to first definitive treatment that are longer than 62 days wait
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-7" class="callout-7-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>The MAPE for this model is 8.561</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 91%">
+<col style="width: 8%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Variable</th>
+<th style="text-align: right;">Importance</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">lag_1_Proportion of suspected cancer or referral to first definitive treatment that are longer than 62 days wait</td>
+<td style="text-align: right;">0.7385377</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Obesity: QOF prevalence (18+ yrs)</td>
+<td style="text-align: right;">0.0255213</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Proportion of available beds that are occupied (General &amp; Acute - overnight)</td>
+<td style="text-align: right;">0.0254610</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Mean proportion of beds that contain a patient with confirmed COVID</td>
+<td style="text-align: right;">0.0089821</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Workforce FTEs per 100,000 population (Other and Local HCHS Doctor Grades - Acute)</td>
+<td style="text-align: right;">0.0088255</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Mental Health total spend per population</td>
+<td style="text-align: right;">0.0071301</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Children and Young People Mental Health spend - excluding learning disabilities and eating disorders per population</td>
+<td style="text-align: right;">0.0058694</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">FTE days sick per 10,000 population (acute)</td>
+<td style="text-align: right;">0.0052459</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Workforce FTEs per 100,000 population (Nurses &amp; health visitors - Acute)</td>
+<td style="text-align: right;">0.0051628</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Total beds per 1,000 60+ yrs (General &amp; Acute - day)</td>
+<td style="text-align: right;">0.0041946</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">A and E Full Time Equivalent (FTE) for Doctors (excluding Consultants) (per 100,000 population)</td>
+<td style="text-align: right;">0.0040562</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">A and E Full Time Equivalent (FTE) for Consultants (per 100,000 population)</td>
+<td style="text-align: right;">0.0038725</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">FTE days sick per 10,000 population (mental health)</td>
+<td style="text-align: right;">0.0038609</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Workforce FTEs per 100,000 population (Specialty Doctor - Acute)</td>
+<td style="text-align: right;">0.0034863</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Workforce FTEs per 100,000 population (Foundation Doctor Year 2 - Acute)</td>
+<td style="text-align: right;">0.0033018</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Workforce FTEs per 100,000 population (Support to ambulance staff - Acute)</td>
+<td style="text-align: right;">0.0032480</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Workforce FTEs per 100,000 population (Central functions - Acute)</td>
+<td style="text-align: right;">0.0027714</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Children and Young People Mental Health spend - eating disorders per population</td>
+<td style="text-align: right;">0.0027127</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Proportion of resident population in national deprivation quintile (Least deprived quintile) - IMD 2019</td>
+<td style="text-align: right;">0.0026751</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Workforce FTEs per 100,000 population (Midwives - Acute)</td>
+<td style="text-align: right;">0.0026721</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip no-icon callout-titled">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-8-contents" aria-controls="callout-8" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Proportion of A&amp;E attendances with greater than 4 hours wait (Type 1 Departments - Major A&amp;E)
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-8" class="callout-8-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>The MAPE for this model is 15.121</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 91%">
+<col style="width: 8%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Variable</th>
+<th style="text-align: right;">Importance</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">lag_1_Proportion of A&amp;E attendances with greater than 4 hours wait (Type 1 Departments - Major A&amp;E)</td>
+<td style="text-align: right;">0.9145704</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">FTE days available per 100 population (acute)</td>
+<td style="text-align: right;">0.0119432</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Proportion of available beds that are occupied (General &amp; Acute - overnight)</td>
+<td style="text-align: right;">0.0099300</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Mean proportion of beds that contain a patient with confirmed COVID</td>
+<td style="text-align: right;">0.0077348</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Workforce FTEs per 100,000 population (Foundation Doctor Year 1 - Acute)</td>
+<td style="text-align: right;">0.0073103</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Proportion of available beds that are occupied (General &amp; Acute - day)</td>
+<td style="text-align: right;">0.0062837</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Workforce FTEs per 100,000 population (Core Training - Acute)</td>
+<td style="text-align: right;">0.0058966</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Workforce FTEs per 100,000 population (Staff Grade - Acute)</td>
+<td style="text-align: right;">0.0058369</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Workforce FTEs per 100,000 population (Senior managers - Acute)</td>
+<td style="text-align: right;">0.0054425</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">FTE days sick per 10,000 population (acute)</td>
+<td style="text-align: right;">0.0053011</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Workforce FTEs per 100,000 population (Other and Local HCHS Doctor Grades - Acute)</td>
+<td style="text-align: right;">0.0044550</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Children and Young People Mental Health spend - excluding learning disabilities and eating disorders per population</td>
+<td style="text-align: right;">0.0037734</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Workforce FTEs per 100,000 population (Specialty Doctor - Acute)</td>
+<td style="text-align: right;">0.0037227</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Smoking: QOF prevalence (15+ yrs)</td>
+<td style="text-align: right;">0.0034917</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Primary care workforce (FTEs) per 100,000 population (GP)</td>
+<td style="text-align: right;">0.0033588</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Workforce FTEs per 100,000 population (Hospital Practitioner / Clinical Assistant - Acute)</td>
+<td style="text-align: right;">0.0030604</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Workforce FTEs per 100,000 population (Support to ambulance staff - Acute)</td>
+<td style="text-align: right;">0.0029737</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Workforce FTEs per 100,000 population (Managers - Acute)</td>
+<td style="text-align: right;">0.0028892</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">FTE days sick per 10,000 population (mental health)</td>
+<td style="text-align: right;">0.0026471</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Workforce FTEs per 100,000 population (Associate Specialist - Acute)</td>
+<td style="text-align: right;">0.0025119</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip no-icon callout-titled">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-9-contents" aria-controls="callout-9" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Proportion of attended GP appointments (over 4 weeks wait time)
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-9" class="callout-9-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>The MAPE for this model is 12.335</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 89%">
+<col style="width: 10%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Variable</th>
+<th style="text-align: right;">Importance</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">lag_1_Proportion of attended GP appointments (over 4 weeks wait time)</td>
+<td style="text-align: right;">0.0215353</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">lag_1_Obesity: QOF prevalence (18+ yrs)</td>
+<td style="text-align: right;">0.0015771</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">lag_1_Proportion of available beds that are occupied (General &amp; Acute - overnight)</td>
+<td style="text-align: right;">0.0007151</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">lag_2_Proportion of available beds that are occupied (General &amp; Acute - overnight)</td>
+<td style="text-align: right;">0.0006088</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Workforce FTEs per 100,000 population (Foundation Doctor Year 1 - Acute)</td>
+<td style="text-align: right;">0.0002329</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">lag_2_Primary care workforce (FTEs) per 100,000 population (Direct Patient Care)</td>
+<td style="text-align: right;">0.0001442</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">lag_2_Proportion of available beds that are occupied (General &amp; Acute - day)</td>
+<td style="text-align: right;">0.0001167</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">lag_2_% former smokers (GPPS)</td>
+<td style="text-align: right;">0.0001106</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Proportion of available beds that are occupied (General &amp; Acute - overnight)</td>
+<td style="text-align: right;">0.0000802</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">lag_2_Adult community crisis care spend (£k) per population</td>
+<td style="text-align: right;">0.0000711</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">lag_2_Gross Total Expenditure (£000s) per individual with long term support during the year</td>
+<td style="text-align: right;">0.0000674</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">lag_1_Primary care workforce (FTEs) per 100,000 population (Direct Patient Care)</td>
+<td style="text-align: right;">0.0000628</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">lag_1_% former smokers (GPPS)</td>
+<td style="text-align: right;">0.0000627</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">lag_2_Total beds per 1,000 60+ yrs (General &amp; Acute - overnight)</td>
+<td style="text-align: right;">0.0000570</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Workforce FTEs per 100,000 population (Specialty Registrar - Acute)</td>
+<td style="text-align: right;">0.0000545</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">lag_1_Adult community crisis care spend (£k) per population</td>
+<td style="text-align: right;">0.0000544</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">lag_1_Primary care workforce (FTEs) per 100,000 population (Admin/Non-Clinical)</td>
+<td style="text-align: right;">0.0000528</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">lag_2_A and E Full Time Equivalent (FTE) for Care Providers (per 100,000 population)</td>
+<td style="text-align: right;">0.0000466</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Workforce FTEs per 100,000 population (Associate Specialist - Acute)</td>
+<td style="text-align: right;">0.0000430</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">lag_1_Mental health spend as a proportion of overall allocation</td>
+<td style="text-align: right;">0.0000397</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip no-icon callout-titled">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-10-contents" aria-controls="callout-10" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Proportion of incomplete pathways greater than 18 weeks from referral
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-10" class="callout-10-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>The MAPE for this model is 7.53</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 91%">
+<col style="width: 8%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Variable</th>
+<th style="text-align: right;">Importance</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">lag_1_Proportion of incomplete pathways greater than 18 weeks from referral</td>
+<td style="text-align: right;">0.3002242</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Proportion of available beds that are occupied (Mental Illness - overnight)</td>
+<td style="text-align: right;">0.0138726</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">lag_1_Proportion of available beds that are occupied (Mental Illness - overnight)</td>
+<td style="text-align: right;">0.0104350</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">lag_1_Proportion of available beds that are occupied (General &amp; Acute - overnight)</td>
+<td style="text-align: right;">0.0098691</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Proportion of available beds that are occupied (General &amp; Acute - overnight)</td>
+<td style="text-align: right;">0.0090516</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">lag_1_Workforce FTEs per 100,000 population (Midwives - Acute)</td>
+<td style="text-align: right;">0.0068389</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">lag_1_Total beds per 1,000 60+ yrs (General &amp; Acute - overnight)</td>
+<td style="text-align: right;">0.0061461</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">lag_1_Obesity: QOF prevalence (18+ yrs)</td>
+<td style="text-align: right;">0.0060058</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">lag_1_Workforce FTEs per 100,000 population (Support to ambulance staff - Acute)</td>
+<td style="text-align: right;">0.0056524</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Smoking: QOF prevalence (15+ yrs)</td>
+<td style="text-align: right;">0.0039674</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Workforce FTEs per 100,000 population (Specialty Doctor - Acute)</td>
+<td style="text-align: right;">0.0038290</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Workforce FTEs per 100,000 population (Support to ambulance staff - Acute)</td>
+<td style="text-align: right;">0.0035517</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">lag_1_Smoking: QOF prevalence (15+ yrs)</td>
+<td style="text-align: right;">0.0035065</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">lag_1_A and E and Ward Liaison mental health services spend (£k) per population</td>
+<td style="text-align: right;">0.0033531</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Obesity: QOF prevalence (18+ yrs)</td>
+<td style="text-align: right;">0.0033204</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">lag_1_Violent crime - violence offences per 1,000 population</td>
+<td style="text-align: right;">0.0031113</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">lag_1_Children and Young People Mental Health spend - excluding learning disabilities and eating disorders per population</td>
+<td style="text-align: right;">0.0027039</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">lag_1_Workforce FTEs per 100,000 population (Consultant - Acute)</td>
+<td style="text-align: right;">0.0025139</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">lag_1_Workforce FTEs per 100,000 population (Senior managers - Acute)</td>
+<td style="text-align: right;">0.0023706</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Children and Young People Mental Health spend - eating disorders per population</td>
+<td style="text-align: right;">0.0022357</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+<div id="tabset-1-3" class="tab-pane" role="tabpanel" aria-labelledby="tabset-1-3-tab">
+<div class="callout callout-style-default callout-tip no-icon callout-titled">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-11-contents" aria-controls="callout-11" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Proportion of incomplete pathways greater than 52 weeks from referral
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-11" class="callout-11-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>The MAPE for this model is 24.208</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 88%">
+<col style="width: 7%">
+<col style="width: 3%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Variable</th>
+<th style="text-align: right;">Importance</th>
+<th style="text-align: left;">Sign</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Children in relative low income families (under 16s)</td>
+<td style="text-align: right;">0.1535625</td>
+<td style="text-align: left;">POS</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">lag_1_Obesity: QOF prevalence (18+ yrs)</td>
+<td style="text-align: right;">0.1514478</td>
+<td style="text-align: left;">NEG</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">lag_1_Workforce FTEs per 100,000 population (Central functions - Acute)</td>
+<td style="text-align: right;">0.1496693</td>
+<td style="text-align: left;">POS</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">lag_1_Workforce FTEs per 100,000 population (Hospital Practitioner / Clinical Assistant - Acute)</td>
+<td style="text-align: right;">0.1370442</td>
+<td style="text-align: left;">NEG</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">lag_1_Proportion of incomplete pathways greater than 52 weeks from referral</td>
+<td style="text-align: right;">0.1319260</td>
+<td style="text-align: left;">POS</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Proportion of available beds that are occupied (General &amp; Acute - overnight)</td>
+<td style="text-align: right;">0.1263450</td>
+<td style="text-align: left;">POS</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">lag_1_Total beds per 1,000 60+ yrs (General &amp; Acute - day)</td>
+<td style="text-align: right;">0.1184555</td>
+<td style="text-align: left;">NEG</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">lag_1_Primary care workforce (FTEs) per 100,000 population (GP)</td>
+<td style="text-align: right;">0.0914543</td>
+<td style="text-align: left;">POS</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">lag_2_Workforce FTEs per 100,000 population (Central functions - Acute)</td>
+<td style="text-align: right;">0.0797126</td>
+<td style="text-align: left;">POS</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Workforce FTEs per 100,000 population (Foundation Doctor Year 2 - Acute)</td>
+<td style="text-align: right;">0.0795685</td>
+<td style="text-align: left;">POS</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">lag_1_Workforce FTEs per 100,000 population (Hotel, property &amp; estates - Acute)</td>
+<td style="text-align: right;">0.0764486</td>
+<td style="text-align: left;">NEG</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">A and E Full Time Equivalent (FTE) for Nurses (per 100,000 population)</td>
+<td style="text-align: right;">0.0751218</td>
+<td style="text-align: left;">NEG</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">lag_1_Children and Young People Mental Health spend - excluding learning disabilities and eating disorders per population</td>
+<td style="text-align: right;">0.0727364</td>
+<td style="text-align: left;">POS</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">lag_1_Workforce FTEs per 100,000 population (Support to ambulance staff - Acute)</td>
+<td style="text-align: right;">0.0706633</td>
+<td style="text-align: left;">NEG</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">lag_1_Proportion of available beds that are occupied (General &amp; Acute - overnight)</td>
+<td style="text-align: right;">0.0627605</td>
+<td style="text-align: left;">NEG</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">lag_1_Proportion of available beds that are occupied (General &amp; Acute - day)</td>
+<td style="text-align: right;">0.0622157</td>
+<td style="text-align: left;">NEG</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">lag_1_A and E Full Time Equivalent (FTE) for Nurses (per 100,000 population)</td>
+<td style="text-align: right;">0.0619746</td>
+<td style="text-align: left;">POS</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">lag_2_Proportion of available beds that are occupied (Maternity - overnight)</td>
+<td style="text-align: right;">0.0555789</td>
+<td style="text-align: left;">NEG</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">lag_1_Total beds per 1,000 60+ yrs (General &amp; Acute - overnight)</td>
+<td style="text-align: right;">0.0533477</td>
+<td style="text-align: left;">NEG</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">lag_2_Proportion of available beds that are occupied (General &amp; Acute - overnight)</td>
+<td style="text-align: right;">0.0499416</td>
+<td style="text-align: left;">POS</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="callout callout-style-default callout-tip no-icon callout-titled">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-12-contents" aria-controls="callout-12" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon no-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Proportion of suspected cancer or referral to first definitive treatment that are longer than 62 days wait
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-12" class="callout-12-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>The MAPE for this model is 6.626</p>
+<table class="caption-top table">
 <colgroup>
 <col style="width: 87%">
 <col style="width: 8%">
@@ -458,48 +1577,43 @@ Proportion of incomplete pathways greater than 18 weeks from referral (incomplet
 </thead>
 <tbody>
 <tr class="odd">
-<td style="text-align: left;">lag_1_62 day wait from suspected cancer or referral to first definitive treament (proportion outside of standard)</td>
-<td style="text-align: right;">1.5092008</td>
+<td style="text-align: left;">lag_1_Proportion of suspected cancer or referral to first definitive treatment that are longer than 62 days wait</td>
+<td style="text-align: right;">0.2799762</td>
 <td style="text-align: left;">POS</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">pandemic_onwards</td>
-<td style="text-align: right;">0.2102214</td>
+<td style="text-align: left;">Proportion of available beds that are occupied (General &amp; Acute - overnight)</td>
+<td style="text-align: right;">0.0430987</td>
 <td style="text-align: left;">POS</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">lag_2_Proportion of available beds that are occupied (General &amp; Acute - overnight)</td>
-<td style="text-align: right;">0.1391953</td>
-<td style="text-align: left;">NEG</td>
+<td style="text-align: left;">Mean proportion of beds that contain a patient with confirmed COVID</td>
+<td style="text-align: right;">0.0429817</td>
+<td style="text-align: left;">POS</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">Obesity: QOF prevalence (18+ yrs)</td>
-<td style="text-align: right;">0.1154661</td>
+<td style="text-align: right;">0.0307371</td>
 <td style="text-align: left;">POS</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">Proportion of available beds that are occupied (General &amp; Acute - overnight)</td>
-<td style="text-align: right;">0.0542626</td>
+<td style="text-align: left;">Mental Health total spend per population</td>
+<td style="text-align: right;">0.0100686</td>
 <td style="text-align: left;">POS</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">Workforce FTEs per 10,000 population (Support to ambulance staff - Acute)</td>
-<td style="text-align: right;">0.0478280</td>
+<td style="text-align: left;">Workforce FTEs per 100,000 population (Support to ambulance staff - Acute)</td>
+<td style="text-align: right;">0.0095791</td>
 <td style="text-align: left;">NEG</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">lag_1_Workforce FTEs per 10,000 population (Managers - Acute)</td>
-<td style="text-align: right;">0.0445966</td>
+<td style="text-align: left;">lag_1_Workforce FTEs per 100,000 population (Managers - Acute)</td>
+<td style="text-align: right;">0.0060149</td>
 <td style="text-align: left;">NEG</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">lag_2_Mental health spend as a proportion of overall allocation</td>
-<td style="text-align: right;">0.0329106</td>
-<td style="text-align: left;">POS</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">lag_2_Out of Area Placements - Reported Spend per 10,000 population</td>
-<td style="text-align: right;">0.0035125</td>
+<td style="text-align: left;">lag_1_Children and Young People Mental Health spend - eating disorders per population</td>
+<td style="text-align: right;">0.0008123</td>
 <td style="text-align: left;">POS</td>
 </tr>
 </tbody>
@@ -508,23 +1622,23 @@ Proportion of incomplete pathways greater than 18 weeks from referral (incomplet
 </div>
 </div>
 <div class="callout callout-style-default callout-tip no-icon callout-titled">
-<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-3-contents" aria-controls="callout-3" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-13-contents" aria-controls="callout-13" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
 <i class="callout-icon no-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-Proportion of A&amp;E attendances greater than 4 hours (Type 1 Departments - Major A&amp;E)
+Proportion of A&amp;E attendances with greater than 4 hours wait (Type 1 Departments - Major A&amp;E)
 </div>
 <div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
-<div id="callout-3" class="callout-3-contents callout-collapse collapse">
+<div id="callout-13" class="callout-13-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<p>The MAE for this model is 0.035</p>
-<table class="table">
+<p>The MAPE for this model is 15.177</p>
+<table class="caption-top table">
 <colgroup>
-<col style="width: 86%">
-<col style="width: 9%">
-<col style="width: 4%">
+<col style="width: 87%">
+<col style="width: 8%">
+<col style="width: 3%">
 </colgroup>
 <thead>
 <tr class="header">
@@ -535,348 +1649,104 @@ Proportion of A&amp;E attendances greater than 4 hours (Type 1 Departments - Maj
 </thead>
 <tbody>
 <tr class="odd">
-<td style="text-align: left;">Proportion of resident population in national deprivation quintile (Least deprived quintile) - IMD 2019</td>
-<td style="text-align: right;">5.0935611</td>
-<td style="text-align: left;">NEG</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Proportion of resident population in national deprivation quintile (Most deprived) - IMD 2019</td>
-<td style="text-align: right;">3.2261711</td>
-<td style="text-align: left;">NEG</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Proportion of resident population in national deprivation quintile (Average deprived) - IMD 2019</td>
-<td style="text-align: right;">2.2517095</td>
-<td style="text-align: left;">NEG</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Proportion of resident population in national deprivation quintile (Second most deprived ) - IMD 2019</td>
-<td style="text-align: right;">1.9880274</td>
-<td style="text-align: left;">NEG</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Smoking: QOF prevalence (15+ yrs)</td>
-<td style="text-align: right;">1.8744489</td>
-<td style="text-align: left;">NEG</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Workforce FTEs per 10,000 population (Consultant - Acute)</td>
-<td style="text-align: right;">1.7282180</td>
-<td style="text-align: left;">NEG</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">FTE days sick per 10,000 population (mental health)</td>
-<td style="text-align: right;">1.5494859</td>
-<td style="text-align: left;">NEG</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">FTE days sick per 10,000 population (acute)</td>
-<td style="text-align: right;">1.5489572</td>
-<td style="text-align: left;">POS</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Workforce FTEs per 10,000 population (Specialty Registrar - Acute)</td>
-<td style="text-align: right;">1.5370624</td>
-<td style="text-align: left;">POS</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">FTE days available per 10,000 population (acute)</td>
-<td style="text-align: right;">1.4210492</td>
-<td style="text-align: left;">NEG</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">FTE days available per 10,000 population (mental health)</td>
-<td style="text-align: right;">1.4005134</td>
-<td style="text-align: left;">POS</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Workforce FTEs per 10,000 population (Core Training - Acute)</td>
-<td style="text-align: right;">1.2848373</td>
-<td style="text-align: left;">POS</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Proportion of resident population in national deprivation quintile (Second least deprived) - IMD 2019</td>
-<td style="text-align: right;">1.0550224</td>
-<td style="text-align: left;">NEG</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Mental health spend as a proportion of overall allocation</td>
-<td style="text-align: right;">0.9868789</td>
-<td style="text-align: left;">NEG</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Primary care workforce (FTEs) per 10,000 population (Direct Patient Care)</td>
-<td style="text-align: right;">0.9705645</td>
-<td style="text-align: left;">POS</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Early Intervention in Psychosis spend (£k) per 10,000 population</td>
-<td style="text-align: right;">0.8405299</td>
-<td style="text-align: left;">POS</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Depression: QOF prevalence (18+ yrs)</td>
-<td style="text-align: right;">0.7869160</td>
+<td style="text-align: left;">lag_1_Proportion of A&amp;E attendances with greater than 4 hours wait (Type 1 Departments - Major A&amp;E)</td>
+<td style="text-align: right;">0.3743025</td>
 <td style="text-align: left;">POS</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">Proportion of available beds that are occupied (General &amp; Acute - overnight)</td>
-<td style="text-align: right;">0.7864414</td>
+<td style="text-align: right;">0.1469490</td>
 <td style="text-align: left;">POS</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">Primary care workforce (FTEs) per 10,000 population (Nurses)</td>
-<td style="text-align: right;">0.7730806</td>
-<td style="text-align: left;">NEG</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Primary care workforce (FTEs) per 10,000 population (GP)</td>
-<td style="text-align: right;">0.7163288</td>
+<td style="text-align: left;">Obesity: QOF prevalence (18+ yrs)</td>
+<td style="text-align: right;">0.0832737</td>
 <td style="text-align: left;">POS</td>
 </tr>
-</tbody>
-</table>
-</div>
-</div>
-</div>
-<div class="callout callout-style-default callout-tip no-icon callout-titled">
-<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-4-contents" aria-controls="callout-4" aria-expanded="false" aria-label="Toggle callout">
-<div class="callout-icon-container">
-<i class="callout-icon no-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Proportion of attended appointments (Over 4 weeks wait time)
-</div>
-<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
-</div>
-<div id="callout-4" class="callout-4-contents callout-collapse collapse">
-<div class="callout-body-container callout-body">
-<p>The MAE for this model is 0.002</p>
-<table class="table">
-<colgroup>
-<col style="width: 84%">
-<col style="width: 10%">
-<col style="width: 4%">
-</colgroup>
-<thead>
-<tr class="header">
-<th style="text-align: left;">Variable</th>
-<th style="text-align: right;">Importance</th>
-<th style="text-align: left;">Sign</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: left;">Proportion of attended appointments (0 to 1 weeks wait time)</td>
-<td style="text-align: right;">6.1490480</td>
-<td style="text-align: left;">NEG</td>
-</tr>
 <tr class="even">
-<td style="text-align: left;">Proportion of attended appointments (1 to 2 weeks wait time)</td>
-<td style="text-align: right;">1.9324337</td>
-<td style="text-align: left;">NEG</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Proportion of attended appointments (2 to 3 weeks wait time)</td>
-<td style="text-align: right;">1.0622877</td>
-<td style="text-align: left;">NEG</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">lag_1_Proportion of attended appointments (0 to 1 weeks wait time)</td>
-<td style="text-align: right;">1.0210268</td>
-<td style="text-align: left;">NEG</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Proportion of attended appointments (3 to 4 weeks wait time)</td>
-<td style="text-align: right;">0.9284869</td>
-<td style="text-align: left;">NEG</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">lag_1_Proportion of attended appointments (3 to 4 weeks wait time)</td>
-<td style="text-align: right;">0.7312282</td>
-<td style="text-align: left;">NEG</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">lag_1_Proportion of attended appointments (1 to 2 weeks wait time)</td>
-<td style="text-align: right;">0.5193975</td>
-<td style="text-align: left;">NEG</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Proportion of population in age band (30-59)</td>
-<td style="text-align: right;">0.4353993</td>
+<td style="text-align: left;">lag_1_Proportion of available beds that are occupied (General &amp; Acute - day)</td>
+<td style="text-align: right;">0.0601968</td>
 <td style="text-align: left;">NEG</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">lag_1_Proportion of available beds that are occupied (General &amp; Acute - overnight)</td>
-<td style="text-align: right;">0.3118409</td>
+<td style="text-align: right;">0.0429442</td>
+<td style="text-align: left;">NEG</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Mean proportion of beds that contain a patient with confirmed COVID</td>
+<td style="text-align: right;">0.0411775</td>
+<td style="text-align: left;">POS</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">lag_1_Workforce FTEs per 100,000 population (Central functions - Acute)</td>
+<td style="text-align: right;">0.0325474</td>
 <td style="text-align: left;">POS</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">Proportion of available beds that are occupied (General &amp; Acute - overnight)</td>
-<td style="text-align: right;">0.2295285</td>
+<td style="text-align: left;">lag_1_Obesity: QOF prevalence (18+ yrs)</td>
+<td style="text-align: right;">0.0267573</td>
 <td style="text-align: left;">NEG</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">lag_1_FTE days available per 10,000 population (mental health)</td>
-<td style="text-align: right;">0.1965201</td>
+<td style="text-align: left;">Early Intervention in Psychosis spend (£k) per population</td>
+<td style="text-align: right;">0.0222300</td>
+<td style="text-align: left;">POS</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Mental health spend as a proportion of overall allocation</td>
+<td style="text-align: right;">0.0191047</td>
+<td style="text-align: left;">NEG</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Smoking: QOF prevalence (15+ yrs)</td>
+<td style="text-align: right;">0.0189338</td>
 <td style="text-align: left;">NEG</td>
 </tr>
 <tr class="even">
+<td style="text-align: left;">Workforce FTEs per 100,000 population (HCHS Doctors - Acute)</td>
+<td style="text-align: right;">0.0128772</td>
+<td style="text-align: left;">POS</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">lag_1_Primary care workforce (FTEs) per 100,000 population (GP)</td>
+<td style="text-align: right;">0.0115118</td>
+<td style="text-align: left;">POS</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">lag_1_A and E Full Time Equivalent (FTE) for Care Providers (per 100,000 population)</td>
+<td style="text-align: right;">0.0100009</td>
+<td style="text-align: left;">POS</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">lag_1_Total beds per 1,000 60+ yrs (General &amp; Acute - day)</td>
+<td style="text-align: right;">0.0082985</td>
+<td style="text-align: left;">NEG</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Workforce FTEs per 100,000 population (Foundation Doctor Year 1 - Acute)</td>
+<td style="text-align: right;">0.0076627</td>
+<td style="text-align: left;">POS</td>
+</tr>
+<tr class="odd">
 <td style="text-align: left;">lag_1_Total beds per 1,000 60+ yrs (General &amp; Acute - overnight)</td>
-<td style="text-align: right;">0.1801719</td>
-<td style="text-align: left;">POS</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Proportion of available beds that are occupied (General &amp; Acute - day)</td>
-<td style="text-align: right;">0.1437520</td>
+<td style="text-align: right;">0.0065443</td>
 <td style="text-align: left;">NEG</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">A and E Full Time Equivalent (FTE) for Care Providers (per 10,000 population)</td>
-<td style="text-align: right;">0.1308777</td>
+<td style="text-align: left;">Workforce FTEs per 100,000 population (Core Training - Acute)</td>
+<td style="text-align: right;">0.0060094</td>
 <td style="text-align: left;">POS</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">Primary care workforce (FTEs) per 10,000 population (Admin/Non-Clinical)</td>
-<td style="text-align: right;">0.1240796</td>
-<td style="text-align: left;">NEG</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">lag_1_Proportion of population in age band (0-29)</td>
-<td style="text-align: right;">0.1208455</td>
+<td style="text-align: left;">Children and Young People Mental Health spend - excluding learning disabilities and eating disorders per population</td>
+<td style="text-align: right;">0.0057780</td>
 <td style="text-align: left;">POS</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">lag_1_Proportion of available beds that are occupied (Mental Illness - overnight)</td>
-<td style="text-align: right;">0.1193170</td>
-<td style="text-align: left;">POS</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">lag_1_Proportion of A&amp;E attendances greater than 4 hours (Type 1 Departments - Major A&amp;E)</td>
-<td style="text-align: right;">0.1164106</td>
-<td style="text-align: left;">NEG</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">lag_1_FTE days sick per 10,000 population (acute)</td>
-<td style="text-align: right;">0.1153591</td>
-<td style="text-align: left;">NEG</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">lag_1_Proportion of incomplete pathways greater than 18 weeks from referral (incomplete)</td>
-<td style="text-align: right;">0.1149187</td>
-<td style="text-align: left;">POS</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
-</div>
-</div>
-<div id="tabset-1-2" class="tab-pane" role="tabpanel" aria-labelledby="tabset-1-2-tab">
-<div class="callout callout-style-default callout-tip no-icon callout-titled">
-<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-5-contents" aria-controls="callout-5" aria-expanded="false" aria-label="Toggle callout">
-<div class="callout-icon-container">
-<i class="callout-icon no-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Proportion of incomplete pathways greater than 18 weeks from referral (incomplete)
-</div>
-<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
-</div>
-<div id="callout-5" class="callout-5-contents callout-collapse collapse">
-<div class="callout-body-container callout-body">
-<p>The MAE for this model is 0.025</p>
-<table class="table">
-<colgroup>
-<col style="width: 90%">
-<col style="width: 9%">
-</colgroup>
-<thead>
-<tr class="header">
-<th style="text-align: left;">Variable</th>
-<th style="text-align: right;">Importance</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: left;">pandemic_onwards</td>
-<td style="text-align: right;">2.5318442</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">lag_1_Proportion of incomplete pathways greater than 18 weeks from referral (incomplete)</td>
-<td style="text-align: right;">0.2888724</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">lag_1_Proportion of available beds that are occupied (General &amp; Acute - overnight)</td>
-<td style="text-align: right;">0.0495532</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">lag_1_Obesity: QOF prevalence (18+ yrs)</td>
-<td style="text-align: right;">0.0175960</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">lag_1_Proportion of available beds that are occupied (Mental Illness - overnight)</td>
-<td style="text-align: right;">0.0153361</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">Proportion of available beds that are occupied (Mental Illness - overnight)</td>
-<td style="text-align: right;">0.0115185</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Workforce FTEs per 10,000 population (Specialty Doctor - Acute)</td>
-<td style="text-align: right;">0.0104914</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Proportion of available beds that are occupied (General &amp; Acute - overnight)</td>
-<td style="text-align: right;">0.0081650</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Workforce FTEs per 10,000 population (Support to ambulance staff - Acute)</td>
-<td style="text-align: right;">0.0055975</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Early Intervention in Psychosis spend (£k) per 10,000 population</td>
-<td style="text-align: right;">0.0055606</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">lag_1_Proportion of available beds that are occupied (General &amp; Acute - day)</td>
-<td style="text-align: right;">0.0046456</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">lag_1_Workforce FTEs per 10,000 population (Specialty Doctor - Acute)</td>
-<td style="text-align: right;">0.0045825</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">lag_1_Workforce FTEs per 10,000 population (Midwives - Acute)</td>
-<td style="text-align: right;">0.0037321</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">lag_1_Workforce FTEs per 10,000 population (Support to ambulance staff - Acute)</td>
-<td style="text-align: right;">0.0036855</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">lag_1_Out of Area Placements - Reported Spend per 10,000 population</td>
-<td style="text-align: right;">0.0035976</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Out of Area Placements - Reported Spend per 10,000 population</td>
-<td style="text-align: right;">0.0034784</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">lag_1_Proportion of resident population in national deprivation quintile (Second least deprived) - IMD 2019</td>
-<td style="text-align: right;">0.0033541</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Workforce FTEs per 10,000 population (Midwives - Acute)</td>
-<td style="text-align: right;">0.0031763</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">lag_1_Proportion of available beds that are occupied (Maternity - overnight)</td>
-<td style="text-align: right;">0.0026138</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">A and E and Ward Liaison mental health services spend (£k) per 10,000 population</td>
-<td style="text-align: right;">0.0025687</td>
+<td style="text-align: right;">0.0027669</td>
+<td style="text-align: left;">POS</td>
 </tr>
 </tbody>
 </table>
@@ -884,661 +1754,131 @@ Proportion of incomplete pathways greater than 18 weeks from referral (incomplet
 </div>
 </div>
 <div class="callout callout-style-default callout-tip no-icon callout-titled">
-<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-6-contents" aria-controls="callout-6" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-14-contents" aria-controls="callout-14" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
 <i class="callout-icon no-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-62 day wait from suspected cancer or referral to first definitive treament (proportion outside of standard)
+Proportion of attended GP appointments (over 4 weeks wait time)
 </div>
 <div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
-<div id="callout-6" class="callout-6-contents callout-collapse collapse">
+<div id="callout-14" class="callout-14-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<p>The MAE for this model is 0.026</p>
-<table class="table">
+<p>The MAPE for this model is 8.684</p>
+<table class="caption-top table">
 <colgroup>
-<col style="width: 91%">
+<col style="width: 87%">
 <col style="width: 8%">
+<col style="width: 4%">
 </colgroup>
 <thead>
 <tr class="header">
 <th style="text-align: left;">Variable</th>
 <th style="text-align: right;">Importance</th>
+<th style="text-align: left;">Sign</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td style="text-align: left;">lag_1_62 day wait from suspected cancer or referral to first definitive treament (proportion outside of standard)</td>
-<td style="text-align: right;">1.6531522</td>
+<td style="text-align: left;">lag_1_Proportion of attended GP appointments (over 4 weeks wait time)</td>
+<td style="text-align: right;">0.2642183</td>
+<td style="text-align: left;">POS</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">pandemic_onwards</td>
-<td style="text-align: right;">0.1070029</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">lag_2_Adult community crisis care spend (£k) per 10,000 population</td>
-<td style="text-align: right;">0.0130079</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">lag_1_FTE days sick per 10,000 population (acute)</td>
-<td style="text-align: right;">0.0101619</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">lag_2_A and E and Ward Liaison mental health services spend (£k) per 10,000 population</td>
-<td style="text-align: right;">0.0085562</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">lag_1_Adult community crisis care spend (£k) per 10,000 population</td>
-<td style="text-align: right;">0.0074932</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">FTE days sick per 10,000 population (acute)</td>
-<td style="text-align: right;">0.0073553</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Children and Young People Mental Health spend - eating disorders per 10,000 population</td>
-<td style="text-align: right;">0.0063775</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Obesity: QOF prevalence (18+ yrs)</td>
-<td style="text-align: right;">0.0060171</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">lag_1_Out of Area Placements - Reported Spend per 10,000 population</td>
-<td style="text-align: right;">0.0044807</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">lag_2_Depression: QOF prevalence (18+ yrs)</td>
-<td style="text-align: right;">0.0043194</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Workforce FTEs per 10,000 population (Associate Specialist - Acute)</td>
-<td style="text-align: right;">0.0042806</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Smoking: QOF prevalence (15+ yrs)</td>
-<td style="text-align: right;">0.0040046</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">lag_2_Proportion of resident population in national deprivation quintile (Most deprived) - IMD 2019</td>
-<td style="text-align: right;">0.0038467</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Proportion of available beds that are occupied (Maternity - overnight)</td>
-<td style="text-align: right;">0.0035741</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">lag_2_Children and Young People Mental Health spend - eating disorders per 10,000 population</td>
-<td style="text-align: right;">0.0035113</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Children and Young People Mental Health spend - excluding learning disabilities and eating disorders per 10,000 population</td>
-<td style="text-align: right;">0.0033610</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">lag_2_Mental health spend as a proportion of overall allocation</td>
-<td style="text-align: right;">0.0032750</td>
+<td style="text-align: left;">lag_1_Proportion of available beds that are occupied (General &amp; Acute - overnight)</td>
+<td style="text-align: right;">0.0619318</td>
+<td style="text-align: left;">POS</td>
 </tr>
 <tr class="odd">
 <td style="text-align: left;">lag_2_Proportion of available beds that are occupied (General &amp; Acute - overnight)</td>
-<td style="text-align: right;">0.0032715</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">lag_1_Improving Access to Psychological Therapies spend (£k) per 10,000 population</td>
-<td style="text-align: right;">0.0032672</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
-</div>
-<div class="callout callout-style-default callout-tip no-icon callout-titled">
-<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-7-contents" aria-controls="callout-7" aria-expanded="false" aria-label="Toggle callout">
-<div class="callout-icon-container">
-<i class="callout-icon no-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Proportion of A&amp;E attendances greater than 4 hours (Type 1 Departments - Major A&amp;E)
-</div>
-<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
-</div>
-<div id="callout-7" class="callout-7-contents callout-collapse collapse">
-<div class="callout-body-container callout-body">
-<p>The MAE for this model is 0.042</p>
-<table class="table">
-<colgroup>
-<col style="width: 91%">
-<col style="width: 8%">
-</colgroup>
-<thead>
-<tr class="header">
-<th style="text-align: left;">Variable</th>
-<th style="text-align: right;">Importance</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: left;">lag_1_Proportion of A&amp;E attendances greater than 4 hours (Type 1 Departments - Major A&amp;E)</td>
-<td style="text-align: right;">1.7570511</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Proportion of available beds that are occupied (General &amp; Acute - overnight)</td>
-<td style="text-align: right;">0.2198495</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">FTE days sick per 10,000 population (acute)</td>
-<td style="text-align: right;">0.1720075</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Out of Area Placements - Reported Spend per 10,000 population</td>
-<td style="text-align: right;">0.1049747</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Smoking: QOF prevalence (15+ yrs)</td>
-<td style="text-align: right;">0.0784684</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">pandemic_onwards</td>
-<td style="text-align: right;">0.0784180</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Obesity: QOF prevalence (18+ yrs)</td>
-<td style="text-align: right;">0.0655767</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Workforce FTEs per 10,000 population (Foundation Doctor Year 1 - Acute)</td>
-<td style="text-align: right;">0.0436849</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Workforce FTEs per 10,000 population (Core Training - Acute)</td>
-<td style="text-align: right;">0.0416546</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Improving Access to Psychological Therapies spend (£k) per 10,000 population</td>
-<td style="text-align: right;">0.0319125</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Adult community crisis care spend (£k) per 10,000 population</td>
-<td style="text-align: right;">0.0306811</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Primary care workforce (FTEs) per 10,000 population (GP)</td>
-<td style="text-align: right;">0.0303515</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">% active smokers (GPPS)</td>
-<td style="text-align: right;">0.0281951</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Workforce FTEs per 10,000 population (Specialty Doctor - Acute)</td>
-<td style="text-align: right;">0.0238948</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Children and Young People Mental Health spend - excluding learning disabilities and eating disorders per 10,000 population</td>
-<td style="text-align: right;">0.0238670</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Depression: QOF prevalence (18+ yrs)</td>
-<td style="text-align: right;">0.0238557</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Workforce FTEs per 10,000 population (Other and Local HCHS Doctor Grades - Acute)</td>
-<td style="text-align: right;">0.0213751</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Children and Young People Mental Health spend - eating disorders per 10,000 population</td>
-<td style="text-align: right;">0.0195767</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Workforce FTEs per 10,000 population (Staff Grade - Acute)</td>
-<td style="text-align: right;">0.0192954</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Proportion of available beds that are occupied (Mental Illness - overnight)</td>
-<td style="text-align: right;">0.0166789</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
-</div>
-<div class="callout callout-style-default callout-tip no-icon callout-titled">
-<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-8-contents" aria-controls="callout-8" aria-expanded="false" aria-label="Toggle callout">
-<div class="callout-icon-container">
-<i class="callout-icon no-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Proportion of attended appointments (Over 4 weeks wait time)
-</div>
-<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
-</div>
-<div id="callout-8" class="callout-8-contents callout-collapse collapse">
-<div class="callout-body-container callout-body">
-<p>The MAE for this model is 0.003</p>
-<table class="table">
-<colgroup>
-<col style="width: 87%">
-<col style="width: 12%">
-</colgroup>
-<thead>
-<tr class="header">
-<th style="text-align: left;">Variable</th>
-<th style="text-align: right;">Importance</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: left;">lag_1_Proportion of attended appointments (Over 4 weeks wait time)</td>
-<td style="text-align: right;">0.0290880</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Workforce FTEs per 10,000 population (Foundation Doctor Year 1 - Acute)</td>
-<td style="text-align: right;">0.0006608</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Primary care workforce (FTEs) per 10,000 population (Direct Patient Care)</td>
-<td style="text-align: right;">0.0003753</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Proportion of population in age band (60+)</td>
-<td style="text-align: right;">0.0001526</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">% former smokers (GPPS)</td>
-<td style="text-align: right;">0.0001317</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Primary care workforce (FTEs) per 10,000 population (Nurses)</td>
-<td style="text-align: right;">0.0001167</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Primary care workforce (FTEs) per 10,000 population (GP)</td>
-<td style="text-align: right;">0.0001150</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Primary care workforce (FTEs) per 10,000 population (Admin/Non-Clinical)</td>
-<td style="text-align: right;">0.0000946</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Workforce FTEs per 10,000 population (Specialty Registrar - Acute)</td>
-<td style="text-align: right;">0.0000939</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Proportion of population in age band (30-59)</td>
-<td style="text-align: right;">0.0000804</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">% active smokers (GPPS)</td>
-<td style="text-align: right;">0.0000740</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Workforce FTEs per 10,000 population (Associate Specialist - Acute)</td>
-<td style="text-align: right;">0.0000612</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Workforce FTEs per 10,000 population (HCHS Doctors - Acute)</td>
-<td style="text-align: right;">0.0000575</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Workforce FTEs per 10,000 population (Midwives - Acute)</td>
-<td style="text-align: right;">0.0000498</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Workforce FTEs per 10,000 population (Foundation Doctor Year 2 - Acute)</td>
-<td style="text-align: right;">0.0000497</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Workforce FTEs per 10,000 population (Support to ambulance staff - Acute)</td>
-<td style="text-align: right;">0.0000473</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Workforce FTEs per 10,000 population (Support to ST&amp;T staff - Acute)</td>
-<td style="text-align: right;">0.0000440</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Proportion of available beds that are occupied (General &amp; Acute - day)</td>
-<td style="text-align: right;">0.0000430</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Proportion of available beds that are occupied (General &amp; Acute - overnight)</td>
-<td style="text-align: right;">0.0000424</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Workforce FTEs per 10,000 population (Staff Grade - Acute)</td>
-<td style="text-align: right;">0.0000401</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
-</div>
-</div>
-<div id="tabset-1-3" class="tab-pane" role="tabpanel" aria-labelledby="tabset-1-3-tab">
-<div class="callout callout-style-default callout-tip no-icon callout-titled">
-<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-9-contents" aria-controls="callout-9" aria-expanded="false" aria-label="Toggle callout">
-<div class="callout-icon-container">
-<i class="callout-icon no-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Proportion of incomplete pathways greater than 18 weeks from referral (incomplete)
-</div>
-<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
-</div>
-<div id="callout-9" class="callout-9-contents callout-collapse collapse">
-<div class="callout-body-container callout-body">
-<p>The MAE for this model is 0.02</p>
-<table class="table">
-<colgroup>
-<col style="width: 89%">
-<col style="width: 10%">
-</colgroup>
-<thead>
-<tr class="header">
-<th style="text-align: left;">Variable</th>
-<th style="text-align: right;">Importance</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: left;">Proportion of available beds that are occupied (General &amp; Acute - overnight)</td>
-<td style="text-align: right;">1.1403025</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">lag_1_Proportion of incomplete pathways greater than 18 weeks from referral (incomplete)</td>
-<td style="text-align: right;">0.0430757</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Proportion of available beds that are occupied (General &amp; Acute - day)</td>
-<td style="text-align: right;">0.0409709</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Obesity: QOF prevalence (18+ yrs)</td>
-<td style="text-align: right;">0.0059297</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Children and Young People Mental Health spend - eating disorders per 10,000 population</td>
-<td style="text-align: right;">0.0046454</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Proportion of available beds that are occupied (Mental Illness - overnight)</td>
-<td style="text-align: right;">0.0041952</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Workforce FTEs per 10,000 population (Managers - Acute)</td>
-<td style="text-align: right;">0.0037630</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Workforce FTEs per 10,000 population (Foundation Doctor Year 1 - Acute)</td>
-<td style="text-align: right;">0.0035810</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">% former smokers (GPPS)</td>
-<td style="text-align: right;">0.0033422</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">FTE days sick per 10,000 population (mental health)</td>
-<td style="text-align: right;">0.0032900</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Workforce FTEs per 10,000 population (Foundation Doctor Year 2 - Acute)</td>
-<td style="text-align: right;">0.0030874</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Mental Health total spend per 10,000 population</td>
-<td style="text-align: right;">0.0028707</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Workforce FTEs per 10,000 population (Hospital Practitioner / Clinical Assistant - Acute)</td>
-<td style="text-align: right;">0.0026987</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Workforce FTEs per 10,000 population (Scientific, therapeutic &amp; technical staff - Acute)</td>
-<td style="text-align: right;">0.0026582</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Primary care workforce (FTEs) per 10,000 population (Admin/Non-Clinical)</td>
-<td style="text-align: right;">0.0026484</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Primary care workforce (FTEs) per 10,000 population (GP)</td>
-<td style="text-align: right;">0.0026472</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Workforce FTEs per 10,000 population (Associate Specialist - Acute)</td>
-<td style="text-align: right;">0.0026277</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Workforce FTEs per 10,000 population (Support to doctors, nurses &amp; midwives - Acute)</td>
-<td style="text-align: right;">0.0025883</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Proportion of available beds that are occupied (Maternity - overnight)</td>
-<td style="text-align: right;">0.0025293</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Mental health spend as a proportion of overall allocation</td>
-<td style="text-align: right;">0.0024533</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
-</div>
-<div class="callout callout-style-default callout-tip no-icon callout-titled">
-<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-10-contents" aria-controls="callout-10" aria-expanded="false" aria-label="Toggle callout">
-<div class="callout-icon-container">
-<i class="callout-icon no-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-62 day wait from suspected cancer or referral to first definitive treament (proportion outside of standard)
-</div>
-<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
-</div>
-<div id="callout-10" class="callout-10-contents callout-collapse collapse">
-<div class="callout-body-container callout-body">
-<p>The MAE for this model is 0.023</p>
-<table class="table">
-<colgroup>
-<col style="width: 89%">
-<col style="width: 10%">
-</colgroup>
-<thead>
-<tr class="header">
-<th style="text-align: left;">Variable</th>
-<th style="text-align: right;">Importance</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: left;">lag_2_Proportion of available beds that are occupied (General &amp; Acute - day)</td>
-<td style="text-align: right;">0.0066522</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Obesity: QOF prevalence (18+ yrs)</td>
-<td style="text-align: right;">0.0055881</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">lag_1_Proportion of available beds that are occupied (General &amp; Acute - overnight)</td>
-<td style="text-align: right;">0.0053838</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">lag_2_Proportion of available beds that are occupied (General &amp; Acute - overnight)</td>
-<td style="text-align: right;">0.0053247</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Smoking: QOF prevalence (15+ yrs)</td>
-<td style="text-align: right;">0.0050222</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">lag_2_Proportion of available beds that are occupied (Mental Illness - overnight)</td>
-<td style="text-align: right;">0.0041759</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Proportion of available beds that are occupied (General &amp; Acute - overnight)</td>
-<td style="text-align: right;">0.0038807</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">lag_1_Mental health spend as a proportion of overall allocation</td>
-<td style="text-align: right;">0.0034227</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">lag_1_Out of Area Placements - Reported Spend per 10,000 population</td>
-<td style="text-align: right;">0.0033107</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">lag_2_Obesity: QOF prevalence (18+ yrs)</td>
-<td style="text-align: right;">0.0032573</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">lag_2_Workforce FTEs per 10,000 population (Midwives - Acute)</td>
-<td style="text-align: right;">0.0029283</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Proportion of available beds that are occupied (Mental Illness - overnight)</td>
-<td style="text-align: right;">0.0028058</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Proportion of available beds that are occupied (General &amp; Acute - day)</td>
-<td style="text-align: right;">0.0024844</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">lag_2_Proportion of available beds that are occupied (Maternity - overnight)</td>
-<td style="text-align: right;">0.0024493</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">lag_2_Mental health spend as a proportion of overall allocation</td>
-<td style="text-align: right;">0.0023125</td>
+<td style="text-align: right;">0.0595838</td>
+<td style="text-align: left;">NEG</td>
 </tr>
 <tr class="even">
 <td style="text-align: left;">lag_1_Obesity: QOF prevalence (18+ yrs)</td>
-<td style="text-align: right;">0.0022555</td>
+<td style="text-align: right;">0.0534880</td>
+<td style="text-align: left;">POS</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">lag_2_Workforce FTEs per 10,000 population (Foundation Doctor Year 2 - Acute)</td>
-<td style="text-align: right;">0.0022528</td>
+<td style="text-align: left;">lag_2_% former smokers (GPPS)</td>
+<td style="text-align: right;">0.0342951</td>
+<td style="text-align: left;">POS</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">lag_1_Proportion of available beds that are occupied (General &amp; Acute - day)</td>
-<td style="text-align: right;">0.0021673</td>
+<td style="text-align: left;">lag_2_Total beds per 1,000 60+ yrs (General &amp; Acute - overnight)</td>
+<td style="text-align: right;">0.0315281</td>
+<td style="text-align: left;">NEG</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">lag_2_Workforce FTEs per 10,000 population (Professionally qualified clinical staff - Acute)</td>
-<td style="text-align: right;">0.0021130</td>
+<td style="text-align: left;">lag_1_Workforce FTEs per 100,000 population (Hotel, property &amp; estates - Acute)</td>
+<td style="text-align: right;">0.0220522</td>
+<td style="text-align: left;">POS</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">lag_2_Workforce FTEs per 10,000 population (Nurses &amp; health visitors - Acute)</td>
-<td style="text-align: right;">0.0021120</td>
+<td style="text-align: left;">lag_2_Workforce FTEs per 100,000 population (Managers - Acute)</td>
+<td style="text-align: right;">0.0169528</td>
+<td style="text-align: left;">NEG</td>
 </tr>
-</tbody>
-</table>
-</div>
-</div>
-</div>
-<div class="callout callout-style-default callout-tip no-icon callout-titled">
-<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-11-contents" aria-controls="callout-11" aria-expanded="false" aria-label="Toggle callout">
-<div class="callout-icon-container">
-<i class="callout-icon no-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-Proportion of A&amp;E attendances greater than 4 hours (Type 1 Departments - Major A&amp;E)
-</div>
-<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
-</div>
-<div id="callout-11" class="callout-11-contents callout-collapse collapse">
-<div class="callout-body-container callout-body">
-<p>The MAE for this model is 0.03</p>
-<table class="table">
-<colgroup>
-<col style="width: 87%">
-<col style="width: 12%">
-</colgroup>
-<thead>
-<tr class="header">
-<th style="text-align: left;">Variable</th>
-<th style="text-align: right;">Importance</th>
-</tr>
-</thead>
-<tbody>
 <tr class="odd">
+<td style="text-align: left;">lag_1_% former smokers (GPPS)</td>
+<td style="text-align: right;">0.0156652</td>
+<td style="text-align: left;">POS</td>
+</tr>
+<tr class="even">
 <td style="text-align: left;">Proportion of available beds that are occupied (General &amp; Acute - overnight)</td>
-<td style="text-align: right;">0.2507951</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Obesity: QOF prevalence (18+ yrs)</td>
-<td style="text-align: right;">0.1155198</td>
+<td style="text-align: right;">0.0151052</td>
+<td style="text-align: left;">POS</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">Proportion of available beds that are occupied (General &amp; Acute - day)</td>
-<td style="text-align: right;">0.1002912</td>
+<td style="text-align: left;">lag_2_Primary care workforce (FTEs) per 100,000 population (Nurses)</td>
+<td style="text-align: right;">0.0148867</td>
+<td style="text-align: left;">POS</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">Proportion of available beds that are occupied (Mental Illness - overnight)</td>
-<td style="text-align: right;">0.0591871</td>
+<td style="text-align: left;">lag_2_A and E Full Time Equivalent (FTE) for Care Providers (per 100,000 population)</td>
+<td style="text-align: right;">0.0140401</td>
+<td style="text-align: left;">POS</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">Workforce FTEs per 10,000 population (Foundation Doctor Year 1 - Acute)</td>
-<td style="text-align: right;">0.0440607</td>
+<td style="text-align: left;">lag_2_Workforce FTEs per 100,000 population (Foundation Doctor Year 2 - Acute)</td>
+<td style="text-align: right;">0.0118177</td>
+<td style="text-align: left;">POS</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">FTE days sick per 10,000 population (acute)</td>
-<td style="text-align: right;">0.0291931</td>
+<td style="text-align: left;">lag_2_Gross Total Expenditure (£000s) per individual with long term support during the year</td>
+<td style="text-align: right;">0.0114849</td>
+<td style="text-align: left;">POS</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">Mental health spend as a proportion of overall allocation</td>
-<td style="text-align: right;">0.0286525</td>
+<td style="text-align: left;">lag_1_Primary care workforce (FTEs) per 100,000 population (Nurses)</td>
+<td style="text-align: right;">0.0112009</td>
+<td style="text-align: left;">POS</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">Proportion of population in age band (30-59)</td>
-<td style="text-align: right;">0.0260709</td>
+<td style="text-align: left;">Adult community crisis care spend (£k) per population</td>
+<td style="text-align: right;">0.0106118</td>
+<td style="text-align: left;">NEG</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">Workforce FTEs per 10,000 population (Consultant - Acute)</td>
-<td style="text-align: right;">0.0221824</td>
+<td style="text-align: left;">lag_2_Workforce FTEs per 100,000 population (Hotel, property &amp; estates - Acute)</td>
+<td style="text-align: right;">0.0097884</td>
+<td style="text-align: left;">POS</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">pandemic_onwards</td>
-<td style="text-align: right;">0.0218232</td>
+<td style="text-align: left;">Workforce FTEs per 100,000 population (Foundation Doctor Year 1 - Acute)</td>
+<td style="text-align: right;">0.0096404</td>
+<td style="text-align: left;">POS</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">Workforce FTEs per 10,000 population (Senior managers - Acute)</td>
-<td style="text-align: right;">0.0212552</td>
+<td style="text-align: left;">Primary care workforce (FTEs) per 100,000 population (Nurses)</td>
+<td style="text-align: right;">0.0095538</td>
+<td style="text-align: left;">POS</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">Workforce FTEs per 10,000 population (HCHS Doctors - Acute)</td>
-<td style="text-align: right;">0.0191111</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Primary care workforce (FTEs) per 10,000 population (Nurses)</td>
-<td style="text-align: right;">0.0168970</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Workforce FTEs per 10,000 population (Midwives - Acute)</td>
-<td style="text-align: right;">0.0141932</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Atrial fibrillation: QOF prevalence (all ages)</td>
-<td style="text-align: right;">0.0139550</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Workforce FTEs per 10,000 population (Associate Specialist - Acute)</td>
-<td style="text-align: right;">0.0131597</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Workforce FTEs per 10,000 population (Core Training - Acute)</td>
-<td style="text-align: right;">0.0113077</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Depression: QOF prevalence (18+ yrs)</td>
-<td style="text-align: right;">0.0100964</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Workforce FTEs per 10,000 population (Central functions - Acute)</td>
-<td style="text-align: right;">0.0098555</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Workforce FTEs per 10,000 population (Staff Grade - Acute)</td>
-<td style="text-align: right;">0.0097014</td>
+<td style="text-align: left;">lag_1_Proportion of resident population in national deprivation quintile (Second most deprived ) - IMD 2019</td>
+<td style="text-align: right;">0.0074459</td>
+<td style="text-align: left;">NEG</td>
 </tr>
 </tbody>
 </table>
@@ -1546,190 +1886,76 @@ Proportion of A&amp;E attendances greater than 4 hours (Type 1 Departments - Maj
 </div>
 </div>
 <div class="callout callout-style-default callout-tip no-icon callout-titled">
-<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-12-contents" aria-controls="callout-12" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-15-contents" aria-controls="callout-15" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
 <i class="callout-icon no-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-Proportion of attended appointments (Over 4 weeks wait time)
+Proportion of incomplete pathways greater than 18 weeks from referral
 </div>
 <div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
-<div id="callout-12" class="callout-12-contents callout-collapse collapse">
+<div id="callout-15" class="callout-15-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<p>The MAE for this model is 0.003</p>
-<p>The MAE for this model is 0.003</p>
-<table class="table">
+<p>The MAPE for this model is 7.474</p>
+<table class="caption-top table">
 <colgroup>
-<col style="width: 88%">
+<col style="width: 83%">
 <col style="width: 11%">
+<col style="width: 5%">
 </colgroup>
 <thead>
 <tr class="header">
 <th style="text-align: left;">Variable</th>
 <th style="text-align: right;">Importance</th>
+<th style="text-align: left;">Sign</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td style="text-align: left;">Proportion of available beds that are occupied (General &amp; Acute - overnight)</td>
-<td style="text-align: right;">0.0226241</td>
+<td style="text-align: left;">lag_1_Proportion of incomplete pathways greater than 18 weeks from referral</td>
+<td style="text-align: right;">0.1833080</td>
+<td style="text-align: left;">POS</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">Proportion of available beds that are occupied (Mental Illness - overnight)</td>
-<td style="text-align: right;">0.0032347</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Proportion of available beds that are occupied (General &amp; Acute - day)</td>
-<td style="text-align: right;">0.0014962</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">lag_1_Atrial fibrillation: QOF prevalence (all ages)</td>
-<td style="text-align: right;">0.0011028</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">lag_1_Proportion of attended appointments (Over 4 weeks wait time)</td>
-<td style="text-align: right;">0.0004882</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Obesity: QOF prevalence (18+ yrs)</td>
-<td style="text-align: right;">0.0001244</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Proportion of population in age band (30-59)</td>
-<td style="text-align: right;">0.0001038</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">lag_1_Primary care workforce (FTEs) per 10,000 population (Direct Patient Care)</td>
-<td style="text-align: right;">0.0001004</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Atrial fibrillation: QOF prevalence (all ages)</td>
-<td style="text-align: right;">0.0000905</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Workforce FTEs per 10,000 population (Associate Specialist - Acute)</td>
-<td style="text-align: right;">0.0000663</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Workforce FTEs per 10,000 population (Specialty Doctor - Acute)</td>
-<td style="text-align: right;">0.0000603</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Proportion of population in age band (60+)</td>
-<td style="text-align: right;">0.0000496</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Proportion of population in age band (0-29)</td>
-<td style="text-align: right;">0.0000436</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Smoking: QOF prevalence (15+ yrs)</td>
-<td style="text-align: right;">0.0000404</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">A and E and Ward Liaison mental health services spend (£k) per 10,000 population</td>
-<td style="text-align: right;">0.0000378</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Workforce FTEs per 10,000 population (Support to ST&amp;T staff - Acute)</td>
-<td style="text-align: right;">0.0000376</td>
-</tr>
-<tr class="odd">
 <td style="text-align: left;">lag_1_Proportion of available beds that are occupied (General &amp; Acute - overnight)</td>
-<td style="text-align: right;">0.0000240</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Workforce FTEs per 10,000 population (Core Training - Acute)</td>
-<td style="text-align: right;">0.0000221</td>
+<td style="text-align: right;">0.0290066</td>
+<td style="text-align: left;">POS</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">lag_1_Workforce FTEs per 10,000 population (Associate Specialist - Acute)</td>
-<td style="text-align: right;">0.0000206</td>
+<td style="text-align: left;">lag_2_Proportion of available beds that are occupied (General &amp; Acute - overnight)</td>
+<td style="text-align: right;">0.0176046</td>
+<td style="text-align: left;">NEG</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">Primary care workforce (FTEs) per 10,000 population (GP)</td>
-<td style="text-align: right;">0.0000206</td>
+<td style="text-align: left;">Workforce FTEs per 100,000 population (Support to ambulance staff - Acute)</td>
+<td style="text-align: right;">0.0126978</td>
+<td style="text-align: left;">NEG</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">Proportion of available beds that are occupied (General &amp; Acute - overnight)</td>
-<td style="text-align: right;">0.0226241</td>
-</tr>
-<tr class="even">
 <td style="text-align: left;">Proportion of available beds that are occupied (Mental Illness - overnight)</td>
-<td style="text-align: right;">0.0032347</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Proportion of available beds that are occupied (General &amp; Acute - day)</td>
-<td style="text-align: right;">0.0014962</td>
+<td style="text-align: right;">0.0110851</td>
+<td style="text-align: left;">POS</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">lag_1_Atrial fibrillation: QOF prevalence (all ages)</td>
-<td style="text-align: right;">0.0011028</td>
+<td style="text-align: left;">Proportion of available beds that are occupied (Maternity - overnight)</td>
+<td style="text-align: right;">0.0067903</td>
+<td style="text-align: left;">POS</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">lag_1_Proportion of attended appointments (Over 4 weeks wait time)</td>
-<td style="text-align: right;">0.0004882</td>
+<td style="text-align: left;">lag_2_Total beds per 1,000 60+ yrs (General &amp; Acute - day)</td>
+<td style="text-align: right;">0.0063263</td>
+<td style="text-align: left;">NEG</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">Obesity: QOF prevalence (18+ yrs)</td>
-<td style="text-align: right;">0.0001244</td>
+<td style="text-align: left;">Children in absolute low income families (under 16s)</td>
+<td style="text-align: right;">0.0048125</td>
+<td style="text-align: left;">POS</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">Proportion of population in age band (30-59)</td>
-<td style="text-align: right;">0.0001038</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">lag_1_Primary care workforce (FTEs) per 10,000 population (Direct Patient Care)</td>
-<td style="text-align: right;">0.0001004</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Atrial fibrillation: QOF prevalence (all ages)</td>
-<td style="text-align: right;">0.0000905</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Workforce FTEs per 10,000 population (Associate Specialist - Acute)</td>
-<td style="text-align: right;">0.0000663</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Workforce FTEs per 10,000 population (Specialty Doctor - Acute)</td>
-<td style="text-align: right;">0.0000603</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Proportion of population in age band (60+)</td>
-<td style="text-align: right;">0.0000496</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Proportion of population in age band (0-29)</td>
-<td style="text-align: right;">0.0000436</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Smoking: QOF prevalence (15+ yrs)</td>
-<td style="text-align: right;">0.0000404</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">A and E and Ward Liaison mental health services spend (£k) per 10,000 population</td>
-<td style="text-align: right;">0.0000378</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Workforce FTEs per 10,000 population (Support to ST&amp;T staff - Acute)</td>
-<td style="text-align: right;">0.0000376</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">lag_1_Proportion of available beds that are occupied (General &amp; Acute - overnight)</td>
-<td style="text-align: right;">0.0000240</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Workforce FTEs per 10,000 population (Core Training - Acute)</td>
-<td style="text-align: right;">0.0000221</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">lag_1_Workforce FTEs per 10,000 population (Associate Specialist - Acute)</td>
-<td style="text-align: right;">0.0000206</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">Primary care workforce (FTEs) per 10,000 population (GP)</td>
-<td style="text-align: right;">0.0000206</td>
+<td style="text-align: left;">lag_1_Workforce FTEs per 100,000 population (Support to ambulance staff - Acute)</td>
+<td style="text-align: right;">0.0009238</td>
+<td style="text-align: left;">NEG</td>
 </tr>
 </tbody>
 </table>
@@ -1742,12 +1968,16 @@ Proportion of attended appointments (Over 4 weeks wait time)
 </section>
 <section id="summary-of-best-models" class="level2">
 <h2 class="anchored" data-anchor-id="summary-of-best-models">Summary of best models</h2>
-<p><a href="#tbl-best-models-inputs">Table&nbsp;2</a> presents the combinations of the inputs to the modelling that created the lowest MAE for each outcome, along with the baseline comparisons.</p>
+<p><a href="#tbl-best-models-inputs" class="quarto-xref">Table&nbsp;2</a> presents the combinations of the inputs to the modelling that created the lowest MAPE for each outcome, along with the baseline comparisons.</p>
 <div class="cell">
+<div id="tbl-best-models-inputs" class="cell quarto-float anchored">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-best-models-inputs-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;2: By outcome, the best combination of input data, along with the MAPE score when comparing the predicted outcome with the observed outcome on the data held back for testing.
+</figcaption>
+<div aria-describedby="tbl-best-models-inputs-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <div class="cell-output-display">
-<div id="tbl-best-models-inputs" class="anchored">
-<table class="table table-sm table-striped small">
-<caption>Table&nbsp;2: By outcome, the best combination of input data, along with the MAE score when comparing the predicted outcome with the observed outcome on the data held back for testing.</caption>
+<table class="do-not-create-environment cell caption-top table table-sm table-striped small">
 <colgroup>
 <col style="width: 33%">
 <col style="width: 7%">
@@ -1767,70 +1997,72 @@ Proportion of attended appointments (Over 4 weeks wait time)
 <th style="text-align: right;">Number of training years</th>
 <th style="text-align: right;">Number of lagged years</th>
 <th style="text-align: left;">Include previous year’s outcome value</th>
-<th style="text-align: right;">MAE (test data)</th>
-<th style="text-align: right;">MAE (baseline - last year)</th>
-<th style="text-align: right;">MAE (baseline - linear 3 years)</th>
+<th style="text-align: right;">MAPE (test data)</th>
+<th style="text-align: right;">MAPE (baseline - last year)</th>
+<th style="text-align: right;">MAPE (baseline - linear 3 years)</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td style="text-align: left;">Proportion of incomplete pathways greater than 18 weeks from referral (incomplete)</td>
+<td style="text-align: left;">Proportion of A&amp;E attendances with greater than 4 hours wait (Type 1 Departments - Major A&amp;E)</td>
 <td style="text-align: left;">Random forest</td>
 <td style="text-align: left;">difference from previous</td>
-<td style="text-align: right;">7</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: left;">TRUE</td>
-<td style="text-align: right;">0.020</td>
-<td style="text-align: right;">0.103</td>
-<td style="text-align: right;">0.101</td>
-</tr>
-<tr class="even">
-<td style="text-align: left;">62 day wait from suspected cancer or referral to first definitive treament (proportion outside of standard)</td>
-<td style="text-align: left;">Generalised linear model</td>
-<td style="text-align: left;">proportion</td>
 <td style="text-align: right;">4</td>
 <td style="text-align: right;">0</td>
 <td style="text-align: left;">TRUE</td>
-<td style="text-align: right;">0.023</td>
-<td style="text-align: right;">0.052</td>
-<td style="text-align: right;">0.058</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left;">Proportion of A&amp;E attendances greater than 4 hours (Type 1 Departments - Major A&amp;E)</td>
-<td style="text-align: left;">Random forest</td>
-<td style="text-align: left;">difference from previous</td>
-<td style="text-align: right;">7</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: left;">FALSE</td>
-<td style="text-align: right;">0.030</td>
-<td style="text-align: right;">0.080</td>
-<td style="text-align: right;">0.090</td>
+<td style="text-align: right;">11.720</td>
+<td style="text-align: right;">31.590</td>
+<td style="text-align: right;">36.270</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">Proportion of A&amp;E attendances greater than 4 hours (Type 1 Departments - Major A&amp;E)</td>
+<td style="text-align: left;">Proportion of attended GP appointments (over 4 weeks wait time)</td>
 <td style="text-align: left;">Random forest</td>
 <td style="text-align: left;">difference from previous</td>
-<td style="text-align: right;">7</td>
-<td style="text-align: right;">0</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">1</td>
 <td style="text-align: left;">TRUE</td>
-<td style="text-align: right;">0.030</td>
-<td style="text-align: right;">0.080</td>
-<td style="text-align: right;">0.090</td>
+<td style="text-align: right;">8.436</td>
+<td style="text-align: right;">18.809</td>
+<td style="text-align: right;">49.468</td>
 </tr>
 <tr class="odd">
-<td style="text-align: left;">Proportion of attended appointments (Over 4 weeks wait time)</td>
-<td style="text-align: left;">Generalised linear model</td>
+<td style="text-align: left;">Proportion of incomplete pathways greater than 18 weeks from referral</td>
+<td style="text-align: left;">Random forest</td>
+<td style="text-align: left;">difference from previous</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: left;">FALSE</td>
+<td style="text-align: right;">6.319</td>
+<td style="text-align: right;">20.141</td>
+<td style="text-align: right;">23.163</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Proportion of incomplete pathways greater than 52 weeks from referral</td>
+<td style="text-align: left;">Random forest</td>
 <td style="text-align: left;">proportion</td>
 <td style="text-align: right;">3</td>
-<td style="text-align: right;">0</td>
+<td style="text-align: right;">2</td>
 <td style="text-align: left;">FALSE</td>
-<td style="text-align: right;">0.002</td>
-<td style="text-align: right;">0.012</td>
-<td style="text-align: right;">0.009</td>
+<td style="text-align: right;">19.046</td>
+<td style="text-align: right;">33.064</td>
+<td style="text-align: right;">51.775</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Proportion of suspected cancer or referral to first definitive treatment that are longer than 62 days wait</td>
+<td style="text-align: left;">Generalised linear model</td>
+<td style="text-align: left;">proportion</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: left;">TRUE</td>
+<td style="text-align: right;">6.626</td>
+<td style="text-align: right;">15.185</td>
+<td style="text-align: right;">12.326</td>
 </tr>
 </tbody>
 </table>
 </div>
+</div>
+</figure>
 </div>
 </div>
 
@@ -1917,10 +2149,27 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
     // clear code selection
     e.clearSelection();
   });
-  function tippyHover(el, contentFn) {
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
     const config = {
       allowHTML: true,
-      content: contentFn,
       maxWidth: 500,
       delay: 100,
       arrow: false,
@@ -1930,8 +2179,17 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
       interactive: true,
       interactiveBorder: 10,
       theme: 'quarto',
-      placement: 'bottom-start'
+      placement: 'bottom-start',
     };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
     window.tippy(el, config); 
   }
   const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
@@ -1943,7 +2201,130 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
       try { href = new URL(href).hash; } catch {}
       const id = href.replace(/^#\/?/, "");
       const note = window.document.getElementById(id);
-      return note.innerHTML;
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
     });
   }
       let selectedAnnoteEl;
@@ -1987,6 +2368,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
             }
             div.style.top = top - 2 + "px";
             div.style.height = height + 4 + "px";
+            div.style.left = 0;
             let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
             if (gutterDiv === null) {
               gutterDiv = window.document.createElement("div");
@@ -2012,6 +2394,32 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
         });
         selectedAnnoteEl = undefined;
       };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
       // Attach click handler to the DT
       const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
       for (const annoteDlNode of annoteDls) {
@@ -2073,7 +2481,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 </script>
 <nav class="page-navigation">
   <div class="nav-page nav-page-previous">
-      <a href="../../outputs/Modelling/modelling_preparation.html" class="pagination-link">
+      <a href="../../outputs/Modelling/modelling_preparation.html" class="pagination-link" aria-label="Data preparation for modelling">
         <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">Data preparation for modelling</span>
       </a>          
   </div>
@@ -2081,6 +2489,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
   </div>
 </nav>
 </div> <!-- /content -->
+
 
 
 

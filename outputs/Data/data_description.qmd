@@ -27,7 +27,7 @@ dc_data <- list.files(
   here::here("data"), 
   full.names = TRUE
   ) |> 
-  (\(x) x[!grepl("configuration-table|modelling_data", x)])() |> 
+  (\(x) x[!grepl("configuration-table", x)])() |> 
   purrr::map_dfr(
     read.csv
   ) |> 
@@ -60,7 +60,8 @@ meta_table <- read.csv(here::here("data/configuration-table.csv"),
                        encoding = "latin1") |> 
   filter(
     status == "include" |
-      domain == "Performance"
+      (domain == "Performance" &
+         status == "modelled")
   ) |> 
   select("domain", "metric") |> 
   arrange(domain, metric)

@@ -28,17 +28,17 @@ This approach attributes the target variable into two groups; "successful" and "
 
 Regularisation was performed to enable selection of the final variables to go into the model. Elastic net regularisation was performed (described in the [hyperparameter tuning](#tuning)) section), and the important variables were identified.
 
-Variable importance was determine by the absolute value of the coefficients for the final model. 
 
 ### Random Forest
 
 This non-parametric approach allows the full dataset to be randomly sub-sampled (with replacement), along with taking random samples of the predictor variables, to build multiple decision trees. These decision trees get aggregated up to provide a model to use on unseen data. 
 
-Important variables are determined by [DN - must finish but the following text is taken from the help pages from `vip::vi_model`]
+A variation of this approach was also tested, where a random forest approach was used in the same way, but to model the change in value of the target variable from the previous year, from the change in values from the predictor variables from the previous year.
 
-> The first measure is computed from permuting out-of-bag (OOB) data: for each tree, the prediction error on the OOB portion of the data is recorded (error rate for classification and MSE for regression). Then the same is done after permuting each predictor variable. The difference between the two are then averaged over all trees in the forest, and normalized by the standard deviation of the differences. If the standard deviation of the differences is equal to 0 for a variable, the division is not done (but the average is almost always equal to 0 in that case).
+### Variable importance
 
-> The second measure is the total decrease in node impurities from splitting on the variable, averaged over all trees. For classification, the node impurity is measured by the Gini index. For regression, it is measured by residual sum of squares.
+Permutation importance was used to provide an indication of which variable influenced the models most. This is performed by shuffling the input data within each column at a time, ten times, and calculating an average of the deterioration in the evaluation metric when assessing the predicted values, using the model, against the observed values in the test dataset.
+
 
 ## Pre-processing
 
@@ -48,11 +48,11 @@ A column for frequency weighting is used for the logistic regression only. This 
 
 ### Lagging data
 
-Models were tested with lagged predictor variables. Both one and two year lagging was testing. Conceptually, this was done to determine whether the value of a predictor value for a previous year has an influence on the target variable for the current year. Where lagged data were included, the lagged values for the target variables were also included. This was done to allow for more accurate predictions to improve model utility for the end user [DN - including the lagged target variable is still up in the air; it significantly improves the model performance but the impact of the other variables that can be influenced by management decisions reduces].  
+Models were tested with lagged predictor variables. Both one and two year lagging was testing. Conceptually, this was done to determine whether the value of a predictor variable for a previous year has an influence on the target variable for the current year. Testing was also performed where a lagged versions of the target variable was included as a predictor variable.
 
 ### Pandemic impact
 
-The impact fo the pandemic was accommodated for by introducing a binary variable which is 0 prior to 2020, and 1 from 2020 onwards.
+The impact of the pandemic was accommodated for by introducing a variable which quantifies the proportion of occupied beds that have a patient with a COVID19 diagnosis in.
 
 ### Splitting dataset
 
@@ -68,7 +68,7 @@ Variables are removed manually in three circumstances:
 
 ### Imputing missing variables
 
-Missing values are imputed for the remaining variables by applying the median value for the variable from the training data. [DN - should I consider different imputation methods for different variables? Other off-the-shelf imputation methods are "bag", "knn", "linear", "lower", "mean", "model", "roll"]
+Missing values were imputed for the remaining variables by applying the mean of the five nearest neighbours values, based on all of the other predictor variables in the training data.
 
 ### Normalisation
 
@@ -92,11 +92,10 @@ The random forest model was also specified with the `randomForest` package. The 
 
 ## Model evaluation
 
-The models are evaluated using the mean absolute error (MAE) [DN - at the moment]. The error metric is on the same scale as the target variable, which provides users with an simpler interpretation. Additionally, the metric is not affected by the size of the values for the target variable, like the percentage error metrics, so it allows comparability between models. Other metrics considered were:
+Regression models have several useful evaluation metrics for assessing model performance. The priority for this study was to select models and explain them using simple metrics that were comparable between models. This meant using an evaluation metric in the same units as the target variables and one that was unaffected by the scale of the target variable.
 
-* R^2^ - this was ruled out for two reasons; firstly, it is quite difficult for the user to interpret how well the model is performing relative to the variable that is being predicted (e.g., it is not in the same units as the target variable). Secondly, it does not optimise on the difference between the observed and the expected, meaning that some ICSs may see greater errors than others. 
-* Root mean squared error (RMSE) - [DN - I think this is still an option]
-* Symmetric mean absolute percentage error (SMAPE) - this was rejected because it made the comparison between models difficult. This occurred because, even though the target variables are all on a scale between 0 and 1, the percentage error value is influence by how large the target variable values are. A smaller SMAPE value therefore could be because the target variable is a smaller value.
-* Mean absolute percentage error (MAPE) - this is rejected for the same reason as SMAPE
+The Mean Absolute Percentage Error (MAPE) metric was selected to evaluate the models because it provides the simplest interpretation and consistency between all the models. 
 
-The MAE is calculated for each of the seven validation sets as described in the [Hyperparameter tuning]{#tuning} section, and an average is taken to calculate the summary validation MAE metric. The optimal model hyperparameters are selected based on this metric and are used to calculate the MAE value for the test dataset. The best model is then identified as the one with the lowest MAE on the test dataset. This identifies the number of years of data in the model, and also whether to include lagged data in the model and if so, the number of years of lagged data to include.
+Having determined the optimal hyperparameters (as described in the model tuning section), the final model was evaluated on the test dataset, from which the MAPE score was calculated. 
+
+The MAPE score for the naïve methods was calculated using the same test dataset as the more sophisticated modelling methods to create a like for like comparison. 
