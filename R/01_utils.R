@@ -2301,6 +2301,13 @@ remove_incomplete_period <- function(data, from, to) {
       group_fields <- "year"
     }
   } else if (from == "quarter") {
+    data <- data |> 
+      mutate(
+        year = case_when(
+          quarter == 4L ~ year + 1,
+          .default = year
+        )
+      )
     if (to == "year") {
       expected_n <- 4
       group_fields <- "year"

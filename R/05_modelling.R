@@ -6,8 +6,9 @@ source("R/04_modelling_utils.R")
 for (target_variable in c(
   "Proportion of incomplete pathways greater than 52 weeks from referral",
   "Proportion of suspected cancer or referral to first definitive treatment that are longer than 62 days wait",
-  "Proportion of A&E attendances greater than 4 hours wait (Type 1 Departments - Major A&E)",
-  "Proportion of attended GP appointments (over 4 weeks wait time)"
+  "Proportion of A&E attendances with greater than 4 hours wait (Type 1 Departments - Major A&E)",
+  "Proportion of attended GP appointments (over 4 weeks wait time)",
+  "Proportion of incomplete pathways greater than 18 weeks from referral"
   )) {
   
   # target_variable <- "Proportion of incomplete pathways greater than 52 weeks from referral"
@@ -16,9 +17,9 @@ for (target_variable in c(
   predict_year <- 2023
   val_type <- "leave_group_out_validation"
   ts_split <- FALSE #set whether to leave the latest year for testing (TRUE) or not (FALSE)
-  evaluation_metric <- "mae"
+  evaluation_metric <- "mape"
   
-  for (model_method in c("logistic_regression", "random_forest")) {
+  for (model_method in c("random_forest", "logistic_regression")) {
     # model_method <- "random_forest"
     
     numerator_remainder <- include_numerator_remainder(model_method)

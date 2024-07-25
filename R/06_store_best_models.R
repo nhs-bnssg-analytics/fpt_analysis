@@ -5,6 +5,10 @@ source("R/04_modelling_utils.R")
 # create subset which contain the best performing models by model type
 best_models <- readRDS("tests/model_testing/model_summary_information.rds") |> 
   filter(
+    `Tuning objective` == "mape"#,
+    # `Number lagged target years` == "0 lagged years"
+  ) |> 
+  filter(
     `Test set value` == min(`Test set value`),
     .by = c(`Target variable`, `Model type`, `Target variable type`)
   ) |> 
@@ -42,6 +46,7 @@ best_models <- readRDS("tests/model_testing/model_summary_information.rds") |>
 # )
 
 best_models <- best_models |>
+  # filter(`Target variable type` == "proportion") |>
   filter(
     `Test set value` == min(`Test set value`),
     .by = `Target variable`
@@ -114,5 +119,5 @@ for (i in seq_len(nrow(best_models))) {
 
 saveRDS(
   final_workflows,
-  "outputs/model_objects/wfs_best_pi.rds"
+  "outputs/model_objects/wfs_best_mape_proportion_pi.rds"
 )

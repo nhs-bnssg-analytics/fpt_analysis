@@ -8,7 +8,7 @@ metrics <- read.csv(
   here::here("data/configuration-table.csv"),
   encoding = "latin1"
 ) |> 
-  filter(status %in% c("", "include")) |> 
+  filter(status %in% c("modelled", "include")) |> 
   select(
     "metric", 
     "numerator_description",
