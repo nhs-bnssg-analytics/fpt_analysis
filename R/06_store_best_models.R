@@ -8,8 +8,7 @@ best_models <- readRDS("tests/model_testing/model_summary_information.rds") |>
     Date = as.Date(Date)
   ) |> 
   filter(
-    `Tuning objective` == "mape",
-    Date == as.Date("2024-08-13")
+    `Tuning objective` == "mape"
   ) |> 
   filter(
     `Test set value` == min(`Test set value`),
