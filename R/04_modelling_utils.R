@@ -583,7 +583,6 @@ load_data <- function(target_variable, value_type = "value", incl_numerator_rema
     select(metric, denominator_description)
   
   
-  
   # ensure full year of data for target variable
   target_data <- dc_data |> 
     filter(

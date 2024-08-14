@@ -425,6 +425,33 @@ bind_rows(
     row.names = FALSE
   )
 
+# total beds
+total_beds <- bind_rows(
+  quarterly_overnight_beds,
+  annual_overnight_beds,
+  quarterly_day_beds,
+  annual_day_beds
+) |> 
+  summarise(
+    across(
+      c(numerator, denominator),
+      sum
+    ),
+    .by = c(
+      year, quarter, frequency, org
+    )
+  ) |> 
+  mutate(
+    value = 100 * numerator / denominator,
+    metric = "Proportion of available beds that are occupied (Total)"
+  )
+
+write.csv(
+  total_beds,
+  "data/total-beds.csv",
+  row.names = FALSE
+)
+
 # Covid hospital activity 
 
 url <- "https://www.england.nhs.uk/statistics/statistical-work-areas/covid-19-hospital-activity/"
@@ -709,14 +736,26 @@ population_60_plus <- read.csv(
 
 quarterly_beds_per_60plus <- c(
   "data/overnight-beds.csv",
-  "data/day-beds.csv"
+  "data/day-beds.csv",
+  "data/total-beds.csv"
 ) |> 
   purrr::map_dfr(
     read.csv
   ) |> 
+  mutate(
+    metric = case_when(
+      metric == "Proportion of available beds that are occupied (Total)" ~ "Total beds per 1,000 60+ yrs (Total)",
+      grepl("General", metric) ~ gsub(
+        "Proportion of available beds that are occupied",
+        "Total beds per 1,000 60+ yrs",
+        metric
+      ),
+      .default = NA_character_
+    )
+  ) |> 
   filter(
-    grepl("General", metric),
-    !is.na(quarter)
+    frequency == "quarterly",
+    !is.na(metric)
   ) |> 
   select(
     "year", "quarter",
@@ -732,11 +771,6 @@ quarterly_beds_per_60plus <- c(
     relationship = "many-to-one"
   ) |> 
   mutate(
-    metric = gsub(
-      "Proportion of available beds that are occupied",
-      "Total beds per 1,000 60+ yrs",
-      metric
-    ),
     value = 1e3 * numerator / denominator
   )
 
