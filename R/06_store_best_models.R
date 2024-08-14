@@ -4,9 +4,12 @@ source("R/04_modelling_utils.R")
 
 # create subset which contain the best performing models by model type
 best_models <- readRDS("tests/model_testing/model_summary_information.rds") |> 
+  mutate(
+    Date = as.Date(Date)
+  ) |> 
   filter(
-    `Tuning objective` == "mape"#,
-    # `Number lagged target years` == "0 lagged years"
+    `Tuning objective` == "mape",
+    Date == as.Date("2024-08-13")
   ) |> 
   filter(
     `Test set value` == min(`Test set value`),
@@ -30,23 +33,7 @@ best_models <- readRDS("tests/model_testing/model_summary_information.rds") |>
     )
   )
 
-# filter just for specific model for the purpose of building the shiny app
-# best_models <- best_models |>
-#   filter(
-#     `Model type` == "logistic_regression"
-#     `Model type` == "random_forest",
-#     `Target variable type` == "proportion"
-#     `Target variable type` == "difference from previous"
-#   )
-
-# best_models <- best_models |> 
-#   filter(
-#   `Model type` == "logistic_regression",
-#   grepl("incomplete", `Target variable`)
-# )
-
 best_models <- best_models |>
-  # filter(`Target variable type` == "proportion") |>
   filter(
     `Test set value` == min(`Test set value`),
     .by = `Target variable`
@@ -119,5 +106,5 @@ for (i in seq_len(nrow(best_models))) {
 
 saveRDS(
   final_workflows,
-  "outputs/model_objects/wfs_best_mape_proportion_pi.rds"
+  "outputs/model_objects/wfs_best_mape_proportion_pi_reduced_inputs.rds"
 )
