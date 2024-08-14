@@ -106,5 +106,5 @@ for (i in seq_len(nrow(best_models))) {
 
 saveRDS(
   final_workflows,
-  "outputs/model_objects/wfs_best_mape_proportion_pi_reduced_inputs.rds"
+  "outputs/model_objects/wfs_best_mape_pi_reduced_inputs.rds"
 )

@@ -442,7 +442,7 @@ total_beds <- bind_rows(
     )
   ) |> 
   mutate(
-    value = numerator / denominator,
+    value = 100 * numerator / denominator,
     metric = "Proportion of available beds that are occupied (Total)"
   )
 
