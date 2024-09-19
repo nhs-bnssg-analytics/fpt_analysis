@@ -277,6 +277,118 @@ unzip_file <- function(zip_filepath, filename_pattern) {
   return(df)
 }
 
+# tidy the qof xlsx files 
+tidy_qof <- function(filepath) {
+  yr <- stringr::str_extract(
+    filepath,
+    pattern = "[0-9]{4}-[0-9]{2}"
+  )
+  
+  sheet_names <- c(
+    # "BP", # don't include, only records measurements against objective
+    # "CS", # cervical screening - not necessary. Not an indicationg of demand
+    # "SMOK", # don't include, only records measurements against objective 
+    "OB", "OST", "PC", "RA", "STIA",
+    "AST","CKD", 
+    "DEP",
+    "CAN", "COPD", "DEM",
+    "DM", "EP", "LD", "MH",
+    "AF", "CHD", "HF", "HYP", "PAD"
+  )
+  
+  qof <- tidyxl::xlsx_cells(
+    filepath
+  ) |> 
+    filter(
+      !is.na(content),
+      sheet %in% sheet_names
+    ) 
+  
+  year_row <- qof |> 
+    filter(
+      character == yr
+    ) |> 
+    distinct(
+      sheet, row
+    ) |> 
+    filter(
+      row == min(row),
+      .by = sheet
+    ) |> 
+    rename(
+      min_row = "row"
+    )
+  
+  # browser()
+  qof <- qof |> 
+    inner_join(
+      year_row,
+      by = join_by(
+        sheet,
+        row >= min_row
+      )
+    )|> 
+    group_by(sheet) |> 
+    behead(
+      direction = "up-left",
+      name = "year"
+    ) |>
+    behead(
+      direction = "left",
+      name = "org"
+    ) |>
+    behead(
+      direction = "left",
+      name = "org_ons"
+    ) |>
+    behead(
+      direction = "left",
+      name = "org_name"
+    ) |> 
+    behead(
+      direction = "up",
+      name = "header"
+    ) |> 
+    mutate(
+      header = case_when(
+        sheet %in% c("DEP", "EP", "CKD", "OB") & 
+          header == "List size \r\naged 18+" ~ "List size",
+        sheet %in% c("DM") & 
+          header == "List size \r\naged 17+" ~ "List size",
+        sheet %in% c("RA") & 
+          header == "List size \r\naged 16+" ~ "List size",
+        sheet %in% c("OST") & 
+          header == "List size \r\naged 50+" ~ "List size",
+        sheet %in% c("AST") & 
+          header == "List size \r\naged 6+" ~ "List size",
+        sheet %in% c("DEP", "EP", "DM") & 
+          header == "Newly diagnosed" ~ "Register",
+        .default = header
+      )
+    ) |> 
+    filter(
+      year == yr,
+      header %in% c(
+        "List size",
+        "Register"
+        )
+    ) |>
+    select(
+      "sheet", "org", "numeric", "year", "header"
+    ) |>
+    pivot_wider(
+      names_from = header,
+      values_from = numeric
+    ) |>
+    rename(
+      denominator = "List size",
+      numerator = "Register"
+    )
+
+  
+  return(qof)
+}
+
 # reformat no criteria to reside data
 tidy_nctr_file <- function(filepath) {
   
