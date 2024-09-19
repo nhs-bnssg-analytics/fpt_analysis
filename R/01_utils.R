@@ -332,15 +332,48 @@ tidy_qof <- function(filepath) {
     behead(
       direction = "up-left",
       name = "year"
-    ) |>
+    )
+  
+  if (yr %in% c("2018-19", "2019-20", "2020-21")) {
+    qof <- qof |> 
+      behead(
+        direction = "up",
+        name = "junk"
+      )
+    
+  }
+  
+  if (yr %in% c("2016-17", "2017-18", "2018-19")) {
+    qof <- qof |> 
+      behead(
+        direction = "left",
+        name = "region_code"
+      ) |> 
+      behead(
+        direction = "left",
+        name = "region_code_ons"
+      ) |> 
+      behead(
+        direction = "left",
+        name = "region_name"
+      )
+  }
+  
+  qof <- qof |> 
     behead(
       direction = "left",
       name = "org"
-    ) |>
-    behead(
-      direction = "left",
-      name = "org_ons"
-    ) |>
+    ) 
+  
+  if (!(yr %in% c("2016-17"))) {
+    qof <- qof |>
+      behead(
+        direction = "left",
+        name = "org_ons"
+      )
+  }
+   
+  qof <- qof |>
     behead(
       direction = "left",
       name = "org_name"
@@ -350,32 +383,63 @@ tidy_qof <- function(filepath) {
       name = "header"
     ) |> 
     mutate(
+      header = gsub("\r\n", "", header),
+      header = gsub("ages", "aged", header),
+      header = gsub("List Size", "List size", header),
       header = case_when(
         sheet %in% c("DEP", "EP", "CKD", "OB") & 
-          header == "List size \r\naged 18+" ~ "List size",
+          header == "List size aged 18+" ~ "List size",
         sheet %in% c("DM") & 
-          header == "List size \r\naged 17+" ~ "List size",
+          header == "List size aged 17+" ~ "List size",
         sheet %in% c("RA") & 
-          header == "List size \r\naged 16+" ~ "List size",
+          header == "List size aged 16+" ~ "List size",
         sheet %in% c("OST") & 
-          header == "List size \r\naged 50+" ~ "List size",
+          header == "List size aged 50+" ~ "List size",
         sheet %in% c("AST") & 
-          header == "List size \r\naged 6+" ~ "List size",
+          header == "List size aged 6+" ~ "List size",
         sheet %in% c("DEP", "EP", "DM") & 
           header == "Newly diagnosed" ~ "Register",
         .default = header
       )
-    ) |> 
-    filter(
-      year == yr,
-      header %in% c(
-        "List size",
-        "Register"
+    ) 
+  
+  if (yr == "2016-17") {
+    qof <- qof |> 
+      filter(
+        year %in% c("2015-16", "2016-17"),
+        header %in% c(
+          "List size",
+          "Register"
         )
-    ) |>
+      )
+  } else {
+    qof <- qof |> 
+      filter(
+        year == yr,
+        header %in% c(
+          "List size",
+          "Register"
+        )
+      )
+  }
+  
+  qof <- qof |>
     select(
       "sheet", "org", "numeric", "year", "header"
-    ) |>
+    ) |> 
+    ungroup()
+  
+  if (yr %in% c("2016-17")) {
+    qof <- qof |> 
+      filter(
+        numeric == max(numeric),
+        .by = c(
+          sheet, org, header, year
+        )
+      )
+  }
+  
+  qof <- qof |> 
     pivot_wider(
       names_from = header,
       values_from = numeric
@@ -383,6 +447,11 @@ tidy_qof <- function(filepath) {
     rename(
       denominator = "List size",
       numerator = "Register"
+    ) |> 
+    mutate(
+      year = as.integer(
+        substr(year, 1, 4)
+      )
     )
 
   
