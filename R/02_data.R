@@ -120,72 +120,13 @@ qof <- fls |>
   )
 
 
-#####
-url <- "https://digital.nhs.uk/data-and-information/publications/statistical/quality-and-outcomes-framework-achievement-prevalence-and-exceptions-data"
-
-
-xl_files <- obtain_links(url, include_link_text = TRUE) |>
-  (\(x) x[grepl("[0-9]{4}-[0-9]{2}$|\\[PAS\\]$", names(x))])() |>
-  (\(x) paste0("https://digital.nhs.uk", x))() |>
-  purrr::map(
-    ~ obtain_links(.x, include_link_text = TRUE)
-  ) |>
-  purrr::map(
-    .f = \(x) x[grepl("xlsx$|xls$|zip$", x)]
-  ) |>
-  unlist() |>
-  (\(x) x[grepl("icb|stp", x, ignore.case = TRUE)])() |>
-  (\(x) x[grepl("Prevalence", names(x))])() |>
-  (\(x) x[!grepl("Sub ICB", names(x))])()
-
-files <- purrr::map2_chr(
-  xl_files,
-  names(xl_files),
-  ~ check_and_download(
-    url = .x,
-    filepath = paste0(
-      "data-raw/QOF/", 
-      gsub(":.*$", "", .y),
-      ".",
-      tools::file_ext(.x)
-      )
-  )
-)
-# files <- list.files("data-raw/QOF", full.names = T)
-# debugonce(tidy_qof)
-tidied_qof <- files |>
-  purrr::map_df(
-    tidy_qof
-  )
-summary(tidied_qof)
-
-sub_icb_obesity <- fingertipsR::fingertips_data(
-  IndicatorID = 92588,
-  AreaTypeID = 66,
-  ParentAreaTypeID = 221
-) |> 
-  filter(AreaType == "ICB sub-locations") |> 
-  summarise(
-    across(
-      c(Count, Denominator),
-      sum
-    ),
-    .by = c(Timeperiod, IndicatorName, IndicatorID, ParentCode, ParentName)
-  ) |> 
-  mutate(
-    Value = 100 * (Count / Denominator),
-    ParentCode = gsub("n", "", ParentCode)
-  ) |> 
-  rename(
-    AreaCode = ParentCode,
-    AreaName = ParentName
-  )
-
+# risk factors from Fingertips
 risk_factors <- fingertipsR::indicators() |> 
   filter(
     grepl("[Rr]isk", DomainName),
     grepl("[Ff]actor", DomainName),
-    !grepl("Deprivation score \\(IMD 2019\\)", IndicatorName)
+    !grepl("Deprivation score \\(IMD 2019\\)", IndicatorName),
+    !grepl("QOF", IndicatorName)
   ) |> 
   pull(
     IndicatorID
@@ -212,14 +153,6 @@ risk_factors <- fingertipsR::indicators() |>
       Sex,
       Age
     )
-  ) |> 
-  # remove obesity prevalence as it is missing some areas that can be replaced
-  # with the sub-icb aggregated values
-  filter(
-    IndicatorID != 92588
-  ) |> 
-  bind_rows(
-    sub_icb_obesity
   ) |> 
   select(
     year = "Timeperiod",
