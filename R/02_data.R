@@ -53,6 +53,111 @@ bind_rows(
     )
 
 # risk factors
+# QOF
+
+practice_lkp <- practice_to_icb()
+
+url <- "https://digital.nhs.uk/data-and-information/publications/statistical/quality-and-outcomes-framework-achievement-prevalence-and-exceptions-data"
+
+zip_files <- obtain_links(url, include_link_text = TRUE) |> 
+  (\(x) x[grepl("[0-9]{4}-[0-9]{2}$|\\[PAS\\]$", names(x))])() |>
+  (\(x) paste0("https://digital.nhs.uk", x))() |>
+  purrr::map(
+    ~ obtain_links(.x, include_link_text = TRUE)
+  ) |>
+  purrr::map(
+    .f = \(x) x[grepl("zip$", x)]
+  ) |> 
+  unlist() |> 
+  (\(x) x[grepl("Raw", names(x))])() |> 
+  (\(x) x[!grepl("1415", x)])() |> 
+  # tidy up the names of the files so they are in the format "QOF yyyy-yy"
+  (\(x) setNames(x, nm = gsub(":.*$", "", names(x))))()
+
+fls <- purrr::map(
+  zip_files,
+  ~ download_unzip_files(
+    .x, 
+    directory = "data-raw/QOF",
+    zip_file_pattern = "PREVALENCE",
+    add_filename_prefix = TRUE
+  )
+) |> 
+  unlist() |> 
+  (\(x) setNames(
+    file.rename(
+      from = x,
+      to = paste0(dirname(x), "/", names(x), ".csv")
+    ),
+    nm = paste0(dirname(x), "/", names(x), ".csv")
+  ))() |> 
+  enframe() |> 
+  pull(name)
+
+
+
+qof <- fls |> 
+  purrr::map(
+    tidy_qof
+  ) |> 
+  list_rbind() |> 
+  left_join(
+    practice_lkp,
+    by = join_by(
+      PRACTICE_CODE
+    )
+  ) |> 
+  assign_org_to_missing_practices() |> 
+  summarise(
+    across(
+      c(numerator, denominator),
+      sum
+    ),
+    .by = c(year, org, metric, frequency)
+  ) |> 
+  mutate(
+    value = 100 * numerator / denominator
+  )
+
+
+#####
+url <- "https://digital.nhs.uk/data-and-information/publications/statistical/quality-and-outcomes-framework-achievement-prevalence-and-exceptions-data"
+
+
+xl_files <- obtain_links(url, include_link_text = TRUE) |>
+  (\(x) x[grepl("[0-9]{4}-[0-9]{2}$|\\[PAS\\]$", names(x))])() |>
+  (\(x) paste0("https://digital.nhs.uk", x))() |>
+  purrr::map(
+    ~ obtain_links(.x, include_link_text = TRUE)
+  ) |>
+  purrr::map(
+    .f = \(x) x[grepl("xlsx$|xls$|zip$", x)]
+  ) |>
+  unlist() |>
+  (\(x) x[grepl("icb|stp", x, ignore.case = TRUE)])() |>
+  (\(x) x[grepl("Prevalence", names(x))])() |>
+  (\(x) x[!grepl("Sub ICB", names(x))])()
+
+files <- purrr::map2_chr(
+  xl_files,
+  names(xl_files),
+  ~ check_and_download(
+    url = .x,
+    filepath = paste0(
+      "data-raw/QOF/", 
+      gsub(":.*$", "", .y),
+      ".",
+      tools::file_ext(.x)
+      )
+  )
+)
+# files <- list.files("data-raw/QOF", full.names = T)
+# debugonce(tidy_qof)
+tidied_qof <- files |>
+  purrr::map_df(
+    tidy_qof
+  )
+summary(tidied_qof)
 
 sub_icb_obesity <- fingertipsR::fingertips_data(
   IndicatorID = 92588,

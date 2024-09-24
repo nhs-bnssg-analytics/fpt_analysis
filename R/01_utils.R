@@ -119,7 +119,14 @@ rename_hospital_beds_xls <- function(filepath) {
   }
 }
 
-download_unzip_files <- function(zip_url, directory, zip_file_pattern) {
+#' provided with a url of a zip file, a directory to unzip it to, and a pattern
+#' to identify the contents of the file to unzip, this function will unzip the
+#' files determined by the specified pattern from the zip file obtained from the
+#' url. #' @param add_filename_prefix logical; if true, the unzipped file(s)
+#' will be prefixed with the .zip file filename. This is useful when there are
+#' different zip files for different periods, but the contents all have the same
+#' file name, and so would naturally write over one another
+download_unzip_files <- function(zip_url, directory, zip_file_pattern, add_filename_prefix = FALSE) {
   if (!isTRUE(file.info(directory)$isdir)) 
     dir.create(directory, recursive = TRUE)
   
@@ -145,17 +152,36 @@ download_unzip_files <- function(zip_url, directory, zip_file_pattern) {
   
   
   if (length(zipped_files) > 0) {
-    zipped_files <- unzip(
+    extracted_files <- unzip(
       zipfile = temp,
       files = zipped_files,
       exdir = directory
     )
+    if (isTRUE(add_filename_prefix)) {
+      zip_filename <- gsub("\\.zip", "", basename(zip_url))
+      
+      new_file_names <- paste0(
+        dirname(extracted_files),
+        "/",
+        zip_filename,
+        "_",
+        basename(extracted_files)
+      )
+      rename_files <- file.rename(
+        from = extracted_files,
+        to = new_file_names
+      )
+      
+      extracted_files <- new_file_names
+    }
+  } else {
+    extracted_files <- zipped_files
   }
   
   
   unlink(temp)
   
-  return(zipped_files)
+  return(extracted_files)
 }
 
 download_unzip_gp_wait_times <- function(zip_url) {
@@ -284,178 +310,82 @@ tidy_qof <- function(filepath) {
     pattern = "[0-9]{4}-[0-9]{2}"
   )
   
-  sheet_names <- c(
-    # "BP", # don't include, only records measurements against objective
-    # "CS", # cervical screening - not necessary. Not an indicationg of demand
-    # "SMOK", # don't include, only records measurements against objective 
-    "OB", "OST", "PC", "RA", "STIA",
-    "AST","CKD", 
-    "DEP",
-    "CAN", "COPD", "DEM",
-    "DM", "EP", "LD", "MH",
-    "AF", "CHD", "HF", "HYP", "PAD"
-  )
+  rename_csv_lkp_function <- function(df) {
+    df <- df |> 
+      rename(
+        metric = any_of(c("INDICATOR_GROUP_CODE", "GROUP_CODE")),
+        numerator = "REGISTER",
+        denominator = any_of(c("PRACTICE_LIST_SIZE", "PATIENT_LIST_SIZE"))
+        
+      )
+  }
   
-  qof <- tidyxl::xlsx_cells(
-    filepath
-  ) |> 
-    filter(
-      !is.na(content),
-      sheet %in% sheet_names
-    ) 
-  
-  year_row <- qof |> 
-    filter(
-      character == yr
-    ) |> 
-    distinct(
-      sheet, row
-    ) |> 
-    filter(
-      row == min(row),
-      .by = sheet
-    ) |> 
+  qof <- filepath |> 
+    read.csv() |> 
     rename(
-      min_row = "row"
-    )
-  
-  # browser()
-  qof <- qof |> 
-    inner_join(
-      year_row,
-      by = join_by(
-        sheet,
-        row >= min_row
-      )
-    )|> 
-    group_by(sheet) |> 
-    behead(
-      direction = "up-left",
-      name = "year"
-    )
-  
-  if (yr %in% c("2018-19", "2019-20", "2020-21")) {
-    qof <- qof |> 
-      behead(
-        direction = "up",
-        name = "junk"
-      )
-    
-  }
-  
-  if (yr %in% c("2016-17", "2017-18", "2018-19")) {
-    qof <- qof |> 
-      behead(
-        direction = "left",
-        name = "region_code"
-      ) |> 
-      behead(
-        direction = "left",
-        name = "region_code_ons"
-      ) |> 
-      behead(
-        direction = "left",
-        name = "region_name"
-      )
-  }
-  
-  qof <- qof |> 
-    behead(
-      direction = "left",
-      name = "org"
-    ) 
-  
-  if (!(yr %in% c("2016-17"))) {
-    qof <- qof |>
-      behead(
-        direction = "left",
-        name = "org_ons"
-      )
-  }
-   
-  qof <- qof |>
-    behead(
-      direction = "left",
-      name = "org_name"
-    ) |> 
-    behead(
-      direction = "up",
-      name = "header"
-    ) |> 
-    mutate(
-      header = gsub("\r\n", "", header),
-      header = gsub("ages", "aged", header),
-      header = gsub("List Size", "List size", header),
-      header = case_when(
-        sheet %in% c("DEP", "EP", "CKD", "OB") & 
-          header == "List size aged 18+" ~ "List size",
-        sheet %in% c("DM") & 
-          header == "List size aged 17+" ~ "List size",
-        sheet %in% c("RA") & 
-          header == "List size aged 16+" ~ "List size",
-        sheet %in% c("OST") & 
-          header == "List size aged 50+" ~ "List size",
-        sheet %in% c("AST") & 
-          header == "List size aged 6+" ~ "List size",
-        sheet %in% c("DEP", "EP", "DM") & 
-          header == "Newly diagnosed" ~ "Register",
-        .default = header
-      )
-    ) 
-  
-  if (yr == "2016-17") {
-    qof <- qof |> 
-      filter(
-        year %in% c("2015-16", "2016-17"),
-        header %in% c(
-          "List size",
-          "Register"
-        )
-      )
-  } else {
-    qof <- qof |> 
-      filter(
-        year == yr,
-        header %in% c(
-          "List size",
-          "Register"
-        )
-      )
-  }
-  
-  qof <- qof |>
-    select(
-      "sheet", "org", "numeric", "year", "header"
-    ) |> 
-    ungroup()
-  
-  if (yr %in% c("2016-17")) {
-    qof <- qof |> 
-      filter(
-        numeric == max(numeric),
-        .by = c(
-          sheet, org, header, year
-        )
-      )
-  }
-  
-  qof <- qof |> 
-    pivot_wider(
-      names_from = header,
-      values_from = numeric
-    ) |>
-    rename(
-      denominator = "List size",
-      numerator = "Register"
-    ) |> 
+      metric = any_of(c("INDICATOR_GROUP_CODE", "GROUP_CODE")),
+      numerator = "REGISTER",
+      denominator = any_of(c("PRACTICE_LIST_SIZE", "PATIENT_LIST_SIZE"))
+    )|>
     mutate(
       year = as.integer(
-        substr(year, 1, 4)
-      )
+        substr(yr, 1, 4)
+      ),
+      metric = case_when(
+        metric == "AF" ~ "Atrial fibrillation: QOF prevalence (all ages)",
+        metric == "DEP" ~ "Depression: QOF prevalence (18+ yrs)",
+        metric == "LD" ~ "Learning disability: QOF prevalence (all ages)",
+        metric == "MH" ~ "Mental Health: QOF prevalence (all ages)",
+        metric == "OB" ~ "Obesity: QOF prevalence (18+ yrs)",
+        metric == "SMOK" ~ "Smoking: QOF prevalence (15+ yrs)",
+        metric == "HYP" ~ "Hypertension: QOF prevalence (all ages)",
+        metric == "AST" ~ "Asthma: QOF prevalence (all ages)",
+        metric == "CAN" ~ "Cancer: QOF prevalence (all ages)",
+        metric == "CHD" ~ "CHD: QOF prevalence (all ages)",
+        metric == "CKD" ~ "CKD: QOF prevalence (18+ yrs)",
+        metric == "COPD" ~ "COPD: QOF prevalence (all ages)",
+        metric == "DEM" ~ "Dementia: QOF prevalence (all ages)",
+        metric == "DM" ~ "Diabetes mellitus: QOF prevalence (17+ yrs)",
+        metric == "EP" ~ "Epilepsy: QOF prevalence (18+ yrs)",
+        metric == "HF" ~ "Heart failure: QOF prevalence (all ages)",
+        metric == "OST" ~ "Osteoporosis: QOF prevalence (50+ yrs)",
+        metric == "PAD" ~ "Peripheral arterial disease: QOF prevalence (all ages)",
+        metric == "PC" ~ "Palliative care: QOF prevalence (all ages)",
+        metric == "RA" ~ "Rheumatoid arthritis: QOF prevalence (16+ yrs)",
+        metric == "STIA" ~ "Stroke and transient ischaemic attack: QOF prevalence (all ages)",
+        .default = NA_character_
+      ),
+      frequency = "annual financial",
+      .keep = "unused"
+    ) |> 
+    filter(
+      !is.na(metric),
+      !is.na(numerator)
     )
-
+  
+  # asthma denominator changes from "all ages" to "6plus" in qof from 2020. Here
+  # we obtain the total list size for each practice and replace the asthma
+  # denominators with that to ensure the asthma metric is a consistent time
+  # series
+  
+  total_list_size <- qof |> 
+    filter(PATIENT_LIST_TYPE == "TOTAL") |> 
+    distinct(
+      year, PRACTICE_CODE, denominator
+    ) |> 
+    mutate(
+      metric = "Asthma: QOF prevalence (all ages)",
+      PATIENT_LIST_TYPE = "TOTAL"
+    )
+  
+  qof <- qof |> 
+    rows_update(
+      total_list_size,
+      by = c("year", "metric", "PRACTICE_CODE")
+    )
   
   return(qof)
+  
 }
 
 # reformat no criteria to reside data
@@ -2100,7 +2030,7 @@ year_from_financial_year <- function(fyear) {
 #'   "E%" values that need converting to "A%" values
 #' @param area_type string; one of "stp", "icb" or "ccg". The area type that the
 #'   E values refer to (that need converting)
-#' @param latest_codes_used logical; data that is publised monthly as it is
+#' @param latest_codes_used logical; data that is published monthly as it is
 #'   created will use the latest codes at the time of publishing, whereas some
 #'   datasets that are published retrospectively, will use up to date area
 #'   codes. This argument should be TRUE in the latter example (only works for
@@ -2278,7 +2208,7 @@ convert_ons_to_health_code <- function(data, area_type = "stp", latest_codes_use
         summarise(
           across(
             c(numerator, denominator),
-            function(x) x * population
+            function(x) sum(x * population)
           ),
           .by = c(
             year, ICB22CDH, metric, frequency, any_of(retain_fields)
@@ -2730,6 +2660,161 @@ quarterly_to_annual_sum <- function(data, year_type, multiplier = 1) {
 }
 
 # lookups -----------------------------------------------------------------
+
+practice_to_icb <- function() {
+  
+  lkp_filepath <- "data-raw/Lookups/practice_to_ics.csv"
+  if (!file.exists(lkp_filepath)) {
+    
+    url <- "https://digital.nhs.uk/data-and-information/publications/statistical/quality-and-outcomes-framework-achievement-prevalence-and-exceptions-data"
+    
+    zip_files <- obtain_links(url, include_link_text = TRUE) |> 
+      (\(x) x[grepl("[0-9]{4}-[0-9]{2}$|\\[PAS\\]$", names(x))])() |>
+      (\(x) paste0("https://digital.nhs.uk", x))() |>
+      purrr::map(
+        ~ obtain_links(.x, include_link_text = TRUE)
+      ) |>
+      purrr::map(
+        .f = \(x) x[grepl("zip$", x)]
+      ) |> 
+      unlist() |> 
+      (\(x) x[grepl("Raw", names(x))])() |> 
+      (\(x) x[!grepl("1415", x)])()
+    
+    temp_save_folder <- "data-raw/junk"
+    
+    fls <- purrr::map(
+      zip_files,
+      ~ download_unzip_files(
+        .x, 
+        directory = temp_save_folder,
+        zip_file_pattern = "GEOGRAPHIES|ORGANISATION_REFERENCE"
+      )
+    ) |> 
+      purrr::map(
+        \(x) if (any(grepl("GEOGRAPHIES", x))) {
+          x[grepl("GEOGRAPHIES", x)]
+        } else if (any(grepl("ORGANISATION_REFERENCE", x))) {
+          x[grepl("ORGANISATION_REFERENCE", x)]
+        } else {
+          NULL
+        }) 
+    
+    rename_csv_lkp_function <- function(df) {
+      df <- df |> 
+        rename(
+          SUB_ICB_ODS_CODE = any_of(c("SUB_ICB_LOC_ODS_CODE", "CCG_ODS_CODE", "CCG_CODE"))
+          
+        ) |> 
+        select(
+          "PRACTICE_CODE",
+          org = "SUB_ICB_ODS_CODE"
+        )
+    }
+    
+    lkp <- fls |> 
+      purrr::map(
+        read.csv
+      ) |> 
+      purrr::map(
+        rename_csv_lkp_function
+      ) |> 
+      purrr::list_rbind(
+        names_to = "year"
+      ) |> 
+      mutate(
+        year = stringr::str_extract(year, "[0-9]{4}"),
+        year = as.numeric(year)
+      ) |> 
+      update_to_latest_ics_codes()
+    
+    # identify practices that don't have an org code
+    missing_practices <- lkp |> 
+      filter(is.na(org)) |> 
+      pull(PRACTICE_CODE) |> 
+      unique()
+    
+    # some of the practices with a missign ICB code have an icb code for a later
+    # year, so create a lookup table from the existing dataset
+    existing_data_lkp <- lkp |> 
+      filter(
+        PRACTICE_CODE %in% missing_practices,
+        !is.na(org)
+      ) |> 
+      distinct(
+        PRACTICE_CODE,
+        org
+      )
+    
+    # update the existing table with the ICB codes we know from later years
+    lkp <- lkp |> 
+      rows_update(
+        existing_data_lkp,
+        by = "PRACTICE_CODE"
+      )
+    
+    # fill in the NA values in the org field
+    lkp <- assign_org_to_missing_practices(lkp)
+    
+    # finally, some practices change their ics depending on the year
+    # (legitimately). Here we want to map all practices to the latest geography,
+    # so we contruct the final table with the latest year of information for
+    # each practice
+    lkp <- lkp |> 
+      arrange(
+        PRACTICE_CODE,
+        desc(year)
+      ) |> 
+      slice(1, .by = PRACTICE_CODE) |> 
+      select(PRACTICE_CODE, org)
+    
+    
+    write.csv(
+      lkp,
+      lkp_filepath,
+      row.names = FALSE
+    )
+    
+    # remove the temporaray folder used to extract the lookup files
+    unlink(
+      temp_save_folder,
+      recursive = TRUE
+    )
+    
+  } else {
+    lkp <- read.csv(lkp_filepath)
+  }
+  return(lkp)
+}
+
+#' identifies NAs in the org column of data object. Then uses PRACTICE_CODE
+#' field along with the attach_icb_to_org to assign a new org to the Practice,
+#' before replacing it in the original table and returning that updated object
+assign_org_to_missing_practices <- function(data) {
+  # identify the practices that are still missing a code, and use the
+  # attach_icb_to_org function to assign them an icb code
+  missing_practices_lkp <- data |> 
+    filter(is.na(org)) |> 
+    pull(PRACTICE_CODE) |> 
+    unique() |> 
+    attach_icb_to_org() |> 
+    distinct() |> 
+    rename(
+      PRACTICE_CODE = "health_org_code",
+      org = "icb_code"
+    )
+  
+  
+  # update the existing table with new codes
+  data <- data |> 
+    rows_update(
+      missing_practices_lkp,
+      by = "PRACTICE_CODE"
+    )
+  
+  return(data)
+}
+
 # scrapes table from NHS Shared Business services. 
 ccg_to_icb <- function() {
   url <- "https://www.sbs.nhs.uk/ccg-icb-list"
@@ -2747,6 +2832,11 @@ ccg_to_icb <- function() {
   return(ccg_to_icb)
 }
 
+#' function requires a dataset with an column called org (which are ODS CCG
+#' codes. It identifies the the codes that are missing from the list of ccgs
+#' that make up the final ccgs before transitioning to sub-icbs. The successor
+#' code for the missing ccgs is then obtained and used to determine the ICS code
+#' using the health_org_lookup function
 update_to_latest_ics_codes <- function(data) {
   latest_sub_icb_codes <- ccg_to_icb() |> 
     pull(ccg_code)
@@ -2968,16 +3058,16 @@ org_to_icb_postcode_lookup_method <- function(health_org_code) {
   return(icb_code)
 }
 
-#' @description provides table of health org and ICB code. 
+#' @description provides table of health org and ICB code.
 #' @details ICB codes are identified from the Shared Business services website.
-#' Then, any successor organisations to the codes provided are identified from the ODS API. 
-#' Sometimes an organisation can be divided into multiple organisations, 
-#' so these are all included. Then the ODS API is used to identify active 
-#' "relative" organisations - and these organisations are cross checked with the 
-#' ICB codes previously obtained. Finally, where ICBs are not yet identified, 
-#' the post code for the organisation is retrieve from the ODS API, this is 
-#' used to identify the LSOA using the Postcodes.io API, which is then used to 
-#' identify ICB22 using the Open Geography Portal.
+#'   Then, any successor organisations to the codes provided are identified from
+#'   the ODS API. Sometimes an organisation can be divided into multiple
+#'   organisations, so these are all included. Then the ODS API is used to
+#'   identify active "relative" organisations - and these organisations are
+#'   cross checked with the ICB codes previously obtained. Finally, where ICBs
+#'   are not yet identified, the post code for the organisation is retrieve from
+#'   the ODS API, this is used to identify the LSOA using the Postcodes.io API,
+#'   which is then used to identify ICB22 using the Open Geography Portal.
 attach_icb_to_org <- function(health_org) {
   
   icb_codes <- ccg_to_icb() |> 

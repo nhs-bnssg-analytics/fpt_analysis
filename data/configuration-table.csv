@@ -189,3 +189,17 @@ Risk factors,Emergency hospital admissions due to falls in people aged 65 and ov
 Risk factors,"Fuel poverty (low income, low energy efficiency methodology)",Demand,,,,
 Risk factors,Stillbirth rate,Demand,,,,
 Risk factors,"Violent crime - violence offences per 1,000 population",Demand,,,,include
+Risk factors,Asthma: QOF prevalence (all ages),Demand,"The number of patients with asthma, as recorded on practice disease registers (QOF)",Practice list size for patients aged 6 yrs and over.,ICS,include
+Risk factors,Cancer: QOF prevalence (all ages),Demand,"The number of patients with cancer, as recorded on practice disease registers (QOF)",Total practice list size.,ICS,include
+Risk factors,CHD: QOF prevalence (all ages),Demand,"The number of patients with coronorary heart disease, as recorded on practice disease registers (QOF)",Total practice list size.,ICS,include
+Risk factors,CKD: QOF prevalence (18+ yrs),Demand,"The number of patients with chronic kidney disease, as recorded on practice disease registers (QOF)",Practice list size for patients aged 18 yrs and over.,ICS,include
+Risk factors,COPD: QOF prevalence (all ages),Demand,"The number of patients with chronic obstructive pulmonary disease, as recorded on practice disease registers (QOF)",Total practice list size.,ICS,include
+Risk factors,Dementia: QOF prevalence (all ages),Demand,"The number of patients with dementia, as recorded on practice disease registers (QOF)",Total practice list size.,ICS,include
+Risk factors,Diabetes mellitus: QOF prevalence (17+ yrs),Demand,"The number of patients with diabetes mellitus, as recorded on practice disease registers (QOF)",Practice list size for patients aged 17 yrs and over.,ICS,include
+Risk factors,Epilepsy: QOF prevalence (18+ yrs),Demand,"The number of patients with epilepsy, as recorded on practice disease registers (QOF)",Practice list size for patients aged 18 yrs and over.,ICS,include
+Risk factors,Heart failure: QOF prevalence (all ages),Demand,"The number of patients with heart failure, as recorded on practice disease registers (QOF)",Total practice list size.,ICS,include
+Risk factors,Osteoporosis: QOF prevalence (50+ yrs),Demand,"The number of patients with osteoporosis, as recorded on practice disease registers (QOF)",Practice list size for patients aged 50 yrs and over.,ICS,include
+Risk factors,Peripheral arterial disease: QOF prevalence (all ages),Demand,"The number of patients with peripheral arterial disease, as recorded on practice disease registers (QOF)",Total practice list size.,ICS,include
+Risk factors,Palliative care: QOF prevalence (all ages),Demand,The number of patients recorded as palliative care on practice disease registers (QOF),Total practice list size.,ICS,include
+Risk factors,Rheumatoid arthritis: QOF prevalence (16+ yrs),Demand,"The number of patients with rrheumatoid arthritis, as recorded on practice disease registers (QOF)",Practice list size for patients aged 16 yrs and over.,ICS,include
+Risk factors,Stroke and transient ischaemic attack: QOF prevalence (all ages),Demand,"The number of patients registered with stroke and transient ischaemic attack, as recorded on practice disease registers (QOF)",Total practice list size.,ICS,include
