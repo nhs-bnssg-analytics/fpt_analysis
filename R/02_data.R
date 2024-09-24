@@ -1484,7 +1484,7 @@ write.csv(
 url <- "https://www.england.nhs.uk/publication/nhs-mental-health-dashboard/"
 
 excel_link <- obtain_links(url) |> 
-  (\(x) x[grepl("xlsm$", x)])() |> 
+  (\(x) x[grepl("xlsm$|xlsb$", x)])() |> 
   as.character() |> 
   head(1)
 

@@ -1216,26 +1216,121 @@ tidy_admissions <- function(filepath) {
 
 tidy_mh_file <- function(filename) {
   
-  sh_nms <- excel_sheets(filename)
+  if (grepl("xlsm$", filename)) {
+    sh_nms <- excel_sheets(filename)
+    
+    sheet_data <- map(
+      sh_nms,
+      ~ readxl::read_excel(
+        filename,
+        sheet = .x,
+      )
+    ) |> 
+      set_names(
+        sh_nms
+      )
+  } else {
+    read_xlsb_sheets <- function(sheet_index, filename) {
+      tryCatch(
+        {
+          read_xlsb(
+            filename,
+            sheet = sheet_index,
+            range = "A1:BZ500",
+            col_names = FALSE
+          )
+        },
+        error = function(cond) {
+          NA
+        }
+      )
+    }
+    
+    get_unique_id <- function(data) {
+      unique_id1 <- data |> 
+        select(1) |> 
+        slice(2)
+      
+      unique_id2 <- data |> 
+        select(2) |> 
+        slice(2)
+      
+      unique_id <- paste(unique_id1, unique_id2)
+      
+      if (grepl("Unique ID:", unique_id))
+        unique_id <- trimws(gsub("Unique ID:", "", unique_id))
+      return(unique_id)
+    }
+    
+    get_name <- function(data) {
+      name1 <- data |> 
+        select(1) |> 
+        slice(1)
+      
+      name2 <- data |> 
+        select(2) |> 
+        slice(1)
+      
+      name <- paste(name1, name2)
+      
+      if (grepl("Title:", name)) {
+        name <- trimws(gsub("Title:", "", name))
+        if (name == "") {
+          name <- "drop"
+        } 
+        
+      } else {
+        name <- "drop"
+      }
+      return(name)
+    }
+    
+    sheet_data <- list()
+    i <- 1
+    continue <- TRUE
+    while (isTRUE(continue)) {
+      df <- read_xlsb_sheets(i, filename)
+      # browser()
+      if (class(df) != "data.frame") {
+        continue <- FALSE
+      } else {
+        new_name <- get_name(df)
+        if (new_name != "drop") {
+          new_name <- setNames(
+            "column.1",
+            nm = new_name
+          )
+          uid <- get_unique_id(df)
+          
+          # if the unique ID is documented incorrectly in the spreadsheet; add
+          # an x on the end
+          if (uid %in% names(sheet_data)) {
+            while(uid %in% names(sheet_data)) {
+              uid <- paste0(uid, "x")
+            }
+          }
+          df <- df |> 
+            rename(
+              all_of(new_name)
+            )
+          sheet_data[[uid]] <- df
+        }
+        i <- i + 1
+      }
+      
+    }
+    
+  }
   
-  sheet_data <- map(
-    sh_nms,
-    ~ readxl::read_excel(
-      filename,
-      sheet = .x,
-    )
-  ) |> 
-    set_names(
-      sh_nms
-    )
-  
+  # browser()
   file_spend_data <- sheet_data[grepl("\\(", names(sheet_data))] |> 
-    map_df(tidy_mh_sheets) |> 
+    map(tidy_mh_sheets) |> 
+    list_rbind() |> 
     filter(
       grepl("spend", metric, ignore.case = TRUE),
       !grepl("planned", time_period)
     ) |> 
-    select(!c("To delete", "Parent code")) |> 
+    select(!any_of(c("To delete", "Parent code"))) |> 
     mutate(
       time_period = gsub(paste0("Q", 1:4, " ", collapse = "|"), "", time_period),
       value = as.numeric(value)
@@ -1315,6 +1410,18 @@ tidy_mh_sheets <- function(sheet_data) {
       (\(x) gsub("Title: ", "", x))()
   }
   
+  title <- gsub(
+    "CYP Mental Health CCG spend",
+    "Children and Young People Mental Health spend",
+    title
+  )
+  
+  title <- gsub(
+    "MH total spend",
+    "Mental Health total spend",
+    title
+  )
+  
   first_row <- match(
     "Region Code",
     sheet_data[[1]]
@@ -1337,6 +1444,7 @@ tidy_mh_sheets <- function(sheet_data) {
       (\(x) x[which(x)])() |> 
       names()
     
+    
     df <- df |> 
       select(-any_of(c(
         all_na_field_names,
@@ -1346,6 +1454,14 @@ tidy_mh_sheets <- function(sheet_data) {
     
     headers <- df[1, ] |> 
       as.character()
+    
+    # check for potential field names that are blank, and exclude them
+    if (any(headers == "")) {
+      remove_cols <- match("", headers)
+      df <- df |> 
+        select(-all_of(remove_cols))
+      headers <- headers[-remove_cols]
+    }
     
     df <- df |> 
       slice(-1) |> 
