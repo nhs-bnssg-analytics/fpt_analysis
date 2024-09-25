@@ -203,3 +203,5 @@ Risk factors,Peripheral arterial disease: QOF prevalence (all ages),Demand,"The 
 Risk factors,Palliative care: QOF prevalence (all ages),Demand,The number of patients recorded as palliative care on practice disease registers (QOF),Total practice list size.,ICS,include
 Risk factors,Rheumatoid arthritis: QOF prevalence (16+ yrs),Demand,"The number of patients with rrheumatoid arthritis, as recorded on practice disease registers (QOF)",Practice list size for patients aged 16 yrs and over.,ICS,include
 Risk factors,Stroke and transient ischaemic attack: QOF prevalence (all ages),Demand,"The number of patients registered with stroke and transient ischaemic attack, as recorded on practice disease registers (QOF)",Total practice list size.,ICS,include
+Risk factors,Smoking prevalence in adults with a long term mental health condition (18+) - current smokers (GPPS),Demand,,,,remove (old time series)
+Risk factors,Reoffending levels: percentage of offenders who reoffend,Demand,,,,remove (old time series)

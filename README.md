@@ -1,31 +1,30 @@
 
-# Spatio-temporal prediction of demand and capacity-related performance
+# Future Performance Tool
 
-The goal of this repository is to explore the possibility of modelling
-high level NHS performance at Integrated Care System geography using
-publicly available data.
-
-**NOTE, this is currently work in progress**
+This repository contains the data download, data manipulation and the
+modelling that underpins the [Future Performance
+Tool](https://sw-dsn.shinyapps.io/planner/).
 
 See a description of the project and the findings as it progresses
 [here](https://nhs-bnssg-analytics.github.io/d_and_c/outputs/01_index.html).
 
 ## Using this repository
 
-The repository is managed using `renv`, so the aim is for it to be
-reproducible by anyone with access to the same versions of R and RStudio
-that I use. After cloning and opening the project for the first time,
-run `renv::restore()` in the console to install all the versions of the
-packages used in this work. You may need to restart RStudio after doing
-this.
+The repository is managed using `renv`. The aim is that anyone that
+wants to reproduce this analysis uses the same version of R that
+performed this analysis. After cloning and opening the project for the
+first time, run `renv::restore()` in the console to install all the
+versions of the packages used in this work. You may need to restart
+RStudio after doing this.
 
 The file `R/02_data.R` should download and clean all of the data files
 from the internet into a [tidy
 format](https://tidyr.tidyverse.org/articles/tidy-data.html). The files
 will be summarised into single files in a folder called `data`. This
-step takes up to 30 minutes to run as the source files are numerous and
-some are quite large. The source files are stored within the `data-raw`
-folder to allow users to refer back to them.
+step takes up to 30 minutes (depending on network connection speeds) to
+run as the source files are numerous and some are quite large. The
+source files are stored within the `data-raw` folder to allow users to
+refer back to them.
 
 A lot of the source files are spreadsheets, and generally they are
 created manually by different organisations and uploaded to a server for
