@@ -22,24 +22,6 @@ obtain_links <- function(url, include_link_text = FALSE) {
   return(links)
 }
 
-obtain_links_and_text <- function(url){
-  # Create an html document from the url
-  webpage <- xml2::read_html(url)
-  # Extract the URLs
-  urls <- webpage %>%
-    rvest::html_nodes("a") %>%
-    rvest::html_attr("href")
-  # Extract the link text
-  links <- webpage %>%
-    rvest::html_nodes("a") %>%
-    rvest::html_text()
-  
-  links <- rlang::set_names(
-    urls,
-    nm = links
-  )
-  return(links)
-}
 # downloading files -------------------------------------------------------
 
 download_url_to_directory <- function(url, new_directory, filename) {
@@ -3614,15 +3596,16 @@ quarterly_ics_populations <- function(incl_agebands = FALSE) {
   # gp population file urls from NHS website
   url <- "https://digital.nhs.uk/data-and-information/publications/statistical/patients-registered-at-a-gp-practice"
   
-  links <- obtain_links_and_text(url) |> 
+  links <- obtain_links(url, include_link_text = TRUE) |> 
     (\(x) x[grepl("[a-z]{,9}-[0-9]{4}", basename(x))])() |> 
     (\(x) rlang::set_names(paste0("https://digital.nhs.uk", x),
                            nm = names(x)))() |> 
     (\(x) x[grepl("january|april|july|october", basename(x), ignore.case = TRUE)])() |> 
     purrr::lmap(
       ~ list(
-        obtain_links_and_text(
-          .x
+        obtain_links(
+          .x, 
+          include_link_text = TRUE
         )
       )
     ) |> 
