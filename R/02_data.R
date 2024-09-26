@@ -119,6 +119,12 @@ qof <- fls |>
     value = 100 * numerator / denominator
   )
 
+write.csv(
+  qof,
+  "data/qof.csv",
+  row.names = FALSE
+)
+
 
 # risk factors from Fingertips
 risk_factors <- fingertipsR::indicators() |> 
@@ -1389,91 +1395,6 @@ bind_rows(
     row.names = FALSE
     )
 
-# Social care funding
-url <- "https://digital.nhs.uk/data-and-information/publications/statistical/adult-social-care-activity-and-finance-report"
-
-annual_links <- obtain_links(url) |> 
-  (function(x) x[grepl("[0-9]{4}-[0-9]{2}$", x)])() |>
-  (function(x) paste0("https://digital.nhs.uk",
-                      x))()
-  
-excel_links <- purrr::map(
-    .x = annual_links,
-    .f = obtain_links
-  ) |> 
-  unlist() |> 
-  (\(x) x[grepl("xls$|xlsx$", x)])() |> 
-  (\(x) x[!grepl("dash|comm-care|per-soc|pss-exp|summary", x, ignore.case = TRUE)])()
-
-xl_files <- purrr::map_chr(
-  excel_links,
-  ~ check_and_download(
-    url = .x,
-    filepath = paste0("data-raw/Social care funding/", basename(.x))
-  )
-) 
-
-xl_files <- xl_files |> 
-  purrr::map_chr(
-    rename_remove_social_care_files
-  ) |> 
-  (function(x) x[!grepl("deleted", x)])()
-
-annual_social_care <- purrr::map_dfr(
-  xl_files,
-  tidy_social_care_funding
-)
-
-pop_weighted_utla_lkp <- lsoa_utla_icb_weighted_pops()
-
-# convert utla to icb
-annual_social_care_icb <- annual_social_care |> 
-  mutate(
-    year = as.integer(year)
-  ) |> 
-  inner_join(
-    pop_weighted_utla_lkp,
-    by = join_by(
-      year == year,
-      org == UTLACD
-    )
-  ) |> 
-  mutate(
-    weighted_pop = population / sum(population),
-    .by = c(
-      year, org
-    )
-  ) |> 
-  mutate(
-    across(
-      c(numerator, denominator),
-      function(x) x * weighted_pop
-    )
-  ) |> 
-  summarise(
-    across(
-      c(numerator, denominator),
-      sum
-    ),
-    .by = c(
-      ICB22CDH, 
-      metric,
-      frequency,
-      year
-    )
-  ) |> 
-  mutate(
-    value = numerator / denominator
-  ) |> 
-  rename(
-    org = ICB22CDH
-  )
-
-write.csv(
-  annual_social_care_icb,
-  "data/annual-social-care-expenditure.csv",
-  row.names = FALSE
-)
 
 # NHS payments to General Practices
 # https://digital.nhs.uk/data-and-information/publications/statistical/nhs-payments-to-general-practice
