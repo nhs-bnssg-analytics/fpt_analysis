@@ -9,7 +9,7 @@ Understanding system demand and capacity is essential for operational and strate
 
 ## Project scope
 
-This project aims to understand demand and capacity in a novel way. Using temporal data on demand (e.g., population in older age groups) and capacity (e.g., workforce metrics) for each ICS geography as model inputs, this project aims to predict performance metrics (e.g., General Practice wait times above 4 weeks) using modern spatio-temporal modelling techniques. The project uses publicly available data to generate predictions for each ICS. It also identifies which input metrics have the biggest influence on the performance metric being predicted.
+This project aims to understand demand and capacity in a novel way. Using temporal data on demand (e.g., population in older age groups) and capacity (e.g., workforce metrics) for each ICS geography as model inputs, this project aims to predict performance metrics (e.g., General Practice wait times above 4 weeks) using modern modelling techniques. The project uses publicly available data to generate predictions for each ICS. It also identifies which input metrics have the biggest influence on the performance metric being predicted.
 
 ## Questions this work can support
 
@@ -17,4 +17,4 @@ Conceptually, the performance metrics should be impacted by the demand and capac
 
 ## Proposed outputs
 
-The outputs from this work would allow the ICSs to see the relationships between their demand and capacity metrics and performance. The baseline modelling will first produce a ‘do nothing’ performance trajectory, based on current/expected levels of demand and capacity. It will then allow users, through ‘what-if’ scenario analysis, to sensitivity test the models for future years to understand how changes to the input metrics will affect future predictions – thus allowing them to inform more optimal decisions on future spend and resource allocation.
+The outputs from this work would allow ICSs to see the relationships between their demand and capacity metrics and performance. The baseline modelling first produces a ‘do nothing’ performance trajectory, based on current/expected levels of demand and capacity. It then allows users, through ‘what-if’ scenario analysis, to sensitivity test the models for future years to understand how changes to the input metrics will affect future performance – thus allowing them to inform more optimal decisions on future spend and resource allocation.

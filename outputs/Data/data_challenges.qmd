@@ -1,7 +1,7 @@
 ---
 title: "Challenges"
 format: html
-order: 1
+order: 3
 execute: 
   echo: false
 ---
@@ -12,7 +12,7 @@ There are limitations with the data processing related to:
 
 ### Geographies
 
-Data are published at different geographies. While some geographies map coterminously with Integrated Care System geographies, some approximate methods of aggregation are needed for the ones that don't.
+Data are published at different geographies. While some geographies map coterminously with Integrated Care System geographies, some approximate methods of aggregation are used for the ones that don't.
 
 ### Time periods of published data
 
@@ -20,7 +20,7 @@ Data are published at different time periods. Data are generally published based
 
 ### Frequencies of published data
 
-Metrics can be published by month, quarter, and year (both financial or calendar). The outputs of the project are intended to inform long term strategic planning, so the shorter frequency metrics are aggregated up to an annual time period to allow for annual predictions.
+Metrics can be published by month, quarter, and year (both financial or calendar). The outputs of the project are intended to inform medium term strategic planning, so the shorter frequency metrics are aggregated up to an annual time period to allow for annual predictions.
 
 ### Comparable metrics
 
