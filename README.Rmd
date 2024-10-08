@@ -11,7 +11,7 @@ knitr::opts_chunk$set(
 
 # Future Performance Tool
 
-This repository contains the data download, data manipulation and the modelling that underpins the [Future Performance Tool](https://sw-dsn.shinyapps.io/planner/).
+This repository contains the data download, data manipulation and the modelling that underpins the [Future Performance Tool](https://sw-dsn.shinyapps.io/future-performance-tool/).
 
 See a description of the project and the findings as it progresses [here](https://nhs-bnssg-analytics.github.io/d_and_c/outputs/01_index.html).
 

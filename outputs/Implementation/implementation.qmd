@@ -99,7 +99,7 @@ combined <- best_models |>
 The previous chapters have described the analytical process taken to determine the most accurate model for each of the outcome variables.
 [Table 1](../Results/results.qmd#tbl-input-combinations) describes the variety of the modelling inputs and approaches taken to determine which combination results in the best performing outcomes. [Table 2](../Results/results.qmd#tbl-best-models-inputs) describes the best models as determined by the MAPE evaluation method.
 
-To make the outputs accessible to a wide audience, a [Shiny application](https://sw-dsn.shinyapps.io/planner/) was developed. The tool contains the model objects which are the outputs of this analytical exercise. The user of the tool is able to manipulate the inputs to see how they affect the predicted outputs for each of the outcomes.
+To make the outputs accessible to a wide audience, a [Shiny application](https://sw-dsn.shinyapps.io/future-performance-tool/) was developed. The tool contains the model objects which are the outputs of this analytical exercise. The user of the tool is able to manipulate the inputs to see how they affect the predicted outputs for each of the outcomes.
 
 Some additional considerations were made before providing the models to the user via the Shiny application:
 
