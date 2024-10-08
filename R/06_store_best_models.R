@@ -6,9 +6,10 @@ source("R/04_modelling_utils.R")
 best_models <- readRDS("tests/model_testing/model_summary_information.rds") |> 
   mutate(
     Date = as.Date(Date)
-  ) |> 
+  ) |>
   filter(
-    `Tuning objective` == "mape"
+    `Tuning objective` == "mape",
+    `Number lagged target years` == "0 lagged years"
   ) |> 
   filter(
     `Test set value` == min(`Test set value`),
@@ -32,19 +33,25 @@ best_models <- readRDS("tests/model_testing/model_summary_information.rds") |>
     )
   )
 
+best_glm_models <- best_models |> 
+  filter(
+    `Model type` == "logistic_regression"
+  )
+
 best_models <- best_models |>
   filter(
     `Test set value` == min(`Test set value`),
     .by = `Target variable`
   )
 
+
+
 final_workflows <- list()
-for (i in seq_len(nrow(best_models))) {
+for (i in seq_len(nrow(best_glm_models))) {
   
-  target_variable <- best_models$`Target variable`[i]
-  model_method <- best_models$`Model type`[i]
+  model_method <- best_glm_models$`Model type`[i]
   predict_year <- 2023
-  
+  target_variable <- best_glm_models$`Target variable`[i]
   dc_data <- load_data(
     target_variable,
     value_type = "value",
@@ -78,20 +85,21 @@ for (i in seq_len(nrow(best_models))) {
   m <- modelling_performance(
     data = dc_data, 
     target_variable, 
-    lagged_years = best_models$`Number lagged years`[i], 
+    lagged_years = best_glm_models$`Number lagged years`[i], 
     keep_current = TRUE, 
-    lag_target = best_models$`Number lagged target years`[i],
+    lag_target = best_glm_models$`Number lagged target years`[i],
     time_series_split = FALSE, 
-    training_years = best_models$`Number training years`[i],
+    training_years = best_glm_models$`Number training years`[i],
     remove_years = NULL,
     shuffle_training_records = FALSE,
-    model_type = best_models$`Model type`[i], 
+    model_type = best_glm_models$`Model type`[i], 
     tuning_grid = "auto",
-    target_type = best_models$`Target variable type`[i],
-    validation_type = best_models$`Validation method`[i],
-    eval_metric = best_models$`Tuning objective`[i],
+    target_type = best_glm_models$`Target variable type`[i],
+    validation_type = best_glm_models$`Validation method`[i],
+    eval_metric = best_glm_models$`Tuning objective`[i],
     include_pi = TRUE,
-    seed = 321
+    seed = 321,
+    auto_feature_selection = FALSE
   )
   
   final_workflows[[target_variable]] <- list(
@@ -105,5 +113,5 @@ for (i in seq_len(nrow(best_models))) {
 
 saveRDS(
   final_workflows,
-  "outputs/model_objects/wfs_best_mape_pi_reduced_inputs.rds"
+  "outputs/model_objects/live_models.rds"
 )

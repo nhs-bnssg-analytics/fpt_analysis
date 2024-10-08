@@ -18,6 +18,7 @@ An approximate model of how demand and capacity metrics can be seen below:
 
 source(here::here("R/00_libraries.R"))
 source(here::here("R/01_utils.R"))
+source(here::here("R/04_modelling_utils.R"))
 ```
 
 ```{r}
@@ -48,9 +49,9 @@ dc_data <- list.files(
 
 
 
-### Data description
+### Data definitions
 
-The metrics collated for the project are described in the tabs below:
+The metrics collated for the project are presented in the tabs below. for a fuller description, see [Modelling inputs](data_metadata.qmd#demand):
 
 ```{r}
 #| label: indicator-metadata
@@ -63,8 +64,8 @@ meta_table <- read.csv(here::here("data/configuration-table.csv"),
       (domain == "Performance" &
          status == "modelled")
   ) |> 
-  select("domain", "metric") |> 
-  arrange(domain, metric)
+  select("theme", "metric", "domain") |> 
+  arrange(theme, metric)
   
 cat("::: {.panel-tabset}\n\n")
 
@@ -77,9 +78,10 @@ for (dom in (sort(unique(meta_table$domain)))) {
     filter(
       domain == dom
     ) |> 
+    select(!c("domain")) |> 
     knitr::kable(
       format = "markdown",
-      col.names = c("Domain", "Metric")
+      col.names = c("Theme", "Metric")
     )
   
   print(tb)
@@ -90,164 +92,396 @@ for (dom in (sort(unique(meta_table$domain)))) {
 cat(":::")
 ```
 
+## Data summary
+
 The frequencies these metrics have been collected at are displayed below:
 
 ```{r}
-#| label: data-frequencies
-#| fig-height: 12
+#| label: data-description
+#| fig-height: 14
+#| fig-width: 18
 #| warning: false
 
-all_data <- dc_data |> 
-  inner_join(
-    meta_table,
-    by = join_by(metric),
-    relationship = "many-to-one"
+target_variable <- c(
+  "Proportion of incomplete pathways greater than 18 weeks from referral",
+  "Proportion of suspected cancer or referral to first definitive treatment that are longer than 62 days wait",
+  "Proportion of A&E attendances with greater than 4 hours wait (Type 1 Departments - Major A&E)",
+  "Proportion of attended GP appointments (over 4 weeks wait time)"
+)
+
+metrics <- read.csv(
+  here::here(
+    "data/configuration-table.csv"
+  ),
+  encoding = "latin1"
+) |> 
+  select(
+    "metric", "domain"
+  )
+
+# removes records where NAs exist for target variables because the target
+# variable columns only exist once in each tibble from the "map" step, but NAs
+# are generated when they are list_rbind() together
+clean_target_variables <- function(data, target_variables) {
+  targ_vars <- data |> 
+    filter(
+      metric %in% target_variables,
+      !is.na(value)
+    )
+  
+  data <- data |> 
+    filter(
+      !(metric %in% target_variables)
+    ) |> 
+    bind_rows(
+      targ_vars
+    )
+  
+  return(data)
+}
+
+df <- target_variable |> 
+  map(
+    ~ load_data(
+      target_variable = .x,
+      value_type = "value",
+      incl_numerator_remainder = FALSE,
+      binary_covid = FALSE
+    )
+) |> 
+  list_rbind() |> 
+  select(!c("nhs_region", "quarter", "month")) |> 
+  pivot_longer(
+    cols = !c("year", "org"),
+    names_to = "metric",
+    values_to = "value"
   ) |> 
-  arrange(domain, metric) |> 
+  distinct() |> 
+  clean_target_variables(
+    target_variables = target_variable
+  )
+
+min_max_years <- df |> 
+  filter(!is.na(value)) |> 
+  summarise(
+    min_year = min(year),
+    max_year = max(year),
+    .by = metric
+  )
+
+df <- df |> 
+  left_join(
+    metrics,
+    by = join_by(
+      metric
+    )
+  ) |> 
+  filter(
+    !grepl("Total - Acute", metric)
+  ) |> 
   mutate(
-    abbreviated_metric = abbreviate(metric, 40),
-    abbreviated_metric = factor(
-      abbreviated_metric,
-      levels = rev(unique(abbreviated_metric))
+    domain = factor(domain, levels = c("Performance", "Demand", "Capacity"))
+  ) |>
+  left_join(
+    min_max_years,
+    by = join_by(
+      metric
     )
-  )
-
-all_data |> 
-  distinct(
-    metric, frequency, domain, abbreviated_metric
   ) |> 
-  ggplot(
-    aes(
-      x = frequency,
-      y = abbreviated_metric
-    )
-  ) +
-  geom_tile(
-    aes(fill = domain)
-  ) +
-  theme_minimal() +
-  theme(
-    axis.text.x = element_text(
-      angle = 45,
-      hjust = 1
-    )
-  ) +
-  labs(
-    title = "Metrics and their frequencies within publications",
-    y = "Metrics (abbreviated)",
-    x = "Frequencies"
-  ) +
-  scale_fill_manual(
-    name = "",
-    values = c(
-      Demand = "#AC2572",
-      Capacity = "#681C66",
-      Performance = "#BD518F"
-    )
-  )
-
-
-```
-
-For the annual metric (financial and calendar year), these are the number of record we have for each year (this is related to the geography the metric is published at):
-
-```{r}
-#| label: annual-metric-counts
-#| fig-height: 11
-
-all_data |> 
   filter(
-    grepl("annual", frequency)
+    between(
+      year,
+      min_year,
+      max_year
+    )
+  ) 
+
+
+df_final <- df |> 
+  select(!c("year", "org")) |> 
+  tidyr::nest(
+    .by = c(domain, metric, min_year, max_year)
   ) |> 
-  count(domain, abbreviated_metric, year) |> 
-  ggplot(
-    aes(
-      x = year,
-      y = abbreviated_metric
-    )
-  ) +
-  geom_tile(
-    aes(fill = n)
-  ) +
-  theme_minimal() +
-  scale_fill_viridis_c(
-    name = "Count of records"
-  ) +
-  labs(
-    title = "Count of records by year",
-    y = "Metrics (abbreviated)",
-    x = "Year"
-  ) +
-  facet_grid(
-    rows = vars(domain),
-    scales = "free_y",
-    space = "free_y"
-  )
-```
-
-
-
-```{r}
-#| label: box-plots
-#| warning: false
-#| results: 'asis'
-#| fig-width: 12
-#| fig-height: 20
-#| include: false
-
-sense_check <- all_data |> 
-  filter(
-    grepl("annual", frequency)
-  )
-
-boxplot_domains <- function(data) {
-  p <- data |> 
-    mutate(
-      metric = stringr::str_wrap(metric, 20)
-    ) |>
-    ggplot(
-      aes(
-        x = as.factor(year),
-        y = value
+  mutate(
+    data = map(
+      data,
+      \(x) x |> 
+        summary() |> 
+        as.data.frame() |> 
+        separate(
+          Freq,
+          sep = ":",
+          into = c("stat", "val")
+        ) |> 
+        mutate(
+          stat = str_trim(stat),
+          val = as.numeric(val)
+        ) |> 
+        select(
+          !c("Var1", "Var2")
+        ) |> 
+        pivot_wider(
+          names_from = stat,
+          values_from = val
         )
-      ) + 
-    geom_boxplot() +
-    theme_minimal() +
-    facet_wrap(
-      facets = vars(metric),
-      scales = "free"
-    ) +
-    labs(
-      x = "",
-      y = ""
-    ) +
-    theme(
-      axis.text.x = element_text(
-        angle = 45,
-        hjust = 1
-      )
     )
-  
-  return(p)
+  ) |> 
+  tidyr::unnest(
+    cols = data
+  ) |> 
+  mutate(
+    `NA's` = replace_na(`NA's`, 0),
+    across(
+      c(`Min.`, `1st Qu.`, Median, Mean, `3rd Qu.`, `Max.`),
+      ~ round(.x, 1)
+    )
+  ) |> 
+  arrange(
+    domain, desc(metric)
+  )
+
+
+abbreviate_domain_metric_year <- function(vec, str_length, met, min_yr, max_yr) {
+  abbreviation <- paste0(
+    "(",
+    substr(vec, 1, str_length),
+    ") ",
+    met,
+    " (",
+    min_yr,
+    "-",
+    max_yr,
+    ")"
+  )
 }
 
-cat("::: {.panel-tabset}\n\n")
+max_x_limit <- 100
 
-for (dom in (unique(sense_check$domain))) {
-  cat(paste("##",
-          dom,
-          "\n\n"))
-  
-  p <- sense_check |> 
-    filter(domain == dom) |> 
-    boxplot_domains()
-  
-  print(p)
-  
-  cat("\n\n")
-}
+main_plot <- df_final |> 
+  rename(
+    min = "Min.",
+    max = "Max.",
+    first_quartile = "1st Qu.",
+    third_quartile = "3rd Qu.",
+    mean = "Mean",
+    median = "Median",
+    Domain = "domain",
+    Metric = "metric",
+    Minimum.year = "min_year",
+    Maximum.year = "max_year"
+  ) |> 
+  mutate(
+    metric = case_when(
+      Domain == "Performance" ~ abbreviate_domain_metric_year(Domain, 4, Metric, Minimum.year, Maximum.year),
+      .default = abbreviate_domain_metric_year(Domain, 3, Metric, Minimum.year, Maximum.year)
+    ),
+    .keep = "unused"
+  ) |> 
+  mutate(
+    across(
+      .cols = all_of(
+        c("min", 
+          "first_quartile",
+          "mean",
+          "median",
+          "third_quartile",
+          "max"
+        )
+      ),
+      .fns = ~ if_else(.x > max_x_limit, as.character(.x), "-"),
+      .names = "{.col}_label"
+    )
+  ) |> 
+  mutate(
+    final_label = paste0(
+      "(",
+      min_label,
+      ", ",
+      first_quartile_label,
+      ", ",
+      median_label,
+      ", ",
+      mean_label,
+      ", ",
+      third_quartile_label,
+      ", ",
+      max_label,
+      ")"
+    ),
+    final_label = case_when(
+      final_label == "(-, -, -, -, -, -)" ~ NA_character_,
+      .default = final_label
+    ),
+    .keep = "unused"
+  ) |> 
+  mutate(
+    across(
+      .cols = all_of(
+        c("min",
+          "first_quartile",
+          "third_quartile",
+          "max"
+        )
+      ),
+      .fns = ~ if_else(.x > max_x_limit, max_x_limit, .x)
+    ),
+    across(
+      .cols = all_of(
+        c("mean",
+          "median"
+        )
+      ),
+      .fns = ~ if_else(.x > max_x_limit, NA_real_, .x)
+    )
+  ) |> #View()
+  ggplot(
+    aes(
+      y = metric
+    )
+  ) +
+  geom_segment(
+    aes(
+      x = min,
+      xend = max,
+      yend = metric
+    ),
+    colour = "gray50"
+  ) +
+  geom_segment(
+    aes(
+      x = first_quartile,
+      xend = third_quartile,
+      yend = metric
+    ),
+    colour = "black",
+    linewidth = 1
+  ) + 
+  geom_point(
+    aes(
+      x = mean
+    ), 
+    shape = 16,
+    size = 4
+  ) +
+  geom_point(
+    aes(
+      x  = median
+    ),
+    shape = 4,
+    size = 4
+  ) +
+  geom_text(
+    aes(
+      label = final_label,
+      x = max_x_limit * 1.02
+    ),
+    hjust = 0,
+    size = 3
+  ) +
+  coord_cartesian(
+    xlim = c(0, max_x_limit),
+    ylim = c(0, NA),
+    expand = FALSE,
+    clip = "off"
+  ) +
+  theme_bw() +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    plot.margin = margin(
+      r = 180
+    )
+  ) +
+  labs(
+    x = "Value",
+    y = "",
+    title = ""
+  ) +
+  annotate(
+    "text", 
+    x = max_x_limit * 1.02, 
+    y = -1, 
+    size = 3,
+    hjust = 0,
+    label = "(Min, 1st.Qu.,Med, Mean, 3rd.Qu., Max)")
 
-cat(":::")
+legend_plot <- tibble(
+  min = 0,
+  first_quartile = 0.25,
+  median = 0.7,
+  mean = 1,
+  third_quartile = 1.3, 
+  max = 1.6,
+  metric = "(Domain) Metric name"
+) |> 
+  ggplot(
+    aes(y = metric)
+  ) +
+  geom_segment(
+    aes(
+      x = min,
+      xend = max,
+      yend = metric
+    ),
+    colour = "gray50"
+  ) +
+  geom_segment(
+    aes(
+      x = first_quartile,
+      xend = third_quartile,
+      yend = metric
+    ),
+    colour = "black",
+    linewidth = 1
+  ) + 
+  geom_point(
+    aes(
+      x = mean
+    ), 
+    shape = 16,
+    size = 4
+  ) +
+  geom_point(
+    aes(
+      x  = median
+    ),
+    shape = 4,
+    size = 4
+  ) +
+  geom_text(
+    data = tibble(
+      position = c(0, 0.25, 0.7, 1, 1.3, 1.6),
+      label = c("Min", "1st.Qu.", "Median", "Mean", "3rd.Qu.", "Max"),
+      metric = "(Domain) Metric name"
+    ),
+    aes(
+      x = position,
+      label = label
+    ),
+    vjust = -1
+  ) +
+  theme_void() +
+  theme(
+    axis.text.y = element_text()
+  ) +
+  scale_y_discrete(
+    expand = expansion(add = 1.5)
+  )
+
+layout <- "
+AAAAA
+#####
+#BB##
+"
+
+final_plot <- main_plot / legend_plot +
+  patchwork::plot_layout(
+    heights = c(25, 0.5, 1.5),
+    design = layout
+  )
+
+final_plot
+
 
 
 ```

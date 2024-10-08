@@ -2759,6 +2759,25 @@ quarterly_to_annual_sum <- function(data, year_type, multiplier = 1) {
 
 # lookups -----------------------------------------------------------------
 
+district_to_cty_lkp <- function() {
+  filepath <- "data-raw/Lookups/LAD23_to_CTY23.csv"
+  if (!file.exists(filepath)) {
+    lkp <- read.csv("https://hub.arcgis.com/api/v3/datasets/561603518d6b42be9362b747e9b16175_0/downloads/data?format=csv&spatialRefId=4326&where=1%3D1") |> 
+      select(
+        "LAD23CD", "CTY23CD"
+      )
+    write.csv(
+      lkp,
+      filepath,
+      row.names = FALSE
+    )
+  } else {
+    lkp <- read.csv(filepath)
+  }
+  
+  return(lkp)
+}
+
 practice_to_icb <- function() {
   
   lkp_filepath <- "data-raw/Lookups/practice_to_ics.csv"

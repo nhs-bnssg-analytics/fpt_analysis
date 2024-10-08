@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Introduction – Future Performance Tool - the analysis underpinning the medium-term planning tool</title>
+<title>Implementating the tool in a Shiny application – Future Performance Tool - the analysis underpinning the medium-term planning tool</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -23,24 +23,23 @@ ul.task-list li input[type="checkbox"] {
 </style>
 
 
-<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
-<script src="../site_libs/quarto-nav/headroom.min.js"></script>
-<script src="../site_libs/clipboard/clipboard.min.js"></script>
-<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
-<script src="../site_libs/quarto-search/fuse.min.js"></script>
-<script src="../site_libs/quarto-search/quarto-search.js"></script>
-<meta name="quarto:offset" content="../">
-<link href="../outputs/Data/data_metadata.html" rel="next">
-<link href="../outputs/01_index.html" rel="prev">
-<script src="../site_libs/quarto-html/quarto.js"></script>
-<script src="../site_libs/quarto-html/popper.min.js"></script>
-<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
-<script src="../site_libs/quarto-html/anchor.min.js"></script>
-<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
-<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
-<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<link href="../../outputs/Results/results.html" rel="prev">
+<script src="../../site_libs/quarto-html/quarto.js"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -80,7 +79,7 @@ ul.task-list li input[type="checkbox"] {
     <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
       <div class="navbar-container container-fluid">
       <div class="navbar-brand-container mx-auto">
-    <a class="navbar-brand" href="../index.html">
+    <a class="navbar-brand" href="../../index.html">
     <span class="navbar-title">Future Performance Tool - the analysis underpinning the medium-term planning tool</span>
     </a>
   </div>
@@ -106,7 +105,7 @@ ul.task-list li input[type="checkbox"] {
       <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
         <i class="bi bi-layout-text-sidebar-reverse"></i>
       </button>
-        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../outputs/introduction_introduction_and_aims.html">Introduction</a></li></ol></nav>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../outputs/Implementation/implementation.html">Implementation</a></li><li class="breadcrumb-item"><a href="../../outputs/Implementation/implementation.html">Implementating the tool in a Shiny application</a></li></ol></nav>
         <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
         </a>
       <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
@@ -121,7 +120,7 @@ ul.task-list li input[type="checkbox"] {
   <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation docked overflow-auto">
     <div class="pt-lg-2 mt-2 text-left sidebar-header">
       <a href="index.html" class="sidebar-logo-link">
-      <img src="../outputs/logo.png" alt="" class="sidebar-logo py-0 d-lg-inline d-none">
+      <img src="../../outputs/logo.png" alt="" class="sidebar-logo py-0 d-lg-inline d-none">
       </a>
       </div>
         <div class="mt-2 flex-shrink-0 align-items-center">
@@ -133,13 +132,13 @@ ul.task-list li input[type="checkbox"] {
     <ul class="list-unstyled mt-1">
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../outputs/01_index.html" class="sidebar-item-text sidebar-link">
+  <a href="../../outputs/01_index.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Scope</span></a>
   </div>
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../outputs/introduction_introduction_and_aims.html" class="sidebar-item-text sidebar-link active">
+  <a href="../../outputs/introduction_introduction_and_aims.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Introduction</span></a>
   </div>
 </li>
@@ -154,19 +153,19 @@ ul.task-list li input[type="checkbox"] {
       <ul id="quarto-sidebar-section-1" class="collapse list-unstyled sidebar-section depth1 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../outputs/Data/data_metadata.html" class="sidebar-item-text sidebar-link">
+  <a href="../../outputs/Data/data_metadata.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Modelling inputs</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../outputs/Data/data_description.html" class="sidebar-item-text sidebar-link">
+  <a href="../../outputs/Data/data_description.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Description</span></a>
   </div>
 </li>
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../outputs/Data/data_challenges.html" class="sidebar-item-text sidebar-link">
+  <a href="../../outputs/Data/data_challenges.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Challenges</span></a>
   </div>
 </li>
@@ -183,7 +182,7 @@ ul.task-list li input[type="checkbox"] {
       <ul id="quarto-sidebar-section-2" class="collapse list-unstyled sidebar-section depth1 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../outputs/Modelling/modelling_preparation.html" class="sidebar-item-text sidebar-link">
+  <a href="../../outputs/Modelling/modelling_preparation.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Data preparation for modelling</span></a>
   </div>
 </li>
@@ -200,7 +199,7 @@ ul.task-list li input[type="checkbox"] {
       <ul id="quarto-sidebar-section-3" class="collapse list-unstyled sidebar-section depth1 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../outputs/Results/results.html" class="sidebar-item-text sidebar-link">
+  <a href="../../outputs/Results/results.html" class="sidebar-item-text sidebar-link">
  <span class="menu-text">Summary of results</span></a>
   </div>
 </li>
@@ -217,7 +216,7 @@ ul.task-list li input[type="checkbox"] {
       <ul id="quarto-sidebar-section-4" class="collapse list-unstyled sidebar-section depth1 show">  
           <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="../outputs/Implementation/implementation.html" class="sidebar-item-text sidebar-link">
+  <a href="../../outputs/Implementation/implementation.html" class="sidebar-item-text sidebar-link active">
  <span class="menu-text">Implementating the tool in a Shiny application</span></a>
   </div>
 </li>
@@ -233,19 +232,16 @@ ul.task-list li input[type="checkbox"] {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#introduction-and-aims" id="toc-introduction-and-aims" class="nav-link active" data-scroll-target="#introduction-and-aims">Introduction and aims</a>
-  <ul class="collapse">
-  <li><a href="#project-aims" id="toc-project-aims" class="nav-link" data-scroll-target="#project-aims">Project aims</a></li>
-  </ul></li>
+  <li><a href="#considerations" id="toc-considerations" class="nav-link active" data-scroll-target="#considerations">Considerations</a></li>
   </ul>
 </nav>
     </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
 
-<header id="title-block-header" class="quarto-title-block default">
+<header id="title-block-header" class="quarto-title-block default"><nav class="quarto-page-breadcrumbs quarto-title-breadcrumbs d-none d-lg-block" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="../../outputs/Implementation/implementation.html">Implementation</a></li><li class="breadcrumb-item"><a href="../../outputs/Implementation/implementation.html">Implementating the tool in a Shiny application</a></li></ol></nav>
 <div class="quarto-title">
-<h1 class="title">Introduction</h1>
+<h1 class="title">Implementating the tool in a Shiny application</h1>
 </div>
 
 
@@ -262,22 +258,36 @@ ul.task-list li input[type="checkbox"] {
 </header>
 
 
-<section id="introduction-and-aims" class="level2">
-<h2 class="anchored" data-anchor-id="introduction-and-aims">Introduction and aims</h2>
-<p>The aims of this project are to use publicly available data to find associations between performance within Integrated Care Systems, and different demand and capacity metrics.</p>
-<p>The strong associations can then be explored as to whether there are actions that can be taken to improve performance.</p>
-<section id="project-aims" class="level3">
-<h3 class="anchored" data-anchor-id="project-aims">Project aims</h3>
-<p>A summary of the aims of the project:</p>
+<section id="considerations" class="level2">
+<h2 class="anchored" data-anchor-id="considerations">Considerations</h2>
+<p>The previous chapters have described the analytical process taken to determine the most accurate model for each of the outcome variables. <a href="../../outputs/Results/results.html#tbl-input-combinations">Table 1</a> describes the variety of the modelling inputs and approaches taken to determine which combination results in the best performing outcomes. <a href="../../outputs/Results/results.html#tbl-best-models-inputs">Table 2</a> describes the best models as determined by the MAPE evaluation method.</p>
+<p>To make the outputs accessible to a wide audience, a <a href="https://sw-dsn.shinyapps.io/planner/">Shiny application</a> was developed. The tool contains the model objects which are the outputs of this analytical exercise. The user of the tool is able to manipulate the inputs to see how they affect the predicted outputs for each of the outcomes.</p>
+<p>Some additional considerations were made before providing the models to the user via the Shiny application:</p>
 <ul>
-<li>Use a data-driven approach to identify associations between metrics that affect performance</li>
-<li>Support medium term decision making</li>
-<li>Forecast future performance based on different scenarios</li>
-<li>Open source and reproducible code</li>
+<li>do the important variables make sense hypothetically?</li>
+<li>are there any obvious issues with future predictions?</li>
+<li>do the future predictions respond as expected when the inputs are altered?</li>
 </ul>
+<p>It is intended that the tool provides the user with a believable experience. The model that has historically been the most accurate at predicting the outcome may be doing so using relationships that are unintuitive. For a user, if this was the case, it could deter them from using the tool. As modelling performance was so similar between the top performing models, it allowed some decision making over which models to surface through the tool. We ensured that only models were surfaced where the majority of the predictor variables, with respect to the outcome, made sense.</p>
+<p>Generally, the best performing models were the random forest models that predict the change in performance from one year to the next. There are no constraints on random forest predictions, and providing these within the tool could result in predictions for the outcome to be outside of the 0-100% constraints that a proportion outcome provides. In the short term (1-10 years) this is unlikely, but it is still possible. Therefore, these random forest models were not surfaced in the tool.</p>
+<p>The models that were based on the generalised linear modelling approach that contained the previous year’s value as a predictor variable often performed very well. Using last year’s value to anchor the prediction seemed like a good approach. Unfortunately, when last year’s value was an important variable, it had the effect of being unable to reverse the direction of consecutive predictions, often causing the prediction of the outcome to exponentially increase to 100% within a few years. These models were therefore not included.</p>
+<p>This has resulted in only presenting the generalised linear models through the Shiny application, where the target variable is not used as a predictor variable. <a href="#fig-plot" class="quarto-xref">Figure&nbsp;1</a> shows how the models presented in the Shiny application compare with the best performing models.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-plot" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-plot-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="implementation_files/figure-html/fig-plot-1.png" class="img-fluid figure-img" width="960">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-plot-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: The difference in Mean Absolute Percentage Error when comparing the models presented in the Shiny application with the best performing models.
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
 
 
-</section>
 </section>
 
 </main> <!-- /main -->
@@ -703,14 +713,11 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 </script>
 <nav class="page-navigation">
   <div class="nav-page nav-page-previous">
-      <a href="../outputs/01_index.html" class="pagination-link" aria-label="Scope">
-        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">Scope</span>
+      <a href="../../outputs/Results/results.html" class="pagination-link" aria-label="Summary of results">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text">Summary of results</span>
       </a>          
   </div>
   <div class="nav-page nav-page-next">
-      <a href="../outputs/Data/data_metadata.html" class="pagination-link" aria-label="Modelling inputs">
-        <span class="nav-page-text">Modelling inputs</span> <i class="bi bi-arrow-right-short"></i>
-      </a>
   </div>
 </nav>
 </div> <!-- /content -->

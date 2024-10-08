@@ -6,12 +6,12 @@ execute:
   echo: false
 ---
 
-## Geographical estimation methods
+
 
 This page documents the data collated and used within the project.
 
 
-## Demand data
+## Demand data {#demand}
 
 ### Percentage of active smokers
 
@@ -356,6 +356,7 @@ This metric can be divided into:
 
 **Denominator:** Total incomplete pathways at the end of the reporting month, aggregated to year.
 
+## Geographical estimation methods
 
 ### Trust to ICS estimations {#catchment-weighting}
 

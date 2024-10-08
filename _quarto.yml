@@ -6,7 +6,7 @@ project:
     - "!peer_review_word.qmd"
 
 website:
-  title: "Spatio-temporal demand and capacity relationships with performance"
+  title: "Future Performance Tool - the analysis underpinning the medium-term planning tool"
   page-navigation: true
   site-path: /outputs/
   navbar:
@@ -30,6 +30,8 @@ website:
         contents: outputs/Modelling/*
       - section: Results
         contents: outputs/Results/*
+      - section: Implementation
+        contents: outputs/Implementation/*
 
 format:
   html:

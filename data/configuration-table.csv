@@ -1,6 +1,6 @@
 theme,metric,domain,numerator_description,denominator_description,raw_area_type,status
 Risk factors,% active smokers (GPPS),Demand,Self-reported active smokers (GPPS survey),Total number of GPPS survey respondents,ICB,include
-Risk factors,% former smokers (GPPS),Demand,Self-reported former smokers (GPPS survey),Total number of GPPS survey respondents,ICB,remove (for testing)
+Risk factors,% former smokers (GPPS),Demand,Self-reported former smokers (GPPS survey),Total number of GPPS survey respondents,ICB,remove (not useful for planning)
 "Quality of care, access and outcomes",Proportion of suspected cancer or referral to first definitive treatment that are longer than 62 days wait,Performance,Number treated within 62 days (all referrals),Number treated,CCG and ICB,modelled
 Risk factors,Atrial fibrillation: QOF prevalence (all ages),Demand,"Patients with atrial fibrillation, as recorded on practice disease registers (QOF)",Total practice list size.,ICB,include
 "Quality of care, access and outcomes",Average daily proportion of patients who no longer meet the criteria to reside that remain in hospital,Performance,Average number of daily patients remaining in hospital who no longer meet the criteria to reside,Average number of daily patients who no longer meet the criteria to reside,ICB,
@@ -59,22 +59,22 @@ Acute beds,"Total beds per 1,000 60+ yrs (General & Acute - overnight)",Capacity
 Acute beds,"Total beds per 1,000 60+ yrs (General & Acute - day)",Capacity,Number of available day bed days in period (General & Acute),Population age 60+,,remove (for testing)
 Acute beds,"Total beds per 1,000 60+ yrs (Total)",Capacity,Number of available bed days in period (General & Acute),Population age 60+,,remove (for testing)
 Risk factors,"new hypertension patients, aged 30-74, with a CV risk assessment >= 20% treated with statins (denominator incl. PCAs) - retired after 2019/20",Demand,"Patients aged 30-74 yrs, with a new diagnosis of hypertension recorded between the preceding 1 April to 31 March (excluding those with a pre-existing CHD, diabetes, stroke and/or TIA), who have a recorded CVD risk assessment score (using an assessment tool agreed with the NHS CB) of Ã¢Â‰Â¥ 20% in the preceding 12 months and are currently treated with statins.","Patients with a new diagnosis of hypertension (excluding those with pre-existing CHD, diabetes, stroke and/or TIA) recorded between the preceding 1 April to 31 March (includes exceptions/patients with Personal Care Adjustments (PCAs); for more details see Rationale).",ICB,remove (data completeness)
-Finanace and use of resources,Gross Total Expenditure (£000s) per individual with long term support during the year,Capacity,Gross Total Expenditure ($000s) from the Adult Social Care Activity and Finance report,Individuals with Long Term Support during the year,Upper Tier Local Authority,include
+Finanace and use of resources,Gross Total Expenditure (£000s) per individual with long term support during the year,Capacity,Gross Total Expenditure ($000s) from the Adult Social Care Activity and Finance report,Individuals with Long Term Support during the year,Upper Tier Local Authority,remove (time series stops in 2021)
 Risk factors,Smoking status at time of delivery,Demand,Number of women known to smoke at time of delivery,Number of maternities where smoking status is known,ICB,remove (data completeness)
 Risk factors,Year 6 prevalence of overweight (including obesity),Demand,Number of overweight and obese pupils in Year 6,Number of pupils in Year 6,ICB,
 Risk factors,Reception prevalence of overweight (including obesity),Demand,Number of overweight and obese pupils in Reception,Number of pupils in Reception,ICB,
-Population,Proportion of population in age band (0-9),Demand,Resident population in age band (0-9),Total resident population,ICB,include
-Population,Proportion of population in age band (10-19),Demand,Resident population in age band (10-19),Total resident population,ICB,include
-Population,Proportion of population in age band (20-29),Demand,Resident population in age band (20-29),Total resident population,ICB,include
-Population,Proportion of population in age band (30-39),Demand,Resident population in age band (30-39),Total resident population,ICB,include
-Population,Proportion of population in age band (40-49),Demand,Resident population in age band (40-49),Total resident population,ICB,include
-Population,Proportion of population in age band (50-59),Demand,Resident population in age band (50-59),Total resident population,ICB,include
-Population,Proportion of population in age band (60-69),Demand,Resident population in age band (60-69),Total resident population,ICB,include
-Population,Proportion of population in age band (70-79),Demand,Resident population in age band (70-79),Total resident population,ICB,include
-Population,Proportion of population in age band (80+),Demand,Resident population in age band (80-89),Total resident population,ICB,include
-Population,Proportion of population in age band (0-29),Demand,Resident population in age band (0-29),Total resident population,ICB,include
-Population,Proportion of population in age band (30-59),Demand,Resident population in age band (30-59),Total resident population,ICB,include
-Population,Proportion of population in age band (60+),Demand,Resident population in age band (60+),Total resident population,ICB,include
+Population,Proportion of population in age band (0-9),Demand,Population registered at a general practice in age band (0-9),Total population registered at the general practice,ICB,include
+Population,Proportion of population in age band (10-19),Demand,Population registered at a general practice in age band (10-19),Total population registered at the general practice,ICB,include
+Population,Proportion of population in age band (20-29),Demand,Population registered at a general practice in age band (20-29),Total population registered at the general practice,ICB,include
+Population,Proportion of population in age band (30-39),Demand,Population registered at a general practice in age band (30-39),Total population registered at the general practice,ICB,include
+Population,Proportion of population in age band (40-49),Demand,Population registered at a general practice in age band (40-49),Total population registered at the general practice,ICB,include
+Population,Proportion of population in age band (50-59),Demand,Population registered at a general practice in age band (50-59),Total population registered at the general practice,ICB,include
+Population,Proportion of population in age band (60-69),Demand,Population registered at a general practice in age band (60-69),Total population registered at the general practice,ICB,include
+Population,Proportion of population in age band (70-79),Demand,Population registered at a general practice in age band (70-79),Total population registered at the general practice,ICB,include
+Population,Proportion of population in age band (80+),Demand,Population registered at a general practice in age band (80-89),Total population registered at the general practice,ICB,include
+Population,Proportion of population in age band (0-29),Demand,Population registered at a general practice in age band (0-29),Total population registered at the general practice,ICB,include
+Population,Proportion of population in age band (30-59),Demand,Population registered at a general practice in age band (30-59),Total population registered at the general practice,ICB,include
+Population,Proportion of population in age band (60+),Demand,Population registered at a general practice in age band (60+),Total population registered at the general practice,ICB,include
 Risk factors,Estimated prevalence of common mental disorders: % of population aged 16 & over,Demand,,,,remove (data quality)
 Risk factors,Estimated prevalence of common mental disorders: % of population aged 65 & over,Demand,,,,remove (data quality)
 Risk factors,Proportion of resident population in national deprivation quintile (Least deprived quintile) - IMD 2019,Demand,Resident population in deprivation quintile (Least deprived quintile),Resident population in area,ICB,include
@@ -183,12 +183,12 @@ People,"A and E Full Time Equivalent (FTE) for Nurses (per 100,000 population)",
 Risk factors,Estimated prevalence of diabetes (undiagnosed and diagnosed),Demand,The estimated number of people aged 16 years and over with diabetes,The numbers of patients registered by GP practice in April 2015 were used for the registered population estimates. The latest estimates published here use 2017 ONS resident population estimates applied to the GP practice populations.,ICS,
 Risk factors,Hypertension: QOF prevalence (all ages),Demand,"The number of patients with established hypertension, as recorded on practice disease registers.",Total practice list size.,ICS,include
 Risk factors,Patients with psychosis who have a current record of alcohol consumption,Demand,"The number of patients on the register of patients with schizophrenia, bipolar affective disorder and other psychoses, including other patients on lithium therapy, who have a record of alcohol consumption in the preceding 12 months.","The number of patients recorded on the practice disease register (MH001). It includes patients with schizophrenia, bipolar affective disorder and other psychoses, including other patients on lithium therapy",ICS,
-Risk factors,Children in absolute low income families (under 16s),Demand,,,,include
-Risk factors,Children in relative low income families (under 16s),Demand,,,,include
+Risk factors,Children in absolute low income families (under 16s),Demand,,,,remove (add in later)
+Risk factors,Children in relative low income families (under 16s),Demand,,,,remove (add in later)
 Risk factors,Emergency hospital admissions due to falls in people aged 65 and over,Demand,,,,
 Risk factors,"Fuel poverty (low income, low energy efficiency methodology)",Demand,,,,
 Risk factors,Stillbirth rate,Demand,,,,
-Risk factors,"Violent crime - violence offences per 1,000 population",Demand,,,,include
+Risk factors,"Violent crime - violence offences per 1,000 population",Demand,,,,remove (published geography is challenging)
 Risk factors,Asthma: QOF prevalence (all ages),Demand,"The number of patients with asthma, as recorded on practice disease registers (QOF)",Practice list size for patients aged 6 yrs and over.,ICS,include
 Risk factors,Cancer: QOF prevalence (all ages),Demand,"The number of patients with cancer, as recorded on practice disease registers (QOF)",Total practice list size.,ICS,include
 Risk factors,CHD: QOF prevalence (all ages),Demand,"The number of patients with coronorary heart disease, as recorded on practice disease registers (QOF)",Total practice list size.,ICS,include

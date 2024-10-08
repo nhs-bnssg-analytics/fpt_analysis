@@ -19,7 +19,9 @@ for (target_variable in c(
   ts_split <- FALSE #set whether to leave the latest year for testing (TRUE) or not (FALSE)
   evaluation_metric <- "mape"
   
-  for (model_method in c("random_forest", "logistic_regression")) {
+  for (model_method in c(
+    "random_forest",
+    "logistic_regression")) {
     # model_method <- "random_forest"
     
     numerator_remainder <- include_numerator_remainder(model_method)
@@ -68,7 +70,8 @@ for (target_variable in c(
         data = dc_data, 
         target_variable = target_variable, 
         predict_year = predict_year,
-        target_type = tt
+        target_type = tt,
+        lag_target = 0:1
       )
       
       modelling_outputs <- inputs |> 

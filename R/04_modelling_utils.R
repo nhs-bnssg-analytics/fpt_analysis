@@ -692,7 +692,7 @@ load_data <- function(target_variable, value_type = "value", incl_numerator_rema
   }
   
   ics_lkp_path <- "data-raw/Lookups/ICB22CDH_NHSER22CDH.csv"
-  if (!file.exists(ics_lkp_path)) {
+  if (!file.exists(here::here(ics_lkp_path))) {
     ics_to_nhs_region <- "https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/SICBL22_ICB22_NHSER22_EN_LU/FeatureServer/0/query?outFields=*&where=1%3D1&f=geojson" |> 
       jsonlite::fromJSON() |> 
       pluck("features", "properties") |> 
@@ -711,7 +711,7 @@ load_data <- function(target_variable, value_type = "value", incl_numerator_rema
       row.names = FALSE
     )
   } else {
-    ics_to_nhs_region <- read.csv(ics_lkp_path)
+    ics_to_nhs_region <- read.csv(here::here(ics_lkp_path))
   }
   
   dc_data <- dc_data |> 
@@ -762,7 +762,7 @@ load_data <- function(target_variable, value_type = "value", incl_numerator_rema
 
 # modelling ---------------------------------------------------------------
 
-modelling_grid <- function(data, target_variable, predict_year, target_type) {
+modelling_grid <- function(data, target_variable, predict_year, target_type, lag_target = 0:1) {
   
   target_type <- match.arg(
     target_type,
@@ -802,7 +802,7 @@ modelling_grid <- function(data, target_variable, predict_year, target_type) {
     ) |> 
     cross_join(
       tibble(
-        lag_target = 0:1
+        lag_target = lag_target
       )
     ) |> 
     filter(
@@ -872,6 +872,7 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
                                   validation_type,
                                   eval_metric,
                                   include_pi = FALSE,
+                                  auto_feature_selection = FALSE,
                                   seed = 321) {
   
   model_type <- match.arg(
@@ -1249,6 +1250,80 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
       set_mode("regression")
   }
   
+  if (isTRUE(auto_feature_selection)) {
+    browser()
+    cat("...feature elimination....")
+    # tm <- log_the_time(tm)
+    cat("...counting baked cols....")
+    baked_cols <- model_recipe |>
+      prep()
+    
+    predictors <- baked_cols |>
+      summary() |>
+      filter(role == "predictor") |>
+      pull(variable)
+    
+    baked_cols <- length(predictors)
+    
+    # tm <- log_the_time(tm)
+    cat("...rfeControl stage....")
+    ctrl <- caret::rfeControl(
+      functions = caret::lrFuncs,
+      method = "boot",
+      repeats = 5,
+      verbose = FALSE,
+      rerank = TRUE
+    )
+    # cat("...sbfControl stage....")
+    # ctrl <- caret::sbfControl(
+    #   functions = caret::lrFuncs,
+    #   method = "repeatedcv",
+    #   repeats = 5,
+    #   verbose = FALSE
+    # )
+    # browser()
+    # tm <- log_the_time(tm)
+    # cat("...parallelising....")
+    # cl <- parallel::makeCluster(
+    #   2,
+    #   type = 'PSOCK'
+    # )
+    # doParallel::registerDoParallel(cl)
+    
+    # debugonce(rfe)
+    # tm <- log_the_time(tm)
+    cat("...feature elimination stage....")
+    browser()
+    lrProfile <- caret::rfe(
+      model_recipe,
+      data = training(splits),
+      sizes = seq(
+        from = 10,
+        to = baked_cols,
+        by = 5
+      ),
+      rfeControl = ctrl,
+      metric = "Accuracy"
+    )
+    
+    # lr_with_filter <- caret::sbf(
+    #   recipe,
+    #   data = training(splits),
+    #   sbfControl = ctrl
+    # )
+    
+    # tm <- log_the_time(tm)
+    cat("...updating the recipe....")
+    model_recipe <- model_recipe |>
+      update_role(
+        all_of(setdiff(
+          predictors,
+          predictors(lrProfile)
+        )),
+        new_role = "recursive feature elimination"
+      )
+  }
+  
   # start workflow
   modelling_workflow <- workflow() |> 
     add_model(model_setup) |> 
@@ -1297,7 +1372,7 @@ modelling_performance <- function(data, target_variable, lagged_years = 0,
         length.out = 10
       ))
     
-    tuning_grid <- 30
+    tuning_grid <- 60
     
     # # obtain resample coefficients function
     # get_glmnet_coefs <- function(x) {

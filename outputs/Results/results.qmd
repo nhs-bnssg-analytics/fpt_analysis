@@ -1,5 +1,5 @@
 ---
-title: "Results"
+title: "Summary of results"
 order: 1
 ---
 
@@ -46,29 +46,29 @@ results <- readRDS(
 
 ## Model inputs
 
-Three main modelling methods were attempted (generalised linear modelling (GLM), using a binomial model with a logit link function; random forest (RF) model modelling the outcome; and a random forest model that models the change in the outcome from the previous year).
+Three main modelling methods were attempted (generalised linear modelling (GLM), using a quasibinomial model with a logit link function; random forest (RF) model modelling the outcome; and a random forest model that models the change in the outcome from the previous year).
 
-Variations on model inputs were also tested. Models were tested where the input data varied between 3 and 7 years. For each of those, different amount of lagging to the input data was tested too - in order to see whether there was a knock on effect of a previous year for an input variable on the outcome variable for the following year. Models with 0, 1 and 2 lagged years were tested. The importance of the previous year's outcome value was also tested, by either including it or not including it in the modelling process. See @tbl-input-combinations for a summary of the combinations of inputs.
+Variations on model inputs were also tested. Models were tested where the input data varied between 3 and 7 years. For each of those, different amount of lagging to the input data was tested too - in order to see whether there was a knock on effect of a previous year for an input variable on the outcome variable for the following year. Models with 0, 1 and 2 lagged years were tested. The importance of the previous year's outcome value as a predictor variable was also tested, by either including it or not including it in the modelling process. See @tbl-input-combinations for a summary of the combinations of inputs.
 
 | Inputs to modelling                                     | Description                                             |
 |-------------------------------------|----------------------------------|
 | Number of years of data                                 | 3 to 7 years                                            |
 | Number of lagged years for predictor variables          | 0, 1, and 2 lagged years                                |
 | Inclusion of previous year's value for outcome variable | True or false                                           |
-| Number of different outcome variables modelled          | 4                                                       |
+| Number of different outcome variables modelled          | 5                                                       |
 | Modelling methods explored                              | GLM, RF (on outcome), RF (on change from previous year) |
 
 : Description of the combinations of the input data assessed in the modelling process. {#tbl-input-combinations}
 
-In all, 360 different models were built and assessed.
+In all, nearly 450 different models were built and assessed. In reality, some of the time series for the outcome variables were not long enough to test for all variations of three to seven years, so fewer than 450 models were built.
 
 ## Model selection
 
-Each of the outcome variables are a proportion, so they have a scale of between 0 and 1. Despite the consistent scale, the distribution between within the scales of the outcome variables differs. For this reason, best performing models are selected by selecting the model for each outcome with the lowest mean absolute percentage error (MAPE) when comparing the predicted outcome with the observed outcome on the portion of the data held back for testing. This allows us to compare results between outcomes to compare the performance of the models between outcomes.
+Each of the outcome variables are a proportion, so they have a scale of between 0 and 1. Despite the consistent scale, the distribution between within the scales of the outcome variables differs. MAPE was used (as described in [Model evalaution](../Modelling/modelling_preparation.qmd#evaluation)) as a comparable metric across the different models.
 
 ## Baseline comparison
 
-To contextualise the models performance for estimating the outcome variable, the MAPE statistic calculated on the test data for the model is compared with two other methods of estimating the outcome variable on the same test data. The two methods chosen to compare with were selected because of their simplicity, but also because these are typical methods teams might employ for predicting future performance:
+As described in [Model evalaution](../Modelling/modelling_preparation.qmd#evaluation), two baseline naive methods of estimating future performance were performed and compared with the more sophisticated methods to contextualise the performance. The two methods chosen to compare with were selected because of their simplicity, but also because these are typical methods teams might employ for predicting future performance:
 
 -   Next year's performance is equal to the previous year's performance
 -   Next year's performance is equal to a linear extrapolation based on the past 3 years' performance

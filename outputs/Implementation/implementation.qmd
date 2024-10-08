@@ -1,0 +1,163 @@
+---
+title: "Implementating the tool in a Shiny application"
+order: 1
+---
+
+```{r}
+#| label: libraries-and-data
+#| message: false
+#| echo: false
+
+source(here::here("R/00_libraries.R"))
+results <- readRDS(
+  here::here("tests/model_testing/model_summary_information.rds")
+) |> 
+  mutate(
+    Date = as.Date(Date),
+    `Number lagged target years` = as.integer(
+      stringr::str_extract(
+        `Number lagged target years`,
+        "[0-9]"
+      )
+    )
+  ) |> 
+  select(
+    var = "Target variable",
+    model = "Model type",
+    outcome = "Target variable type",
+    training_years = "Number training years",
+    lagged_years = "Number lagged years",
+    lagged_outcome = "Number lagged target years",
+    mape = "Test set value",
+    naive_last_year = "Baseline (same as last year)",
+    naive_trend = "Baseline (linear (3 years))"
+  ) |> 
+  mutate(
+    model = paste0(
+      model,
+      " (",
+      outcome,
+      ")"
+    ),
+    .keep = "unused"
+  )
+
+
+
+best_models <- results |> 
+  filter(
+    mape == min(mape),
+    .by = c(var)
+  ) |> 
+  filter(
+    training_years == min(training_years),
+    .by = c(var)
+  ) |> 
+  mutate(
+    `Model description` = "Most accurate model"
+  )
+
+best_glm_models <- results |> 
+  filter(
+    model == "logistic_regression (proportion)",
+    lagged_outcome == 0
+  ) |> 
+  filter(
+    mape == min(mape),
+    .by = c(var)
+  ) |> 
+  filter(
+    training_years == min(training_years),
+    .by = c(var)
+  ) |> 
+  mutate(
+    `Model description` = stringr::str_wrap(
+      "Best GLM model without the lagged outcome used as a predictor",
+      30
+    )
+  )
+
+combined <- best_models |> 
+  bind_rows(
+    best_glm_models
+  ) |> 
+  mutate(
+    model = stringr::str_replace(
+      model, "random_forest", "Random forest"
+    ),
+    model = stringr::str_replace(
+      model, "logistic_regression", "Generalised linear model"
+    ),
+    var = stringr::str_wrap(
+      var, 35
+    )
+  )
+```
+
+## Considerations
+
+The previous chapters have described the analytical process taken to determine the most accurate model for each of the outcome variables.
+[Table 1](../Results/results.qmd#tbl-input-combinations) describes the variety of the modelling inputs and approaches taken to determine which combination results in the best performing outcomes. [Table 2](../Results/results.qmd#tbl-best-models-inputs) describes the best models as determined by the MAPE evaluation method.
+
+To make the outputs accessible to a wide audience, a [Shiny application](https://sw-dsn.shinyapps.io/planner/) was developed. The tool contains the model objects which are the outputs of this analytical exercise. The user of the tool is able to manipulate the inputs to see how they affect the predicted outputs for each of the outcomes.
+
+Some additional considerations were made before providing the models to the user via the Shiny application:
+
+* do the important variables make sense hypothetically?
+* are there any obvious issues with future predictions?
+* do the future predictions respond as expected when the inputs are altered?
+
+It is intended that the tool provides the user with a believable experience. The model that has historically been the most accurate at predicting the outcome may be doing so using relationships that are unintuitive. For a user, if this was the case, it could deter them from using the tool. As modelling performance was so similar between the top performing models, it allowed some decision making over which models to surface through the tool. We ensured that only models were surfaced where the majority of the predictor variables, with respect to the outcome, made sense.
+
+Generally, the best performing models were the random forest models that predict the change in performance from one year to the next. There are no constraints on random forest predictions, and providing these within the tool could result in predictions for the outcome to be outside of the 0-100% constraints that a proportion outcome provides. In the short term (1-10 years) this is unlikely, but it is still possible. Therefore, these random forest models were not surfaced in the tool.
+
+The models that were based on the generalised linear modelling approach that contained the previous year's value as a predictor variable often performed very well. Using last year's value to anchor the prediction seemed like a good approach. Unfortunately, when last year's value was an important variable, it had the effect of being unable to reverse the direction of consecutive predictions, often causing the prediction of the outcome to exponentially increase to 100% within a few years. These models were therefore not included.
+
+This has resulted in only presenting the generalised linear models through the Shiny application, where the target variable is not used as a predictor variable. @fig-plot shows how the models presented in the Shiny application compare with the best performing models.
+
+
+
+```{r}
+#| label: fig-plot
+#| echo: false
+#| fig-width: 10
+#| fig-height: 6
+#| fig-cap: "The difference in Mean Absolute Percentage Error when comparing the models presented in the Shiny application with the best performing models."
+
+ggplot(
+  combined,
+  aes(
+    x = mape,
+    y = var
+  )
+) +
+  geom_point(
+    aes(
+      colour = `Model description`,
+      shape = `Model description`
+    )
+  ) +
+  geom_text(
+    data = combined |> filter(`Model description` == "Most accurate model"),
+    aes(
+      label = stringr::str_wrap(model, 15)
+    ),
+    nudge_y = 0.35,
+    size = 3
+  ) +
+  labs(
+    title = "Comparing the most accurate models with the models presented in the Shiny tool",
+    y = "Outcome",
+    x = "Mean Absolute Percentage Error"
+  ) +
+  scale_colour_manual(
+    values = c(
+      "#ae2374",
+      "#005fb8"
+    )
+  ) +
+  xlim(0, NA) +
+  theme_minimal()
+```
+
+

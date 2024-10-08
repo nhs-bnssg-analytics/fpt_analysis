@@ -48,7 +48,7 @@ A column for frequency weighting is used for the logistic regression only. This 
 
 ### Lagging data
 
-Models were tested with lagged predictor variables. Both one and two year lagging was testing. Conceptually, this was done to determine whether the value of a predictor variable for a previous year has an influence on the target variable for the current year. Testing was also performed where a lagged versions of the target variable was included as a predictor variable.
+Models were tested with lagged predictor variables. Both one and two year lagging was tested. Conceptually, this was done to determine whether the value of a predictor variable for a previous year has an influence on the target variable for the current year. Testing was also performed where a lagged versions of the target variable was included as a predictor variable.
 
 ### Pandemic impact
 
@@ -64,7 +64,7 @@ Variables are removed manually in three circumstances:
 
 1. where more than 40% of the training set are missing
 2. where more than 95% of the training set are 0
-3. Where more than 95% of the test set are missing
+3. where more than 95% of the test set are missing
 
 ### Imputing missing variables
 
@@ -80,7 +80,7 @@ The training set was split into 7 folds to perform "leave-group-out" cross valid
 
 ## Model specification
 
-### Logistic regression with elastic net regularisation
+### Generalised linear model with elastic net regularisation
 
 Using the R package `glmnet`, a quasibinomial model was selected with a logit link transformation. The number of lambda values that determine the lambda path was selected as 150, which is higher than the default value of 100, to increase the likelihood of model convergence. Standardisation of the input data was performed as a separate pre-processing step, as described above, rather than within the `glmnet` function.
 
@@ -90,12 +90,17 @@ The two hyperparameters that were tuned were; the penalty parameter (lambda), wh
 
 The random forest model was also specified with the `randomForest` package. The three hyperparameters that were tuned were; the number of randomly selected predictors in each tree, the number of trees, and the minimum node size allowed before permitting another branch to grow.
 
-## Model evaluation
+## Model evaluation {#evaluation}
 
 Regression models have several useful evaluation metrics for assessing model performance. The priority for this study was to select models and explain them using simple metrics that were comparable between models. This meant using an evaluation metric in the same units as the target variables and one that was unaffected by the scale of the target variable.
 
 The Mean Absolute Percentage Error (MAPE) metric was selected to evaluate the models because it provides the simplest interpretation and consistency between all the models. 
 
-Having determined the optimal hyperparameters (as described in the model tuning section), the final model was evaluated on the test dataset, from which the MAPE score was calculated. 
+Having determined the optimal hyperparameters (as described in the [hyperparameter tuning section](#tuning)), the final model was evaluated on the test dataset, from which the MAPE score was calculated. 
+
+MAPE scores were also calculated on two naïve methods of performance forecasting:
+
+1. future performance is the same as the previous year's performance
+2. future performance is estimated by extrapolating a linear model through the last three years of observed performance data
 
 The MAPE score for the naïve methods was calculated using the same test dataset as the more sophisticated modelling methods to create a like for like comparison. 
