@@ -12,7 +12,7 @@ website:
   navbar:
     right:
       - icon: github
-        href: https://github.com/nhs-bnssg-analytics/d_and_c
+        href: https://github.com/nhs-bnssg-analytics/fpt_analysis
         aria-label: GitHub
   sidebar:
     logo: outputs/logo.png

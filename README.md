@@ -6,7 +6,7 @@ modelling that underpins the [Future Performance
 Tool](https://sw-dsn.shinyapps.io/future-performance-tool/).
 
 See a description of the project and the findings as it progresses
-[here](https://nhs-bnssg-analytics.github.io/d_and_c/outputs/01_index.html).
+[here](https://nhs-bnssg-analytics.github.io/fpt_analysis/outputs/01_index.html).
 
 ## Using this repository
 
@@ -33,4 +33,5 @@ be inconsistent. The code in this project attempts to negate the
 inconsistency, but there will be occasions where an unpredictable manual
 step has occurred that the code hasn’t accounted for, and will result in
 an error. Please report these errors through the
-[issues](https://github.com/nhs-bnssg-analytics/d_and_c/issues) page.
+[issues](https://github.com/nhs-bnssg-analytics/fpt_analysis/issues)
+page.
