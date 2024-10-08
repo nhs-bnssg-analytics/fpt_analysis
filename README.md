@@ -3,7 +3,10 @@
 
 This repository contains the data download, data manipulation and the
 modelling that underpins the [Future Performance
-Tool](https://sw-dsn.shinyapps.io/future-performance-tool/).
+Tool](https://sw-dsn.shinyapps.io/future-performance-tool/). The Shiny
+code for the Future Performance Tool is
+[here](https://github.com/nhs-bnssg-analytics/fpt_tool), which was
+developed using a {golem} framework.
 
 See a description of the project and the findings as it progresses
 [here](https://nhs-bnssg-analytics.github.io/fpt_analysis/outputs/01_index.html).

@@ -24,7 +24,7 @@ Metrics can be published by month, quarter, and year (both financial or calendar
 
 ### Comparable metrics
 
-Data are generally published as raw figures. Without context, it is difficult to evaluate whether a figure is high or low. For added context, the metric needs to be calculated with a denominator. This enables comparison with other areas. The choice of denominator determines the metric value and it can have a large influence on how the metric differs between areas. The description of the metric, along with the denominator and numerator description, can be found in the [configuration-table.csv](https://github.com/nhs-bnssg-analytics/d_and_c/blob/master/data/configuration-table.csv) file.
+Data are generally published as raw figures. Without context, it is difficult to evaluate whether a figure is high or low. For added context, the metric needs to be calculated with a denominator. This enables comparison with other areas. The choice of denominator determines the metric value and it can have a large influence on how the metric differs between areas. The description of the metric, along with the denominator and numerator description, can be found in the [configuration-table.csv](https://github.com/nhs-bnssg-analytics/fpt_analysis/blob/master/data/configuration-table.csv) file.
 
 ### Interpretation
 
