@@ -3823,11 +3823,19 @@ trust_to_ics_proportions <- function(final_year = 2020) {
   
   # this link changes because it is generated with php
   # the file can be found here: https://app.box.com/s/qh8gzpzeo1firv1ezfxx2e6c4tgtrudl
-  url <- "https://public.boxcloud.com/d/1/b1!_if4KZ-UlX6Fdqz-M5OQ-8Y6ZRDyIlXfPY9wSrdbBAAOKF27MZM1CfnXKFNdBKMN1blXwHiGsosjEvyMoVvelzX_fyx4EM9lGtjkWNeENiyVAlwKAtE3U62msLnU4jl0Ydkn9HcEHgoPYr5TjddsDXG02DD8GZArAj3s1LK5QO4pFBvUjczfVMXFGxomoEqBQ9hsGBGljY70GpTL4CfSx6P0l_UtE-8zsKFXlWOfGpBNzHFGj1-XkeV5ZVFahJP7zz3vvs7cMDYbsmKr_osn6ICqMrWi3re4ISic3gtsOrRUS9DAXoXC0ra2ODaswc94tFLeg1Faldz15dxFZaRGhirsmfeTYzoQt_AgzifZcLcp9RXHUah6G_bmoHIQYHnG2YPLkNYdUvYJ-rMkgMDmx3v3QS1tYtvZUXFQAmMo1x7dmLn_VMp8v8P5-lr1xOwyClHwCf9X6gOi1dc4bS9ld9K3MfdXzBXumHdx84HYgryrT6fH7gzk5j7dt37V20DNDOfUzDeJBonAfdCe9u08NtjsxXHokjvGvvZWJgwVwhamywpvyYgjoY11KvYBIC3PWTBMkjDd8oA8d04xItkbFD1hIokffSfWm6UkVFyz1tjP3UWcHaxvPiJ6C0FVY0HN0RxmHMyoKKxUL6BE0Fv_W9zEhkMuBG1ehKAgko0BWZsb6k1X4ID0zdavgMvCunA6_g803kNW4x3RCw6woRjLkoIrhsYyuB_XqMvpx4rdmtkhS2IgwFwqzap0BgvIZ88sjCoeq3709Xq1SwzoiTnhPpIl2wM6TQb1HdiK3kb1kQB-H3ckh1F-_MEOXIqKOUypr8aO4S8VkehoX0tYnMkKSnMqSe2lYsOszpyRYJCG2V_-P9ZivTXZx-wMKrvY0Hy_dQwa_E7dw4yWQ7CPM7PkQgi7-A_2q_jjsOnro8FAn_6U38-CVsVE9nTQafwfCDAIbISC3VsLX2U9vPBZwO8UaHdORIsj4VYJ5WRpQIkwiP_ryKJmsu20I6MMWAQg5-Mo-L9ezGXfgM9X3DztUQktXejvaRFd-MT4ytNPwA911fNA5pSWdrjm5Oy8qggppZepK6wLBWpQeqV27AWaKk1Cg0eAP9Jl-KewxiwSwHjjILSHLLPsz2MHC9zoAFH0JGcJA67ZEdqB-aJbtEoEQQ1yVNDBftf7VZJIX49BBL0IgePUYv7n_aeYOLVQbsO8P2Mo1TQFnpZVwBt5HRqGLZyNz9XVmspRxbn1oHfZVRGlGWJxKTZmy7XiTuXIhSfE8rbQeyWqqrSdcSyd63Ekb5csu3CM1AWwckWBEptT9mKSG1AoOfggv0MAJpq7kPXsB-5730VaLymLrpRNUAKBs3Bv9pCQ1emCYyKbbx4VdYAQyPALgHc./download"
+  
+  url <- "https://app.box.com/index.php?rm=box_download_shared_file&shared_name=qh8gzpzeo1firv1ezfxx2e6c4tgtrudl&file_id=f_976234504165"
+  
+  download_url <- httr::GET(
+    url = url
+  ) |> 
+    purrr::pluck(
+      "all_headers", 1, "headers", "location"
+    )
   
   file <- check_and_download(
     filepath = "data-raw/Catchment populations/catchment-populations.xlsx",
-    url = url
+    url = download_url
   )
   
   msoas_in_catchments <- c(
