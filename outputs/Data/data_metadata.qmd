@@ -29,7 +29,7 @@ This page documents the data collated and used within the project.
 
 **Denominator:** Total population.
 
-### Proportion of resident population within each deprivation quintile
+### Proportion of resident population within the most and least deprived quintiles
 
 **Source:** [ONS Indices of Deprivation 2019 by LSOA](https://assets.publishing.service.gov.uk/media/5d8b3b51ed915d036a455aa6/File_5_-_IoD2019_Scores.xlsx)
 
@@ -200,7 +200,7 @@ These indicators are calculated for acute and mental health settings.
 
 **Numerator:** Full-time equivalent sick days.
 
-**Numerator source:** [NHS ESR Sickness Absensce](https://files.digital.nhs.uk/A6/67E0C1/ESR_ABSENCE_CSV_NHSE.csv) for April 2009 to March 2022.
+**Numerator source:** [NHS ESR Sickness Absence](https://files.digital.nhs.uk/A6/67E0C1/ESR_ABSENCE_CSV_NHSE.csv) for April 2009 to March 2022.
 
 **Numerator source:** For April 2022 onwards, the monthly text files in the [NHS Sickness absence rates](https://digital.nhs.uk/data-and-information/publications/statistical/nhs-sickness-absence-rates) publication are used.
 
@@ -310,7 +310,7 @@ This denominator is used for all of the metrics described above except "mental h
 
 ## Performance
 
-### 62 Day Wait for First Treatment for Cancer
+### Proportion of suspected cancer or referral to first definitive treatment that are longer than 62 days wait
 
 **Source:** [NHS Cancer Wait Times](https://www.england.nhs.uk/statistics/statistical-work-areas/cancer-waiting-times/)
 
@@ -332,23 +332,15 @@ This metric is only collated for Type 1 Departments - Major A&E attendances.
 
 **Denominator:** Total A&E attendances.
 
-### Proportion of attended GP appointments within specified timescale
+### Proportion of attended GP appointments with over 4 weeks wait time
 
 **Source:** [NHS Appointments in General Practice](https://digital.nhs.uk/data-and-information/publications/statistical/appointments-in-general-practice/)
-
-This metric can be divided into:
-
--   0 to 1 weeks wait time
--   1 to 2 weeks wait time
--   2 to 3 weeks wait time
--   3 to 4 weeks wait time
--   Over 4 weeks wait time
 
 **Numerator:** Total appointments within timeframe.
 
 **Denominator:** Total appointments.
 
-### Proportion of Incomplete Referral to Treatment Pathways greater than 18 weeks from Referral
+### Proportion of Incomplete Referral to Treatment Pathways greater than 18 and 52 weeks from Referral
 
 **Source:** [NHS Referral to Treatment Waiting Times](https://www.england.nhs.uk/statistics/statistical-work-areas/rtt-waiting-times/)
 
