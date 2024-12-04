@@ -81,7 +81,7 @@ For 2021 and 2022, the Local Authority District (LAD) populations are used for e
 
 **Denominator:** Total practice list size.
 
-### Coronorary heart disease: QOF prevalence
+### Coronary heart disease: QOF prevalence
 
 **Source:** [Quality and Outcomes Framework](https://digital.nhs.uk/data-and-information/publications/statistical/quality-and-outcomes-framework-achievement-prevalence-and-exceptions-data)
 
@@ -161,11 +161,11 @@ For 2021 and 2022, the Local Authority District (LAD) populations are used for e
 
 **Denominator:** Total practice list size.
 
-### Rhuematoid arthritis: QOF prevalence (16+ yrs)
+### Rheumatoid arthritis: QOF prevalence (16+ yrs)
 
 **Source:** [Quality and Outcomes Framework](https://digital.nhs.uk/data-and-information/publications/statistical/quality-and-outcomes-framework-achievement-prevalence-and-exceptions-data)
 
-**Numerator:** Patients aged 16 and over with rhuematoid arthritis, as recorded on practice disease registers (Quality and Outcomes Framework).
+**Numerator:** Patients aged 16 and over with rheumatoid arthritis, as recorded on practice disease registers (Quality and Outcomes Framework).
 
 **Denominator:** All registered patients aged 16 and over.
 
@@ -184,13 +184,13 @@ For 2021 and 2022, the Local Authority District (LAD) populations are used for e
 
 **Numerator:** Estimated FTEs in acute settings in each ICS for the month nearest to July each year.
 
-**Numerator source:** [NHS Worforce Statistics](https://digital.nhs.uk/data-and-information/publications/statistical/nhs-workforce-statistics).
+**Numerator source:** [NHS Workforce Statistics](https://digital.nhs.uk/data-and-information/publications/statistical/nhs-workforce-statistics).
 
-**Calculation details:** The csv file for the month closest to July are downloaded, and the csv file with the Staff Group and Organisation information is used. From this file, the FTEs are used for the calculation. Only the "Acute" Cluster Group is used, along with the "Total" Staff Grade. Other Cluster Groups are removed because the data quality are less reliable (for example, Ambulance Cluster Group attribute all FTEs to where the regional headquarters of the Ambulatory Service is located - this appears to be the case for Mental Health and Community Services Cluster Group too).
+**Calculation details:** The csv file for the month closest to July are downloaded, and the csv file with the Staff Group and Organisation information is used. From this file, the FTEs are used for the calculation. Only the "Acute" Cluster Group is used, along with the "Total" Staff Grade. Other Cluster Groups are removed because the data quality is less reliable (for example, Ambulance Cluster Group attribute all FTEs to where the regional headquarters of the Ambulatory Service is located - this appears to be the case for Mental Health and Community Services Cluster Group too).
 
 Each organisations FTE value is applied to an ICS using the trust to ICS estimation method described in the [trust to ICS weighting section](#catchment-weighting).
 
-**Denominator:** Total registered population within General Practices at July each year.
+**Denominator:** Total registered population within General Practices in July each year.
 
 **Denominator source:** [NHS Patients registered at a GP Practice](https://digital.nhs.uk/data-and-information/publications/statistical/patients-registered-at-a-gp-practice)
 
@@ -281,7 +281,7 @@ This denominator is used for all of the metrics described above except "mental h
 
 **Denominator:** Quarterly registered population within General Practices averaged to calculate an annual figure. This figure is multiplied by 100,000 for ease of understanding the calculated metric.
 
-### A&E full time equivelents per 100,000 population
+### A&E full time equivalents per 100,000 population
 
 **Numerator:** A&E full time equivalents for the following staff groups:
 
@@ -297,7 +297,7 @@ This denominator is used for all of the metrics described above except "mental h
 **Denominator source:** [NHS Patients registered at a GP Practice](https://digital.nhs.uk/data-and-information/publications/statistical/patients-registered-at-a-gp-practice)
 
 
-### Mean proportion of beds that contain a paitent with confirmed COVID
+### Mean proportion of beds that contain a patient with confirmed COVID
 
 **Numerator:** Mean number of beds with a patient with confirmed COVID.
 
